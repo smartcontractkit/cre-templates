@@ -35,3 +35,6 @@ dist
 # solidity build artifacts
 out/
 cache/
+
+# typescript
+node_modules/

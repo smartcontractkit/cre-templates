@@ -25,7 +25,12 @@ If your workflow does not do any chain write then you can keep a dummy key as a 
 CRE_ETH_PRIVATE_KEY=0000000000000000000000000000000000000000000000000000000000000001
 ```
 
-## 3. Configure RPC endpoints
+## 3. Install dependencies
+```
+cd workflowName && bun install
+```
+
+## 4. Configure RPC endpoints
 
 For local simulation to interact with a chain, you must specify RPC endpoints for the chains you interact with in the `project.yaml` file. This is required for submitting transactions and reading blockchain state.
 
@@ -40,13 +45,11 @@ Note: The following 7 chains are supported in local simulation (both testnet and
 
 Add your preferred RPCs under the `rpcs` section. For chain names, refer to https://github.com/smartcontractkit/chain-selectors/blob/main/selectors.yml
 
-## 4. Set up workflow secrets
+## 5. Set up workflow secrets
 
 This template workflow demonstrates the use of secrets. To configure them, a separate file containing the secret names is required. For this template, a secrets.yaml file is already provided in the workflow root directory with all necessary entries.
 
 To simulate how secrets are accessed, you need to define them in your environment. Below is an example based on the generated secrets.yaml.
-
-Note: Support for Vault DON is currently in progress. Once it’s fully integrated, secrets will be managed there by default—eliminating the need to store secrets locally or maintain a secrets.yaml file.
 
 ```bash
 export SECRET_ADDRESS_ALL="0xMySecretAddress"
@@ -64,13 +67,13 @@ Note in our example the secret address is used to read a balance from. You can u
 export SECRET_ADDRESS_ALL="0x4700A50d858Cb281847ca4Ee0938F80DEfB3F1dd"
 ```
 
-## 5. Deploy contracts
+## 6. Deploy contracts
 
 Deploy the BalanceReader, MessageEmitter, ReserveManager and SimpleERC20 contracts. You can either do this on a local chain or on a testnet using tools like cast/foundry.
 
 For a quick start, you can also use the pre-deployed contract addresses on Ethereum Sepolia—no action required on your part if you're just trying things out.
 
-## 6. Configure workflow
+## 7. Configure workflow
 
 Configure `config.json` for the workflow
 
@@ -98,18 +101,18 @@ local-simulation:
     secrets-path: "../secrets.yaml"
 ```
 
-## 7. Simulate the workflow
+## 8. Simulate the workflow
 
 Run the command from <b>project root directory</b> and pass in the path to the workflow directory.
 
 ```bash
-cre workflow simulate <path-to-workflow-directory> --target local-simulation
+cre workflow simulate <path-to-workflow-directory>
 ```
 
 For a workflow directory named `workflow01` the exact command would be:
 
 ```bash
-cre workflow simulate ./workflow01 --target local-simulation
+cre workflow simulate ./workflow01
 ```
 
 After this you will get a set of options similar to:
@@ -125,11 +128,11 @@ Enter your choice (1-3):
 
 You can simulate each of the following triggers types as follows
 
-### 7a. Simulating Cron Trigger Workflows
+### 8a. Simulating Cron Trigger Workflows
 
 Select option 1, and the workflow should immediately execute.
 
-### 7b. Simulating Log Trigger Workflows
+### 8b. Simulating Log Trigger Workflows
 
 Select option 2, and then two additional prompts will come up and you can pass in the example inputs:
 
@@ -148,7 +151,7 @@ Found log event at index 0: contract=0x1d598672486ecB50685Da5497390571Ac4E93FDc,
 Created EVM trigger log for transaction 0x420721d7d00130a03c5b525b2dbfd42550906ddb3075e8377f9bb5d1a5992f8e, event 0
 ```
 
-### 7c. Simulating HTTP Trigger Workflows
+### 8c. Simulating HTTP Trigger Workflows
 
 Select option 3, and then an additional prompt will come up where you can pass in:
 
