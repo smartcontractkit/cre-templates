@@ -1,4 +1,4 @@
-module custom-data-feed-project
+module cre-custom-data-feed-go
 
 go 1.24.5
 

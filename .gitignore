@@ -38,3 +38,5 @@ cache/
 
 # typescript
 node_modules/
+bun.lock
+tmp.js
