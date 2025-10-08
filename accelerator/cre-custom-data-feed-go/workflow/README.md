@@ -51,8 +51,6 @@ This template workflow demonstrates the use of secrets. To configure them, a sep
 
 To simulate how secrets are accessed, you need to define them in your environment. Below is an example based on the generated secrets.yaml.
 
-Note: Support for Vault DON is currently in progress. Once it’s fully integrated, secrets will be managed there by default—eliminating the need to store secrets locally or maintain a secrets.yaml file.
-
 ```bash
 export SECRET_ADDRESS_ALL="0xMySecretAddress"
 ```
@@ -91,7 +89,7 @@ Note: This command must be run from the <b>project root directory</b> where proj
 ```bash
 # Navigate to your project root (where project.yaml is located)
 # Generate bindings for all contracts
-cre generate-bindings --chain-family=evm
+cre generate-bindings evm
 
 # The bindings will be generated in contracts/evm/src/generated/
 # Each contract gets its own package subdirectory:
@@ -118,6 +116,18 @@ Configure `config.json` for the workflow
 
 The config is already populated with deployed contracts in template.
 
+Note: Make sure your `workflow.yaml` file is pointing to the config.json, example:
+
+```yaml
+local-simulation:
+  user-workflow:
+    workflow-name: "workflow01"
+  workflow-artifacts:
+    workflow-path: "."
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"
+```
+
 
 ## 8. Simulate the workflow
 
@@ -125,7 +135,7 @@ The config is already populated with deployed contracts in template.
 ```bash
 go mod tidy
 
-cre workflow simulate <path-to-workflow> --target local-simulation
+cre workflow simulate <path-to-workflow>
 ```
 
 After this you will get a set of options similar to:
