@@ -1,0 +1,46 @@
+export const ReserveManager = [
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'requestId',
+				type: 'uint256',
+			},
+		],
+		name: 'RequestReserveUpdate',
+		type: 'event',
+	},
+	{
+		inputs: [],
+		name: 'lastTotalMinted',
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+		stateMutability: 'view',
+		type: 'function',
+	},
+	{
+		inputs: [],
+		name: 'lastTotalReserve',
+		outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+		stateMutability: 'view',
+		type: 'function',
+	},
+	{
+		inputs: [
+			{
+				components: [
+					{ internalType: 'uint256', name: 'totalMinted', type: 'uint256' },
+					{ internalType: 'uint256', name: 'totalReserve', type: 'uint256' },
+				],
+				internalType: 'struct UpdateReserves',
+				name: 'updateReserves',
+				type: 'tuple',
+			},
+		],
+		name: 'updateReserves',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function',
+	},
+] as const

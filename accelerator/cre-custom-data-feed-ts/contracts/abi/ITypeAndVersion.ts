@@ -1,0 +1,9 @@
+export const ITypeAndVersion = [
+	{
+		inputs: [],
+		name: 'typeAndVersion',
+		outputs: [{ internalType: 'string', name: '', type: 'string' }],
+		stateMutability: 'pure',
+		type: 'function',
+	},
+] as const
