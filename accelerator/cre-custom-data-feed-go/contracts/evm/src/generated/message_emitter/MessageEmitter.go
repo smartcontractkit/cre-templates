@@ -73,7 +73,21 @@ type GetMessageInput struct {
 // Errors
 
 // Events
+// The <Event> struct should be used as a filter (for log triggers).
+// Indexed (string and bytes) fields will be of type common.Hash.
+// They need to he (crypto.Keccak256) hashed and passed in.
+// Indexed (tuple/slice/array) fields can be passed in as is, the Encode<Event>Topics function will handle the hashing.
+//
+// The <Event>Decoded struct will be the result of calling decode (Adapt) on the log trigger result.
+// Indexed dynamic type fields will be of type common.Hash.
+
 type MessageEmitted struct {
+	Emitter   common.Address
+	Timestamp *big.Int
+	Message   string
+}
+
+type MessageEmittedDecoded struct {
 	Emitter   common.Address
 	Timestamp *big.Int
 	Message   string
@@ -98,7 +112,7 @@ type MessageEmitterCodec interface {
 	DecodeTypeAndVersionMethodOutput(data []byte) (string, error)
 	MessageEmittedLogHash() []byte
 	EncodeMessageEmittedTopics(evt abi.Event, values []MessageEmitted) ([]*evm.TopicValues, error)
-	DecodeMessageEmitted(log *evm.Log) (*MessageEmitted, error)
+	DecodeMessageEmitted(log *evm.Log) (*MessageEmittedDecoded, error)
 }
 
 func NewMessageEmitter(
@@ -253,14 +267,19 @@ func (c *Codec) EncodeMessageEmittedTopics(
 }
 
 // DecodeMessageEmitted decodes a log into a MessageEmitted struct.
-func (c *Codec) DecodeMessageEmitted(log *evm.Log) (*MessageEmitted, error) {
-	event := new(MessageEmitted)
+func (c *Codec) DecodeMessageEmitted(log *evm.Log) (*MessageEmittedDecoded, error) {
+	event := new(MessageEmittedDecoded)
 	if err := c.abi.UnpackIntoInterface(event, "MessageEmitted", log.Data); err != nil {
 		return nil, err
 	}
 	var indexed abi.Arguments
 	for _, arg := range c.abi.Events["MessageEmitted"].Inputs {
 		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
 			indexed = append(indexed, arg)
 		}
 	}
@@ -289,7 +308,7 @@ func (c MessageEmitter) GetLastMessage(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -327,7 +346,7 @@ func (c MessageEmitter) GetMessage(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -364,7 +383,7 @@ func (c MessageEmitter) TypeAndVersion(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -408,18 +427,43 @@ func (c *MessageEmitter) UnpackError(data []byte) (any, error) {
 	}
 }
 
-func (c *MessageEmitter) LogTriggerMessageEmittedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []MessageEmitted) (cre.Trigger[*evm.Log, *evm.Log], error) {
+// MessageEmittedTrigger wraps the raw log trigger and provides decoded MessageEmittedDecoded data
+type MessageEmittedTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]                 // Embed the raw trigger
+	contract                        *MessageEmitter // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into MessageEmitted data
+func (t *MessageEmittedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[MessageEmittedDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeMessageEmitted(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode MessageEmitted log: %w", err)
+	}
+
+	return &bindings.DecodedLog[MessageEmittedDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *MessageEmitter) LogTriggerMessageEmittedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []MessageEmitted) (cre.Trigger[*evm.Log, *bindings.DecodedLog[MessageEmittedDecoded]], error) {
 	event := c.ABI.Events["MessageEmitted"]
 	topics, err := c.Codec.EncodeMessageEmittedTopics(event, filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode topics for MessageEmitted: %w", err)
 	}
 
-	return evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
 		Addresses:  [][]byte{c.Address.Bytes()},
 		Topics:     topics,
 		Confidence: confidence,
-	}), nil
+	})
+
+	return &MessageEmittedTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
 }
 
 func (c *MessageEmitter) FilterLogsMessageEmitted(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {

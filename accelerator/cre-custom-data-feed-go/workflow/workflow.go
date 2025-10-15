@@ -9,16 +9,19 @@ import (
 	"math/big"
 	"time"
 
-	"custom-data-feed-project/contracts/evm/src/generated/balance_reader"
-	"custom-data-feed-project/contracts/evm/src/generated/ierc20"
-	"custom-data-feed-project/contracts/evm/src/generated/message_emitter"
-	"custom-data-feed-project/contracts/evm/src/generated/reserve_manager"
+	"cre-custom-data-feed-go/contracts/evm/src/generated/balance_reader"
+	"cre-custom-data-feed-go/contracts/evm/src/generated/ierc20"
+	"cre-custom-data-feed-go/contracts/evm/src/generated/message_emitter"
+	"cre-custom-data-feed-go/contracts/evm/src/generated/reserve_manager"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/shopspring/decimal"
 
 	pb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	pbvalues "github.com/smartcontractkit/chainlink-protos/cre/go/values"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm"
+	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm/bindings"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/scheduler/cron"
 	"github.com/smartcontractkit/cre-sdk-go/cre"
@@ -31,8 +34,7 @@ const (
 // EVMConfig holds per-chain configuration.
 type EVMConfig struct {
 	TokenAddress          string `json:"tokenAddress"`
-	PORAddress            string `json:"porAddress"`
-	ProxyAddress          string `json:"proxyAddress"`
+	ReserveManagerAddress string `json:"reserveManagerAddress"`
 	BalanceReaderAddress  string `json:"balanceReaderAddress"`
 	MessageEmitterAddress string `json:"messageEmitterAddress"`
 	ChainName             string `json:"chainName"`
@@ -81,70 +83,70 @@ func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.Secre
 		Schedule: config.Schedule,
 	}
 
-	logTriggerCfg := &evm.FilterLogTriggerRequest{
-		Addresses: make([][]byte, len(config.EVMs)),
-	}
-
-	for i, evmCfg := range config.EVMs {
-		address, err := hex.DecodeString(evmCfg.MessageEmitterAddress[2:])
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode MessageEmitter address %s: %w", evmCfg.MessageEmitterAddress, err)
-		}
-		logTriggerCfg.Addresses[i] = address
-	}
-
 	httpTriggerCfg := &http.Config{}
 
-	chainSelector, err := config.EVMs[0].GetChainSelector()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get chain selector for %s: %w", config.EVMs[0].ChainName, err)
-	}
-
-	return cre.Workflow[*Config]{
+	workflow := cre.Workflow[*Config]{
 		cre.Handler(
 			cron.Trigger(cronTriggerCfg),
 			onPORCronTrigger,
 		),
 		cre.Handler(
-			evm.LogTrigger(chainSelector, logTriggerCfg),
-			onLogTrigger,
-		),
-		cre.Handler(
 			http.Trigger(httpTriggerCfg),
 			onHTTPTrigger,
 		),
-	}, nil
+	}
+
+	for _, evmCfg := range config.EVMs {
+		msgEmitter, err := prepareMessageEmitter(logger, evmCfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare message emitter: %w", err)
+		}
+		chainSelector, err := evmCfg.GetChainSelector()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get chain selector: %w", err)
+		}
+		trigger, err := msgEmitter.LogTriggerMessageEmittedLog(chainSelector, evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST, []message_emitter.MessageEmitted{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create message emitted trigger: %w", err)
+		}
+		workflow = append(workflow, cre.Handler(trigger, onLogTrigger))
+	}
+
+	return workflow, nil
 }
 
 func onPORCronTrigger(config *Config, runtime cre.Runtime, outputs *cron.Payload) (string, error) {
 	return doPOR(config, runtime, outputs.ScheduledExecutionTime.AsTime())
 }
 
-func onLogTrigger(config *Config, runtime cre.Runtime, payload *evm.Log) (string, error) {
+func onLogTrigger(config *Config, runtime cre.Runtime, payload *bindings.DecodedLog[message_emitter.MessageEmittedDecoded]) (string, error) {
 	logger := runtime.Logger()
+
+	// use the decoded event log to get the event message
+	message := payload.Data.Message
+	logger.Info("Message retrieved from the event log", "message", message)
+
+	// the event message can also be retrieved from the contract itself
+	// below is an example of how to read from the contract
 	messageEmitter, err := prepareMessageEmitter(logger, config.EVMs[0])
 	if err != nil {
 		return "", fmt.Errorf("failed to prepare message emitter: %w", err)
 	}
 
-	topics := payload.GetTopics()
-	if len(topics) < 3 {
-		logger.Error("Log payload does not contain enough topics", "topics", topics)
-		return "", fmt.Errorf("log payload does not contain enough topics: %d", len(topics))
-	}
-
-	// topics[1] is a 32-byte topic, but the address is the last 20 bytes
-	emitter := topics[1][12:]
+	// use the decoded event log to get the emitter address
+	// the emitter address is not a dynamic type, so it can be decoded from log even though its indexed
+	emitter := payload.Data.Emitter
 	lastMessageInput := message_emitter.GetLastMessageInput{
 		Emitter: common.Address(emitter),
 	}
 
-	message, err := messageEmitter.GetLastMessage(runtime, lastMessageInput, big.NewInt(8771643)).Await()
+	blockNumber := pbvalues.ProtoToBigInt(payload.Log.BlockNumber)
+	logger.Info("Block number of event log", "blockNumber", blockNumber)
+	message, err = messageEmitter.GetLastMessage(runtime, lastMessageInput, blockNumber).Await()
 	if err != nil {
 		logger.Error("Could not read from contract", "contract_chain", config.EVMs[0].ChainName, "err", err.Error())
 		return "", err
 	}
-
 	logger.Info("Message retrieved from the contract", "message", message)
 
 	return message, nil
@@ -154,10 +156,10 @@ func onHTTPTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 	logger := runtime.Logger()
 	logger.Info("Raw HTTP trigger received")
 
-	// If there’s no input, fall back to “now”.
+	// If there's no input, fall back to "now".
 	if len(payload.Input) == 0 {
 		logger.Warn("HTTP trigger payload is empty; defaulting execution time to now")
-		return doPOR(config, runtime, time.Now().UTC())
+		return doPOR(config, runtime, runtime.Now().UTC())
 	}
 
 	// Log the raw JSON for debugging (human-readable).
@@ -172,7 +174,7 @@ func onHTTPTrigger(config *Config, runtime cre.Runtime, payload *http.Payload) (
 
 	// Provide a sensible default if the field is missing/zero.
 	if req.ExecutionTime.IsZero() {
-		req.ExecutionTime = time.Now().UTC()
+		req.ExecutionTime = runtime.Now().UTC()
 	}
 
 	logger.Info("Parsed HTTP trigger received", "payload", req)
@@ -269,7 +271,7 @@ func fetchNativeTokenBalance(runtime cre.Runtime, evmCfg EVMConfig, tokenHolderA
 	logger.Info("Getting native balances", "address", evmCfg.BalanceReaderAddress, "tokenAddress", tokenHolderAddress)
 	balances, err := balanceReader.GetNativeBalances(runtime, balance_reader.GetNativeBalancesInput{
 		Addresses: []common.Address{common.Address(tokenAddress)},
-	}, big.NewInt(8771643)).Await()
+	}, big.NewInt(rpc.FinalizedBlockNumber.Int64())).Await()
 
 	if err != nil {
 		logger.Error("Could not read from contract", "contract_chain", evmCfg.ChainName, "err", err.Error())
@@ -302,7 +304,7 @@ func getTotalSupply(config *Config, runtime cre.Runtime) (*big.Int, error) {
 			logger.Error("failed to create token", "address", evmCfg.TokenAddress, "err", err)
 			return nil, fmt.Errorf("failed to create token for address %s: %w", evmCfg.TokenAddress, err)
 		}
-		evmTotalSupplyPromise := token.TotalSupply(runtime, big.NewInt(8771643))
+		evmTotalSupplyPromise := token.TotalSupply(runtime, big.NewInt(rpc.FinalizedBlockNumber.Int64()))
 		supplyPromises[i] = evmTotalSupplyPromise
 	}
 
@@ -332,7 +334,7 @@ func updateReserves(config *Config, runtime cre.Runtime, totalSupply *big.Int, t
 		return fmt.Errorf("failed to create EVM client for %s: %w", evmCfg.ChainName, err)
 	}
 
-	reserveManager, err := reserve_manager.NewReserveManager(evmClient, common.HexToAddress(evmCfg.ProxyAddress), nil)
+	reserveManager, err := reserve_manager.NewReserveManager(evmClient, common.HexToAddress(evmCfg.ReserveManagerAddress), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create reserve manager: %w", err)
 	}

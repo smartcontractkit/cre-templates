@@ -85,13 +85,33 @@ type TransferFromInput struct {
 // Errors
 
 // Events
+// The <Event> struct should be used as a filter (for log triggers).
+// Indexed (string and bytes) fields will be of type common.Hash.
+// They need to he (crypto.Keccak256) hashed and passed in.
+// Indexed (tuple/slice/array) fields can be passed in as is, the Encode<Event>Topics function will handle the hashing.
+//
+// The <Event>Decoded struct will be the result of calling decode (Adapt) on the log trigger result.
+// Indexed dynamic type fields will be of type common.Hash.
+
 type Approval struct {
 	Owner   common.Address
 	Spender common.Address
 	Value   *big.Int
 }
 
+type ApprovalDecoded struct {
+	Owner   common.Address
+	Spender common.Address
+	Value   *big.Int
+}
+
 type Transfer struct {
+	From  common.Address
+	To    common.Address
+	Value *big.Int
+}
+
+type TransferDecoded struct {
 	From  common.Address
 	To    common.Address
 	Value *big.Int
@@ -121,10 +141,10 @@ type IERC20Codec interface {
 	DecodeTransferFromMethodOutput(data []byte) (bool, error)
 	ApprovalLogHash() []byte
 	EncodeApprovalTopics(evt abi.Event, values []Approval) ([]*evm.TopicValues, error)
-	DecodeApproval(log *evm.Log) (*Approval, error)
+	DecodeApproval(log *evm.Log) (*ApprovalDecoded, error)
 	TransferLogHash() []byte
 	EncodeTransferTopics(evt abi.Event, values []Transfer) ([]*evm.TopicValues, error)
-	DecodeTransfer(log *evm.Log) (*Transfer, error)
+	DecodeTransfer(log *evm.Log) (*TransferDecoded, error)
 }
 
 func NewIERC20(
@@ -341,14 +361,19 @@ func (c *Codec) EncodeApprovalTopics(
 }
 
 // DecodeApproval decodes a log into a Approval struct.
-func (c *Codec) DecodeApproval(log *evm.Log) (*Approval, error) {
-	event := new(Approval)
+func (c *Codec) DecodeApproval(log *evm.Log) (*ApprovalDecoded, error) {
+	event := new(ApprovalDecoded)
 	if err := c.abi.UnpackIntoInterface(event, "Approval", log.Data); err != nil {
 		return nil, err
 	}
 	var indexed abi.Arguments
 	for _, arg := range c.abi.Events["Approval"].Inputs {
 		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
 			indexed = append(indexed, arg)
 		}
 	}
@@ -412,14 +437,19 @@ func (c *Codec) EncodeTransferTopics(
 }
 
 // DecodeTransfer decodes a log into a Transfer struct.
-func (c *Codec) DecodeTransfer(log *evm.Log) (*Transfer, error) {
-	event := new(Transfer)
+func (c *Codec) DecodeTransfer(log *evm.Log) (*TransferDecoded, error) {
+	event := new(TransferDecoded)
 	if err := c.abi.UnpackIntoInterface(event, "Transfer", log.Data); err != nil {
 		return nil, err
 	}
 	var indexed abi.Arguments
 	for _, arg := range c.abi.Events["Transfer"].Inputs {
 		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
 			indexed = append(indexed, arg)
 		}
 	}
@@ -448,7 +478,7 @@ func (c IERC20) Allowance(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -486,7 +516,7 @@ func (c IERC20) BalanceOf(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -523,7 +553,7 @@ func (c IERC20) TotalSupply(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -567,18 +597,43 @@ func (c *IERC20) UnpackError(data []byte) (any, error) {
 	}
 }
 
-func (c *IERC20) LogTriggerApprovalLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []Approval) (cre.Trigger[*evm.Log, *evm.Log], error) {
+// ApprovalTrigger wraps the raw log trigger and provides decoded ApprovalDecoded data
+type ApprovalTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]         // Embed the raw trigger
+	contract                        *IERC20 // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into Approval data
+func (t *ApprovalTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[ApprovalDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeApproval(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Approval log: %w", err)
+	}
+
+	return &bindings.DecodedLog[ApprovalDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *IERC20) LogTriggerApprovalLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []Approval) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ApprovalDecoded]], error) {
 	event := c.ABI.Events["Approval"]
 	topics, err := c.Codec.EncodeApprovalTopics(event, filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode topics for Approval: %w", err)
 	}
 
-	return evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
 		Addresses:  [][]byte{c.Address.Bytes()},
 		Topics:     topics,
 		Confidence: confidence,
-	}), nil
+	})
+
+	return &ApprovalTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
 }
 
 func (c *IERC20) FilterLogsApproval(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
@@ -600,18 +655,43 @@ func (c *IERC20) FilterLogsApproval(runtime cre.Runtime, options *bindings.Filte
 	})
 }
 
-func (c *IERC20) LogTriggerTransferLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []Transfer) (cre.Trigger[*evm.Log, *evm.Log], error) {
+// TransferTrigger wraps the raw log trigger and provides decoded TransferDecoded data
+type TransferTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]         // Embed the raw trigger
+	contract                        *IERC20 // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into Transfer data
+func (t *TransferTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[TransferDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeTransfer(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Transfer log: %w", err)
+	}
+
+	return &bindings.DecodedLog[TransferDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *IERC20) LogTriggerTransferLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []Transfer) (cre.Trigger[*evm.Log, *bindings.DecodedLog[TransferDecoded]], error) {
 	event := c.ABI.Events["Transfer"]
 	topics, err := c.Codec.EncodeTransferTopics(event, filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode topics for Transfer: %w", err)
 	}
 
-	return evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
 		Addresses:  [][]byte{c.Address.Bytes()},
 		Topics:     topics,
 		Confidence: confidence,
-	}), nil
+	})
+
+	return &TransferTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
 }
 
 func (c *IERC20) FilterLogsTransfer(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {

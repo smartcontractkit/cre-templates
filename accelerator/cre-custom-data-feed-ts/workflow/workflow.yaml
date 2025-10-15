@@ -24,7 +24,7 @@ local-simulation:
     secrets-path: "../secrets.yaml"
 
 # ==========================================================================
-production-testnet:
+staging:
   user-workflow:
     workflow-name: "custom-data-feed-workflow"
   workflow-artifacts:

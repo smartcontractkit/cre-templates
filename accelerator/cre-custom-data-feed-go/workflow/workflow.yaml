@@ -17,18 +17,18 @@
 # ==========================================================================
 local-simulation:
   user-workflow:
-    workflow-name: "custom-data-feed"
+    workflow-name: "cre-custom-data-feed"
   workflow-artifacts:
     workflow-path: "."
     config-path: "./config.json"
     secrets-path: "../secrets.yaml"
 
 # ==========================================================================
-production-testnet:
+staging:
   user-workflow:
-    workflow-name: "custom-data-feed"
+    workflow-name: "cre-custom-data-feed"
   workflow-artifacts:
     workflow-path: "."
-    config-path: ""
-    secrets-path: ""
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"
     

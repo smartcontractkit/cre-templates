@@ -49,7 +49,7 @@ var (
 )
 
 var ReserveManagerMetaData = &bind.MetaData{
-	ABI: "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"requestId\",\"type\":\"uint256\"}],\"name\":\"RequestReserveUpdate\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"lastTotalMinted\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"lastTotalReserve\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"totalMinted\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalReserve\",\"type\":\"uint256\"}],\"internalType\":\"structUpdateReserves\",\"name\":\"updateReserves\",\"type\":\"tuple\"}],\"name\":\"updateReserves\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"lastTotalMinted\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastTotalReserve\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onReport\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"report\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"event\",\"name\":\"RequestReserveUpdate\",\"inputs\":[{\"name\":\"u\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structReserveManager.UpdateReserves\",\"components\":[{\"name\":\"totalMinted\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"totalReserve\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"anonymous\":false}]",
 }
 
 // Structs
@@ -59,8 +59,13 @@ type UpdateReserves struct {
 }
 
 // Contract Method Inputs
-type UpdateReservesInput struct {
-	UpdateReserves UpdateReserves
+type OnReportInput struct {
+	Arg0   []byte
+	Report []byte
+}
+
+type SupportsInterfaceInput struct {
+	InterfaceId [4]byte
 }
 
 // Contract Method Outputs
@@ -68,8 +73,20 @@ type UpdateReservesInput struct {
 // Errors
 
 // Events
+// The <Event> struct should be used as a filter (for log triggers).
+// Indexed (string and bytes) fields will be of type common.Hash.
+// They need to he (crypto.Keccak256) hashed and passed in.
+// Indexed (tuple/slice/array) fields can be passed in as is, the Encode<Event>Topics function will handle the hashing.
+//
+// The <Event>Decoded struct will be the result of calling decode (Adapt) on the log trigger result.
+// Indexed dynamic type fields will be of type common.Hash.
+
 type RequestReserveUpdate struct {
-	RequestId *big.Int
+	U UpdateReserves
+}
+
+type RequestReserveUpdateDecoded struct {
+	U UpdateReserves
 }
 
 // Main Binding Type for ReserveManager
@@ -86,11 +103,13 @@ type ReserveManagerCodec interface {
 	DecodeLastTotalMintedMethodOutput(data []byte) (*big.Int, error)
 	EncodeLastTotalReserveMethodCall() ([]byte, error)
 	DecodeLastTotalReserveMethodOutput(data []byte) (*big.Int, error)
-	EncodeUpdateReservesMethodCall(in UpdateReservesInput) ([]byte, error)
+	EncodeOnReportMethodCall(in OnReportInput) ([]byte, error)
+	EncodeSupportsInterfaceMethodCall(in SupportsInterfaceInput) ([]byte, error)
+	DecodeSupportsInterfaceMethodOutput(data []byte) (bool, error)
 	EncodeUpdateReservesStruct(in UpdateReserves) ([]byte, error)
 	RequestReserveUpdateLogHash() []byte
 	EncodeRequestReserveUpdateTopics(evt abi.Event, values []RequestReserveUpdate) ([]*evm.TopicValues, error)
-	DecodeRequestReserveUpdate(log *evm.Log) (*RequestReserveUpdate, error)
+	DecodeRequestReserveUpdate(log *evm.Log) (*RequestReserveUpdateDecoded, error)
 }
 
 func NewReserveManager(
@@ -171,8 +190,30 @@ func (c *Codec) DecodeLastTotalReserveMethodOutput(data []byte) (*big.Int, error
 	return result, nil
 }
 
-func (c *Codec) EncodeUpdateReservesMethodCall(in UpdateReservesInput) ([]byte, error) {
-	return c.abi.Pack("updateReserves", in.UpdateReserves)
+func (c *Codec) EncodeOnReportMethodCall(in OnReportInput) ([]byte, error) {
+	return c.abi.Pack("onReport", in.Arg0, in.Report)
+}
+
+func (c *Codec) EncodeSupportsInterfaceMethodCall(in SupportsInterfaceInput) ([]byte, error) {
+	return c.abi.Pack("supportsInterface", in.InterfaceId)
+}
+
+func (c *Codec) DecodeSupportsInterfaceMethodOutput(data []byte) (bool, error) {
+	vals, err := c.abi.Methods["supportsInterface"].Outputs.Unpack(data)
+	if err != nil {
+		return *new(bool), err
+	}
+	jsonData, err := json.Marshal(vals[0])
+	if err != nil {
+		return *new(bool), fmt.Errorf("failed to marshal ABI result: %w", err)
+	}
+
+	var result bool
+	if err := json.Unmarshal(jsonData, &result); err != nil {
+		return *new(bool), fmt.Errorf("failed to unmarshal to bool: %w", err)
+	}
+
+	return result, nil
 }
 
 func (c *Codec) EncodeUpdateReservesStruct(in UpdateReserves) ([]byte, error) {
@@ -222,14 +263,19 @@ func (c *Codec) EncodeRequestReserveUpdateTopics(
 }
 
 // DecodeRequestReserveUpdate decodes a log into a RequestReserveUpdate struct.
-func (c *Codec) DecodeRequestReserveUpdate(log *evm.Log) (*RequestReserveUpdate, error) {
-	event := new(RequestReserveUpdate)
+func (c *Codec) DecodeRequestReserveUpdate(log *evm.Log) (*RequestReserveUpdateDecoded, error) {
+	event := new(RequestReserveUpdateDecoded)
 	if err := c.abi.UnpackIntoInterface(event, "RequestReserveUpdate", log.Data); err != nil {
 		return nil, err
 	}
 	var indexed abi.Arguments
 	for _, arg := range c.abi.Events["RequestReserveUpdate"].Inputs {
 		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
 			indexed = append(indexed, arg)
 		}
 	}
@@ -257,7 +303,7 @@ func (c ReserveManager) LastTotalMinted(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -294,7 +340,7 @@ func (c ReserveManager) LastTotalReserve(
 	var bn cre.Promise[*pb.BigInt]
 	if blockNumber == nil {
 		promise := c.client.HeaderByNumber(runtime, &evm.HeaderByNumberRequest{
-			BlockNumber: pb.NewBigIntFromInt(big.NewInt(rpc.FinalizedBlockNumber.Int64())),
+			BlockNumber: bindings.FinalizedBlockNumber,
 		})
 
 		bn = cre.Then(promise, func(finalizedBlock *evm.HeaderByNumberReply) (*pb.BigInt, error) {
@@ -363,18 +409,43 @@ func (c *ReserveManager) UnpackError(data []byte) (any, error) {
 	}
 }
 
-func (c *ReserveManager) LogTriggerRequestReserveUpdateLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []RequestReserveUpdate) (cre.Trigger[*evm.Log, *evm.Log], error) {
+// RequestReserveUpdateTrigger wraps the raw log trigger and provides decoded RequestReserveUpdateDecoded data
+type RequestReserveUpdateTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]                 // Embed the raw trigger
+	contract                        *ReserveManager // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into RequestReserveUpdate data
+func (t *RequestReserveUpdateTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[RequestReserveUpdateDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeRequestReserveUpdate(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode RequestReserveUpdate log: %w", err)
+	}
+
+	return &bindings.DecodedLog[RequestReserveUpdateDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *ReserveManager) LogTriggerRequestReserveUpdateLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []RequestReserveUpdate) (cre.Trigger[*evm.Log, *bindings.DecodedLog[RequestReserveUpdateDecoded]], error) {
 	event := c.ABI.Events["RequestReserveUpdate"]
 	topics, err := c.Codec.EncodeRequestReserveUpdateTopics(event, filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode topics for RequestReserveUpdate: %w", err)
 	}
 
-	return evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
 		Addresses:  [][]byte{c.Address.Bytes()},
 		Topics:     topics,
 		Confidence: confidence,
-	}), nil
+	})
+
+	return &RequestReserveUpdateTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
 }
 
 func (c *ReserveManager) FilterLogsRequestReserveUpdate(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {

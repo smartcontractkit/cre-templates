@@ -9,8 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm"
+	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm/bindings"
 	evmmock "github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm/mock"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	httpmock "github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http/mock"
@@ -19,16 +22,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"cre-v1-project/contracts/evm/src/generated/balance_reader"
-	"cre-v1-project/contracts/evm/src/generated/ierc20"
-	"cre-v1-project/contracts/evm/src/generated/message_emitter"
+	"cre-custom-data-feed-go/contracts/evm/src/generated/balance_reader"
+	"cre-custom-data-feed-go/contracts/evm/src/generated/ierc20"
+	"cre-custom-data-feed-go/contracts/evm/src/generated/message_emitter"
 )
 
 var anyExecutionTime = time.Unix(1752514917, 0)
 
 func TestInitWorkflow(t *testing.T) {
 	config := makeTestConfig(t)
-	runtime := testutils.NewRuntime(t, map[string]string{})
+	runtime := testutils.NewRuntime(t, testutils.Secrets{})
 
 	workflow, err := InitWorkflow(config, runtime.Logger(), nil)
 	require.NoError(t, err)
@@ -39,8 +42,10 @@ func TestInitWorkflow(t *testing.T) {
 
 func TestOnCronTrigger(t *testing.T) {
 	config := makeTestConfig(t)
-	runtime := testutils.NewRuntime(t, map[string]string{
-		"/SECRET_ADDRESS": "0x1234567890123456789012345678901234567890",
+	runtime := testutils.NewRuntime(t, testutils.Secrets{
+		"": {
+			"SECRET_ADDRESS": "0x9876543210987654321098765432109876543210",
+		},
 	})
 
 	// Mock HTTP client for POR data
@@ -120,7 +125,7 @@ func TestOnCronTrigger(t *testing.T) {
 
 func TestOnLogTrigger(t *testing.T) {
 	config := makeTestConfig(t)
-	runtime := testutils.NewRuntime(t, map[string]string{})
+	runtime := testutils.NewRuntime(t, testutils.Secrets{})
 
 	// Mock EVM client
 	chainSelector, err := config.EVMs[0].GetChainSelector()
@@ -138,29 +143,46 @@ func TestOnLogTrigger(t *testing.T) {
 		return "Test message from contract", nil
 	}
 
+	msgEmitterAbi, err := message_emitter.MessageEmitterMetaData.GetAbi()
+	require.NoError(t, err)
+	eventData, err := abi.Arguments{msgEmitterAbi.Events["MessageEmitted"].Inputs[2]}.Pack("Test message from contract")
+	require.NoError(t, err, "Encoding event data should not return an error")
 	// Create a mock log payload
 	mockLog := &evm.Log{
 		Topics: [][]byte{
 			common.HexToHash("0x1234567890123456789012345678901234567890123456789012345678901234").Bytes(), // event signature
 			common.HexToHash("0x000000000000000000000000abcdefabcdefabcdefabcdefabcdefabcdefabcd").Bytes(), // emitter address (padded)
-			common.HexToHash("0x5678567856785678567856785678567856785678567856785678567856785678").Bytes(), // additional topic
+			common.HexToHash("0x000000000000000000000000000000000000000000000000000000006716eb80").Bytes(), // additional topic
 		},
-		Data: []byte{},
+		Data:        eventData, // this is not used by the test as we pass in mockLogDecoded, but encoding here for consistency
+		BlockNumber: pb.NewBigIntFromInt(big.NewInt(100)),
 	}
 
-	result, err := onLogTrigger(config, runtime, mockLog)
+	mockLogDecoded := &bindings.DecodedLog[message_emitter.MessageEmittedDecoded]{
+		Log: mockLog,
+		Data: message_emitter.MessageEmittedDecoded{
+			Emitter:   common.HexToAddress("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"),
+			Message:   "Test message from contract",
+			Timestamp: big.NewInt(100),
+		},
+	}
+
+	result, err := onLogTrigger(config, runtime, mockLogDecoded)
 	require.NoError(t, err)
 	require.Equal(t, "Test message from contract", result)
 
 	// Verify expected log messages
 	logs := runtime.GetLogs()
 	assertLogContains(t, logs, `msg="Message retrieved from the contract"`)
+	assertLogContains(t, logs, `blockNumber=100`)
 }
 
 func TestOnHTTPTrigger(t *testing.T) {
 	config := makeTestConfig(t)
-	runtime := testutils.NewRuntime(t, map[string]string{
-		"/SECRET_ADDRESS": "0x9876543210987654321098765432109876543210",
+	runtime := testutils.NewRuntime(t, testutils.Secrets{
+		"": {
+			"SECRET_ADDRESS": "0x9876543210987654321098765432109876543210",
+		},
 	})
 
 	// Mock HTTP client for POR data

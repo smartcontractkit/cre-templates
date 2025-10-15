@@ -21,7 +21,7 @@ local-simulation:
       url: https://sepolia.infura.io/v3/YOUR_API_KEY
 
 # ==========================================================================
-production-testnet:
+staging:
   cre-cli:
     don-family: "zone-a"
   account:
