@@ -9,4 +9,5 @@
 
 </div>
 
-# CRE Templates
+# CRE Templates - Building Blocks
+

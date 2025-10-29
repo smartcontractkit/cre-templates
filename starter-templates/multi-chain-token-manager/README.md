@@ -9,4 +9,4 @@
 
 </div>
 
-# CRE Templates
+# Multi-Chain Token Manager - CRE Template

@@ -9,4 +9,4 @@
 
 </div>
 
-# CRE Templates
+# Key/Value Store Integration - CRE Building Blocks
