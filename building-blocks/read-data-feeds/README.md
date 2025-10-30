@@ -4,13 +4,9 @@
     </a>
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/smartcontractkit/cre-templates/blob/main/LICENSE)
-<<<<<<< HEAD
-=======
 [![CRE Home](https://img.shields.io/static/v1?label=CRE&message=Home&color=blue)](https://chain.link/chainlink-runtime-environment)
 [![CRE Documentation](https://img.shields.io/static/v1?label=CRE&message=Docs&color=blue)](https://docs.chain.link/cre)
->>>>>>> 3d5062fcb29df23f2ea944030d3bfafd16bc7409
 
 </div>
 
-# CRE Templates - Building Blocks
-
+# Fetch Indexer Data - CRE Building Blocks
