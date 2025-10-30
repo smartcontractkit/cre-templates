@@ -2,7 +2,7 @@
 
 //go:build !wasip1
 
-package btcusd_price_feed
+package price_feed_aggregator
 
 import (
 	"errors"
@@ -20,8 +20,8 @@ var (
 	_ = common.Big1
 )
 
-// BTCUSDPriceFeedMock is a mock implementation of BTCUSDPriceFeed for testing.
-type BTCUSDPriceFeedMock struct {
+// PriceFeedAggregatorMock is a mock implementation of PriceFeedAggregator for testing.
+type PriceFeedAggregatorMock struct {
 	AccessController        func() (common.Address, error)
 	Aggregator              func() (common.Address, error)
 	Decimals                func() (uint8, error)
@@ -42,9 +42,9 @@ type BTCUSDPriceFeedMock struct {
 	Version                 func() (*big.Int, error)
 }
 
-// NewBTCUSDPriceFeedMock creates a new BTCUSDPriceFeedMock for testing.
-func NewBTCUSDPriceFeedMock(address common.Address, clientMock *evmmock.ClientCapability) *BTCUSDPriceFeedMock {
-	mock := &BTCUSDPriceFeedMock{}
+// NewPriceFeedAggregatorMock creates a new PriceFeedAggregatorMock for testing.
+func NewPriceFeedAggregatorMock(address common.Address, clientMock *evmmock.ClientCapability) *PriceFeedAggregatorMock {
+	mock := &PriceFeedAggregatorMock{}
 
 	codec, err := NewCodec()
 	if err != nil {

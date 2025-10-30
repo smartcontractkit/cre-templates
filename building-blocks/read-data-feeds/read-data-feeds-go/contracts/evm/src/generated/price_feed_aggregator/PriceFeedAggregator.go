@@ -1,6 +1,6 @@
 // Code generated — DO NOT EDIT.
 
-package btcusd_price_feed
+package price_feed_aggregator
 
 import (
 	"bytes"
@@ -50,7 +50,7 @@ var (
 	_ = reflect.Bool
 )
 
-var BTCUSDPriceFeedMetaData = &bind.MetaData{
+var PriceFeedAggregatorMetaData = &bind.MetaData{
 	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_aggregator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_accessController\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"int256\",\"name\":\"current\",\"type\":\"int256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"}],\"name\":\"AnswerUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"startedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"}],\"name\":\"NewRound\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"OwnershipTransferRequested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"accessController\",\"outputs\":[{\"internalType\":\"contractAccessControllerInterface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"aggregator\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_aggregator\",\"type\":\"address\"}],\"name\":\"confirmAggregator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"description\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_roundId\",\"type\":\"uint256\"}],\"name\":\"getAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint80\",\"name\":\"_roundId\",\"type\":\"uint80\"}],\"name\":\"getRoundData\",\"outputs\":[{\"internalType\":\"uint80\",\"name\":\"roundId\",\"type\":\"uint80\"},{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint80\",\"name\":\"answeredInRound\",\"type\":\"uint80\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_roundId\",\"type\":\"uint256\"}],\"name\":\"getTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestRound\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestRoundData\",\"outputs\":[{\"internalType\":\"uint80\",\"name\":\"roundId\",\"type\":\"uint80\"},{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint80\",\"name\":\"answeredInRound\",\"type\":\"uint80\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"addresspayable\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"name\":\"phaseAggregators\",\"outputs\":[{\"internalType\":\"contractAggregatorV2V3Interface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"phaseId\",\"outputs\":[{\"internalType\":\"uint16\",\"name\":\"\",\"type\":\"uint16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_aggregator\",\"type\":\"address\"}],\"name\":\"proposeAggregator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proposedAggregator\",\"outputs\":[{\"internalType\":\"contractAggregatorV2V3Interface\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint80\",\"name\":\"_roundId\",\"type\":\"uint80\"}],\"name\":\"proposedGetRoundData\",\"outputs\":[{\"internalType\":\"uint80\",\"name\":\"roundId\",\"type\":\"uint80\"},{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint80\",\"name\":\"answeredInRound\",\"type\":\"uint80\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proposedLatestRoundData\",\"outputs\":[{\"internalType\":\"uint80\",\"name\":\"roundId\",\"type\":\"uint80\"},{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint80\",\"name\":\"answeredInRound\",\"type\":\"uint80\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_accessController\",\"type\":\"address\"}],\"name\":\"setController\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"version\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
@@ -180,16 +180,16 @@ type OwnershipTransferredDecoded struct {
 	To   common.Address
 }
 
-// Main Binding Type for BTCUSDPriceFeed
-type BTCUSDPriceFeed struct {
+// Main Binding Type for PriceFeedAggregator
+type PriceFeedAggregator struct {
 	Address common.Address
 	Options *bindings.ContractInitOptions
 	ABI     *abi.ABI
 	client  *evm.Client
-	Codec   BTCUSDPriceFeedCodec
+	Codec   PriceFeedAggregatorCodec
 }
 
-type BTCUSDPriceFeedCodec interface {
+type PriceFeedAggregatorCodec interface {
 	EncodeAcceptOwnershipMethodCall() ([]byte, error)
 	EncodeAccessControllerMethodCall() ([]byte, error)
 	DecodeAccessControllerMethodOutput(data []byte) (common.Address, error)
@@ -245,12 +245,12 @@ type BTCUSDPriceFeedCodec interface {
 	DecodeOwnershipTransferred(log *evm.Log) (*OwnershipTransferredDecoded, error)
 }
 
-func NewBTCUSDPriceFeed(
+func NewPriceFeedAggregator(
 	client *evm.Client,
 	address common.Address,
 	options *bindings.ContractInitOptions,
-) (*BTCUSDPriceFeed, error) {
-	parsed, err := abi.JSON(strings.NewReader(BTCUSDPriceFeedMetaData.ABI))
+) (*PriceFeedAggregator, error) {
+	parsed, err := abi.JSON(strings.NewReader(PriceFeedAggregatorMetaData.ABI))
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func NewBTCUSDPriceFeed(
 	if err != nil {
 		return nil, err
 	}
-	return &BTCUSDPriceFeed{
+	return &PriceFeedAggregator{
 		Address: address,
 		Options: options,
 		ABI:     &parsed,
@@ -271,8 +271,8 @@ type Codec struct {
 	abi *abi.ABI
 }
 
-func NewCodec() (BTCUSDPriceFeedCodec, error) {
-	parsed, err := abi.JSON(strings.NewReader(BTCUSDPriceFeedMetaData.ABI))
+func NewCodec() (PriceFeedAggregatorCodec, error) {
+	parsed, err := abi.JSON(strings.NewReader(PriceFeedAggregatorMetaData.ABI))
 	if err != nil {
 		return nil, err
 	}
@@ -1167,7 +1167,7 @@ func (c *Codec) DecodeOwnershipTransferred(log *evm.Log) (*OwnershipTransferredD
 	return event, nil
 }
 
-func (c BTCUSDPriceFeed) AccessController(
+func (c PriceFeedAggregator) AccessController(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[common.Address] {
@@ -1204,7 +1204,7 @@ func (c BTCUSDPriceFeed) AccessController(
 
 }
 
-func (c BTCUSDPriceFeed) Aggregator(
+func (c PriceFeedAggregator) Aggregator(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[common.Address] {
@@ -1241,7 +1241,7 @@ func (c BTCUSDPriceFeed) Aggregator(
 
 }
 
-func (c BTCUSDPriceFeed) Decimals(
+func (c PriceFeedAggregator) Decimals(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[uint8] {
@@ -1278,7 +1278,7 @@ func (c BTCUSDPriceFeed) Decimals(
 
 }
 
-func (c BTCUSDPriceFeed) Description(
+func (c PriceFeedAggregator) Description(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[string] {
@@ -1315,7 +1315,7 @@ func (c BTCUSDPriceFeed) Description(
 
 }
 
-func (c BTCUSDPriceFeed) GetAnswer(
+func (c PriceFeedAggregator) GetAnswer(
 	runtime cre.Runtime,
 	args GetAnswerInput,
 	blockNumber *big.Int,
@@ -1353,7 +1353,7 @@ func (c BTCUSDPriceFeed) GetAnswer(
 
 }
 
-func (c BTCUSDPriceFeed) GetRoundData(
+func (c PriceFeedAggregator) GetRoundData(
 	runtime cre.Runtime,
 	args GetRoundDataInput,
 	blockNumber *big.Int,
@@ -1391,7 +1391,7 @@ func (c BTCUSDPriceFeed) GetRoundData(
 
 }
 
-func (c BTCUSDPriceFeed) GetTimestamp(
+func (c PriceFeedAggregator) GetTimestamp(
 	runtime cre.Runtime,
 	args GetTimestampInput,
 	blockNumber *big.Int,
@@ -1429,7 +1429,7 @@ func (c BTCUSDPriceFeed) GetTimestamp(
 
 }
 
-func (c BTCUSDPriceFeed) LatestAnswer(
+func (c PriceFeedAggregator) LatestAnswer(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[*big.Int] {
@@ -1466,7 +1466,7 @@ func (c BTCUSDPriceFeed) LatestAnswer(
 
 }
 
-func (c BTCUSDPriceFeed) LatestRound(
+func (c PriceFeedAggregator) LatestRound(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[*big.Int] {
@@ -1503,7 +1503,7 @@ func (c BTCUSDPriceFeed) LatestRound(
 
 }
 
-func (c BTCUSDPriceFeed) LatestRoundData(
+func (c PriceFeedAggregator) LatestRoundData(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[LatestRoundDataOutput] {
@@ -1540,7 +1540,7 @@ func (c BTCUSDPriceFeed) LatestRoundData(
 
 }
 
-func (c BTCUSDPriceFeed) LatestTimestamp(
+func (c PriceFeedAggregator) LatestTimestamp(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[*big.Int] {
@@ -1577,7 +1577,7 @@ func (c BTCUSDPriceFeed) LatestTimestamp(
 
 }
 
-func (c BTCUSDPriceFeed) Owner(
+func (c PriceFeedAggregator) Owner(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[common.Address] {
@@ -1614,7 +1614,7 @@ func (c BTCUSDPriceFeed) Owner(
 
 }
 
-func (c BTCUSDPriceFeed) PhaseAggregators(
+func (c PriceFeedAggregator) PhaseAggregators(
 	runtime cre.Runtime,
 	args PhaseAggregatorsInput,
 	blockNumber *big.Int,
@@ -1652,7 +1652,7 @@ func (c BTCUSDPriceFeed) PhaseAggregators(
 
 }
 
-func (c BTCUSDPriceFeed) PhaseId(
+func (c PriceFeedAggregator) PhaseId(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[uint16] {
@@ -1689,7 +1689,7 @@ func (c BTCUSDPriceFeed) PhaseId(
 
 }
 
-func (c BTCUSDPriceFeed) ProposedAggregator(
+func (c PriceFeedAggregator) ProposedAggregator(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[common.Address] {
@@ -1726,7 +1726,7 @@ func (c BTCUSDPriceFeed) ProposedAggregator(
 
 }
 
-func (c BTCUSDPriceFeed) ProposedGetRoundData(
+func (c PriceFeedAggregator) ProposedGetRoundData(
 	runtime cre.Runtime,
 	args ProposedGetRoundDataInput,
 	blockNumber *big.Int,
@@ -1764,7 +1764,7 @@ func (c BTCUSDPriceFeed) ProposedGetRoundData(
 
 }
 
-func (c BTCUSDPriceFeed) ProposedLatestRoundData(
+func (c PriceFeedAggregator) ProposedLatestRoundData(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[ProposedLatestRoundDataOutput] {
@@ -1801,7 +1801,7 @@ func (c BTCUSDPriceFeed) ProposedLatestRoundData(
 
 }
 
-func (c BTCUSDPriceFeed) Version(
+func (c PriceFeedAggregator) Version(
 	runtime cre.Runtime,
 	blockNumber *big.Int,
 ) cre.Promise[*big.Int] {
@@ -1838,7 +1838,7 @@ func (c BTCUSDPriceFeed) Version(
 
 }
 
-func (c BTCUSDPriceFeed) WriteReport(
+func (c PriceFeedAggregator) WriteReport(
 	runtime cre.Runtime,
 	report *cre.Report,
 	gasConfig *evm.GasConfig,
@@ -1850,7 +1850,7 @@ func (c BTCUSDPriceFeed) WriteReport(
 	})
 }
 
-func (c *BTCUSDPriceFeed) UnpackError(data []byte) (any, error) {
+func (c *PriceFeedAggregator) UnpackError(data []byte) (any, error) {
 	switch common.Bytes2Hex(data[:4]) {
 	default:
 		return nil, errors.New("unknown error selector")
@@ -1859,8 +1859,8 @@ func (c *BTCUSDPriceFeed) UnpackError(data []byte) (any, error) {
 
 // AnswerUpdatedTrigger wraps the raw log trigger and provides decoded AnswerUpdatedDecoded data
 type AnswerUpdatedTrigger struct {
-	cre.Trigger[*evm.Log, *evm.Log]                  // Embed the raw trigger
-	contract                        *BTCUSDPriceFeed // Keep reference for decoding
+	cre.Trigger[*evm.Log, *evm.Log]                      // Embed the raw trigger
+	contract                        *PriceFeedAggregator // Keep reference for decoding
 }
 
 // Adapt method that decodes the log into AnswerUpdated data
@@ -1877,7 +1877,7 @@ func (t *AnswerUpdatedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[AnswerUpd
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) LogTriggerAnswerUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []AnswerUpdatedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[AnswerUpdatedDecoded]], error) {
+func (c *PriceFeedAggregator) LogTriggerAnswerUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []AnswerUpdatedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[AnswerUpdatedDecoded]], error) {
 	event := c.ABI.Events["AnswerUpdated"]
 	topics, err := c.Codec.EncodeAnswerUpdatedTopics(event, filters)
 	if err != nil {
@@ -1896,7 +1896,7 @@ func (c *BTCUSDPriceFeed) LogTriggerAnswerUpdatedLog(chainSelector uint64, confi
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) FilterLogsAnswerUpdated(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
+func (c *PriceFeedAggregator) FilterLogsAnswerUpdated(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
 	if options == nil {
 		options = &bindings.FilterOptions{
 			ToBlock: options.ToBlock,
@@ -1917,8 +1917,8 @@ func (c *BTCUSDPriceFeed) FilterLogsAnswerUpdated(runtime cre.Runtime, options *
 
 // NewRoundTrigger wraps the raw log trigger and provides decoded NewRoundDecoded data
 type NewRoundTrigger struct {
-	cre.Trigger[*evm.Log, *evm.Log]                  // Embed the raw trigger
-	contract                        *BTCUSDPriceFeed // Keep reference for decoding
+	cre.Trigger[*evm.Log, *evm.Log]                      // Embed the raw trigger
+	contract                        *PriceFeedAggregator // Keep reference for decoding
 }
 
 // Adapt method that decodes the log into NewRound data
@@ -1935,7 +1935,7 @@ func (t *NewRoundTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[NewRoundDecode
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) LogTriggerNewRoundLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []NewRoundTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[NewRoundDecoded]], error) {
+func (c *PriceFeedAggregator) LogTriggerNewRoundLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []NewRoundTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[NewRoundDecoded]], error) {
 	event := c.ABI.Events["NewRound"]
 	topics, err := c.Codec.EncodeNewRoundTopics(event, filters)
 	if err != nil {
@@ -1954,7 +1954,7 @@ func (c *BTCUSDPriceFeed) LogTriggerNewRoundLog(chainSelector uint64, confidence
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) FilterLogsNewRound(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
+func (c *PriceFeedAggregator) FilterLogsNewRound(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
 	if options == nil {
 		options = &bindings.FilterOptions{
 			ToBlock: options.ToBlock,
@@ -1975,8 +1975,8 @@ func (c *BTCUSDPriceFeed) FilterLogsNewRound(runtime cre.Runtime, options *bindi
 
 // OwnershipTransferRequestedTrigger wraps the raw log trigger and provides decoded OwnershipTransferRequestedDecoded data
 type OwnershipTransferRequestedTrigger struct {
-	cre.Trigger[*evm.Log, *evm.Log]                  // Embed the raw trigger
-	contract                        *BTCUSDPriceFeed // Keep reference for decoding
+	cre.Trigger[*evm.Log, *evm.Log]                      // Embed the raw trigger
+	contract                        *PriceFeedAggregator // Keep reference for decoding
 }
 
 // Adapt method that decodes the log into OwnershipTransferRequested data
@@ -1993,7 +1993,7 @@ func (t *OwnershipTransferRequestedTrigger) Adapt(l *evm.Log) (*bindings.Decoded
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequestedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
+func (c *PriceFeedAggregator) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequestedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferRequested"]
 	topics, err := c.Codec.EncodeOwnershipTransferRequestedTopics(event, filters)
 	if err != nil {
@@ -2012,7 +2012,7 @@ func (c *BTCUSDPriceFeed) LogTriggerOwnershipTransferRequestedLog(chainSelector 
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) FilterLogsOwnershipTransferRequested(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
+func (c *PriceFeedAggregator) FilterLogsOwnershipTransferRequested(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
 	if options == nil {
 		options = &bindings.FilterOptions{
 			ToBlock: options.ToBlock,
@@ -2033,8 +2033,8 @@ func (c *BTCUSDPriceFeed) FilterLogsOwnershipTransferRequested(runtime cre.Runti
 
 // OwnershipTransferredTrigger wraps the raw log trigger and provides decoded OwnershipTransferredDecoded data
 type OwnershipTransferredTrigger struct {
-	cre.Trigger[*evm.Log, *evm.Log]                  // Embed the raw trigger
-	contract                        *BTCUSDPriceFeed // Keep reference for decoding
+	cre.Trigger[*evm.Log, *evm.Log]                      // Embed the raw trigger
+	contract                        *PriceFeedAggregator // Keep reference for decoding
 }
 
 // Adapt method that decodes the log into OwnershipTransferred data
@@ -2051,7 +2051,7 @@ func (t *OwnershipTransferredTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Ow
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferredTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
+func (c *PriceFeedAggregator) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferredTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferred"]
 	topics, err := c.Codec.EncodeOwnershipTransferredTopics(event, filters)
 	if err != nil {
@@ -2070,7 +2070,7 @@ func (c *BTCUSDPriceFeed) LogTriggerOwnershipTransferredLog(chainSelector uint64
 	}, nil
 }
 
-func (c *BTCUSDPriceFeed) FilterLogsOwnershipTransferred(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
+func (c *PriceFeedAggregator) FilterLogsOwnershipTransferred(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
 	if options == nil {
 		options = &bindings.FilterOptions{
 			ToBlock: options.ToBlock,
