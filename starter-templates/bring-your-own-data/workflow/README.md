@@ -50,13 +50,13 @@ rpcs:
 ```
 Ensure the provided URLs point to valid RPC endpoints for the specified chains. You may use public RPC providers or set up your own node.
 
-## 4. [Optional] Deploy contracts
+### 4. [Optional] Deploy contracts
 
 This step can be skipped if you are only going to test against local simulation.
 
 Follow instructions in [../contracts/README.md](../contracts/README.md) to deploy the PoR or NAV contracts.
 
-# 5. [Optional] generate contract bindings
+### 5. [Optional] generate contract bindings
 
 To enable seamless interaction between the workflow and the contracts, Go bindings need to be generated from the contract ABIs. These ABIs are located in projectRoot/contracts/src/abi. Use the cre generate-bindings command to generate the bindings.
 
@@ -72,7 +72,7 @@ cre generate-bindings evm
 
 This will create Go binding files for all the contracts (DataFeedsCache, etc.) that can be imported and used in your workflow.
 
-## 6. [Optional] Configure workflow
+### 6. [Optional] Configure workflow
 
 Only required if you would like to test different configurations or if you deployed
 your own contracts in step 4.
@@ -83,7 +83,7 @@ Configure `config.json` for the workflow you would like to run.
 
 [./nav/README.md](./nav/README.md)
 
-## 7. Simulate the workflow
+### 7. Simulate the workflow
 
 > **Note:** Run `go mod tidy` to update dependencies after generating bindings.
 ```bash
