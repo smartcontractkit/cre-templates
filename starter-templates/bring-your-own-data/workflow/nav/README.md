@@ -20,12 +20,17 @@ or deploy your own contracts to run the example end-to-end.
 
 See instructions in [../README.md](../README.md).
 
-## Targeting your own contracts
+## [Optional] Targeting your own contracts
 
 1. Deploy your DataFeedsCache contracts following the instructions in [../../contracts/README.md](../../contracts/README.md)
 2. Update the target chains/contracts in [./config.json](./config.json)
 
-## Targeting your own NAV API
+## [Optional] Configure workflow
 
-1. Update the target url in [./config.json](./config.json)
-2. Update the workflow code in [./workflow.go](./workflow.go) to handle your API schema
+Configure [config.json](./config.json) for the workflow
+- `schedule` should be set to `"0 */5 * * * *"` for every 5 minutes or any other cron expression you prefer
+- `url` API url that returns NAV data; if updated, then you need to modify the workflow code in [./workflow.go](./workflow.go) to handle your API schema
+- `dataIdHex` Data feed ID; any 32 hex characters
+- `dataFeedsCacheAddress` should be the DataFeedsCache contract address; either the default or the one deployed from [../../contracts/](../../contracts/)
+- `chainName` should be name of selected chain (refer to https://github.com/smartcontractkit/chain-selectors/blob/main/selectors.yml)
+- `gasLimit` should be the gas limit of chain write
