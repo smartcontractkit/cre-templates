@@ -9,7 +9,7 @@ pragma solidity 0.8.26;
 
 library Workflow {
 
-    function KeystoneForwarder(uint256 chainid) internal pure returns (address) {
+    function keystoneForwarder(uint256 chainid) internal pure returns (address) {
         if (chainid == 11155111) {
             // ethereum sepolia
             return 0xA73aFb610aC79A729A393D679029fCf9618854AD;
@@ -21,7 +21,7 @@ library Workflow {
         }
     }
 
-    function MockKeystoneForwarder(uint256 chainid) internal pure returns (address) {
+    function mockKeystoneForwarder(uint256 chainid) internal pure returns (address) {
         if (chainid == 11155111) {
             // ethereum sepolia
             return 0x15fC6ae953E024d975e77382eEeC56A9101f9F88;
@@ -34,13 +34,13 @@ library Workflow {
     }
 
     // Helper: convert raw workflow name to on-chain bytes10 representation.
-    function ToOnChainWorkflowName(string memory rawName) internal pure returns (bytes10) {
+    function toOnChainWorkflowName(string memory rawName) internal pure returns (bytes10) {
         return hashTruncateName(rawName);
     }
 
     // Helper: convert raw workflow name to on-chain bytes10 representation when
     // using `cre workflow simulate`.
-    function ToOnChainSimWorkflowName(string memory rawName) internal pure returns (bytes10) {
+    function toOnChainSimWorkflowName(string memory rawName) internal pure returns (bytes10) {
         // Convert to bytes
         bytes memory raw = bytes(rawName);
 
@@ -51,7 +51,7 @@ library Workflow {
         }
 
         // Encode to hex string
-        string memory encodedWorkflowName = ToHexString(padded);
+        string memory encodedWorkflowName = toHexString(padded);
 
         return hashTruncateName(encodedWorkflowName);
     }
@@ -61,7 +61,7 @@ library Workflow {
         bytes32 hash = sha256(bytes(name));
 
         // Convert hash to hex string and truncate to 10 bytes (20 hex chars)
-        string memory hashHex = ToHexString(abi.encodePacked(hash));
+        string memory hashHex = toHexString(abi.encodePacked(hash));
         bytes memory hashBytes = bytes(hashHex);
 
         bytes memory truncated = new bytes(10);
@@ -78,7 +78,7 @@ library Workflow {
     }
 
     // Helper: bytes -> hex string
-    function ToHexString(bytes memory data) internal pure returns (string memory) {
+    function toHexString(bytes memory data) internal pure returns (string memory) {
         bytes memory hexChars = "0123456789abcdef";
         bytes memory str = new bytes(data.length * 2);
         for (uint256 i = 0; i < data.length; i++) {

@@ -11,7 +11,7 @@ contract Deploy is Script {
         vm.startBroadcast();
 
         string memory workflowName = "cre-nav";
-        address keystoneForwarder = Workflow.KeystoneForwarder(block.chainid);
+        address keystoneForwarder = Workflow.keystoneForwarder(block.chainid);
 
         DataFeedsCache dfc = new DataFeedsCache();
         console.log("DataFeedsCache deployed at:", address(dfc));
@@ -28,15 +28,15 @@ contract Deploy is Script {
         DataFeedsCache.WorkflowMetadata[] memory workflowMetadata;
 
         if (vm.envOr("ENABLE_SIMULATE_WORKFLOW", false) == true) {
-            address mockKeystoneForwarder = Workflow.MockKeystoneForwarder(block.chainid);
+            address mockKeystoneForwarder = Workflow.mockKeystoneForwarder(block.chainid);
 
             // Enables writing data feeds cache with `cre workflow simulate`,
             // which uses a local signer and the mock keystone forwarder 
             // on-chain.
 
-            bytes10 onChainSimWorkflowName = Workflow.ToOnChainSimWorkflowName(workflowName);
+            bytes10 onChainSimWorkflowName = Workflow.toOnChainSimWorkflowName(workflowName);
             console.log(
-                string.concat("on-chain sim workflow name (bytes10): 0x", Workflow.ToHexString(abi.encodePacked(onChainSimWorkflowName)))
+                string.concat("on-chain sim workflow name (bytes10): 0x", Workflow.toHexString(abi.encodePacked(onChainSimWorkflowName)))
             );
 
             workflowMetadata = new DataFeedsCache.WorkflowMetadata[](2);
@@ -49,9 +49,9 @@ contract Deploy is Script {
             workflowMetadata = new DataFeedsCache.WorkflowMetadata[](1);
         }
 
-        bytes10 onChainWorkflowName = Workflow.ToOnChainWorkflowName(workflowName);
+        bytes10 onChainWorkflowName = Workflow.toOnChainWorkflowName(workflowName);
         console.log(
-            string.concat("on-chain workflow name (bytes10): 0x", Workflow.ToHexString(abi.encodePacked(onChainWorkflowName)))
+            string.concat("on-chain workflow name (bytes10): 0x", Workflow.toHexString(abi.encodePacked(onChainWorkflowName)))
         );
 
         workflowMetadata[0] = DataFeedsCache.WorkflowMetadata({

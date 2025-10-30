@@ -24,7 +24,7 @@ contract Deploy is Script {
             // Enables `cre workflow simulate` which uses the mock keystone 
             // forwarder on-chain.
             keystoneForwarders = new address[](2);
-            address mockKeystoneForwarder = Workflow.MockKeystoneForwarder(block.chainid);
+            address mockKeystoneForwarder = Workflow.mockKeystoneForwarder(block.chainid);
             keystoneForwarders[1] = mockKeystoneForwarder;
             workflowOwners = new address[](2);
             workflowOwners[1] = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa; // simulator owner
@@ -32,7 +32,7 @@ contract Deploy is Script {
             keystoneForwarders = new address[](1);
             workflowOwners = new address[](1);
         }
-        keystoneForwarders[0] = Workflow.KeystoneForwarder(block.chainid);
+        keystoneForwarders[0] = Workflow.keystoneForwarder(block.chainid);
         workflowOwners[0] = msg.sender;
 
         if (block.chainid == 11155111) {
