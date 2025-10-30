@@ -9,7 +9,7 @@ pragma solidity 0.8.26;
 
 library Workflow {
 
-    function KeystoneForwarder(uint256 chainid) internal pure returns (address) {
+    function keystoneForwarder(uint256 chainid) internal pure returns (address) {
         if (chainid == 11155111) {
             // ethereum sepolia
             return 0xA73aFb610aC79A729A393D679029fCf9618854AD;
@@ -21,7 +21,7 @@ library Workflow {
         }
     }
 
-    function MockKeystoneForwarder(uint256 chainid) internal pure returns (address) {
+    function mockKeystoneForwarder(uint256 chainid) internal pure returns (address) {
         if (chainid == 11155111) {
             // ethereum sepolia
             return 0x15fC6ae953E024d975e77382eEeC56A9101f9F88;

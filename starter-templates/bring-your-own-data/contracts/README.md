@@ -9,4 +9,34 @@
 
 </div>
 
-# Bring Your Own Data - Smart Contracts - CRE Template
+# Deploying your own Bring Your Own Data contracts
+
+Instructions on how to deploy your own contracts for use with the Bring Your Own Data template.
+
+## Prerequisites
+
+Install [Foundry](https://getfoundry.sh/introduction/installation/).
+
+## Proof-of-Reserve (PoR)
+
+```
+ENABLE_WORKFLOW_SIMULATION=true \
+forge script ./scripts/por/DeployPoRContracts.s.sol \
+--rpc-url "<RPC URL for target chain>" \
+--private-key <EOA funded on target chain> \
+--broadcast
+```
+
+Update the PoR workflow config with the newly deployed contract addresses as per [../workflow/por/README.md](../workflow/por/README.md).
+
+## Net Asset Value (NAV)
+
+```
+ENABLE_WORKFLOW_SIMULATION=true \
+forge script ./scripts/por/DeployPoRContracts.s.sol \
+--rpc-url <RPC URL for target chain> \
+--private-key <EOA funded on target chain> \
+--broadcast
+```
+
+Update the NAV workflow config with the newly deployed contract addresses as per [../workflow/por/README.md](../workflow/nav/README.md).
