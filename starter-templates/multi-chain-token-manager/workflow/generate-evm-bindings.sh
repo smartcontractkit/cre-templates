@@ -8,3 +8,4 @@ cp ../contracts/src/multi-chain-token-manager/ProtocolSmartWallet.sol ./contract
 cat ../contracts/foundry-artifacts/ProtocolSmartWallet.sol/ProtocolSmartWallet.json | jq .abi > ./contracts/evm/src/abi/ProtocolSmartWallet.abi
 
 cre generate-bindings evm
+

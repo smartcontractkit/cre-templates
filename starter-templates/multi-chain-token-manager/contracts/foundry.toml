@@ -1,0 +1,17 @@
+[profile.default]
+auto_detect_solc = true
+optimizer = true
+optimizer_runs = 1_000_000
+
+solc = '0.8.26'
+evm_version = "paris"
+
+src = "src/"
+test = "test/"
+out = "foundry-artifacts"
+cache_path = "foundry-cache"
+libs = ['./node_modules', './lib']
+
+bytecode_hash = "none"
+ffi = false
+via_ir = true

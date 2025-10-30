@@ -9,4 +9,4 @@
 
 </div>
 
-# Smart Contracts - CRE Template
+# Bring Your Own Data - Smart Contracts - CRE Template
