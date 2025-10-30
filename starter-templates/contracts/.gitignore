@@ -1,0 +1,21 @@
+artifacts
+broadcast
+cache
+node_modules
+solc
+abi
+coverage
+coverage.json
+typechain
+
+
+# Foundry
+foundry-cache
+foundry-artifacts
+
+.openzeppelin
+
+
+# Secret files
+.env
+

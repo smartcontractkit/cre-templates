@@ -1,0 +1,20 @@
+{
+  "schedule": "0 */5 * * * *",
+  "minBPSDeltaForRebalance": 50,
+  "evms": [
+    {
+      "assetAddress": "0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05",
+      "poolAddress": "0x1Feac342C432770cD804C1EB8EC8ef514BAAf1E7",
+      "protocolSmartWalletAddress": "0x8D51aAE7F52B74D26D4a38803c0328dfD5C87af0",
+      "chainName": "ethereum-testnet-sepolia",
+      "gasLimit": 1000000
+    },
+    {
+      "assetAddress": "0x88A2d74F47a237a62e7A51cdDa67270CE381555e",
+      "poolAddress": "0xd79773a680885012863f1Ab2446a96fb830A825e",
+      "protocolSmartWalletAddress": "0xe698BA634C9266962e19f3D21667e8036202CA33",
+      "chainName": "ethereum-testnet-sepolia-base-1",
+      "gasLimit": 1000000
+    }
+  ]
+}
