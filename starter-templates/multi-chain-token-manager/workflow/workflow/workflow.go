@@ -1,5 +1,5 @@
 // This workflow compares supply APYs across multiple EVM chains and
-// ebalances supply to the chain with the highest APY via cross-chain
+// rebalances supply to the chain with the highest APY via cross-chain
 // transfers.
 //
 // It requires at least two EVM configurations to compare APYs.
