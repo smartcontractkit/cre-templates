@@ -1,5 +1,14 @@
 {
   "schedule": "0 */10 * * * *",
   "chainName": "ethereum-mainnet-arbitrum-1",
-  "aggregatorAddress": "0x6ce185860a4963106506C203335A2910413708e9"
+  "feeds": [
+    {
+      "name": "BTC/USD",
+      "address": "0x6ce185860a4963106506C203335A2910413708e9"
+    },
+    {
+      "name": "ETH/USD",
+      "address": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612"
+    }
+  ]
 }

@@ -67,13 +67,22 @@ Create/update `config.json` for the simple reader workflow:
 {
   "schedule": "0 */10 * * * *",
   "chainName": "ethereum-mainnet-arbitrum-1",
-  "aggregatorAddress": "0x6ce185860a4963106506C203335A2910413708e9"
+  "feeds": [
+    {
+      "name": "BTC/USD",
+      "address": "0x6ce185860a4963106506C203335A2910413708e9"
+    },
+    {
+      "name": "ETH/USD",
+      "address": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612"
+    }
+  ]
 }
 ```
 
 * `schedule` uses a 6-field cron expression: run on the 0th second every 10 minutes.
 * `chainName` must match your `project.yaml` RPC entry.
-* `aggregatorAddress` is the BTC/USD proxy above.
+* `feeds` is an array of price pair and associated address.
 
 ### 5) Run a local simulation
 
@@ -87,14 +96,12 @@ You should see output similar to:
 
 ```
 Workflow compiled
-2025-10-29T16:08:11Z [SIMULATION] Simulator Initialized
+2025-10-30T09:24:27Z [SIMULATION] Simulator Initialized
 
-2025-10-29T16:08:11Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
-2025-10-29T16:08:12Z [USER LOG] msg="BTC/USD feed read" chain=ethereum-mainnet-arbitrum-1 address=0x6ce185860a4963106506C203335A2910413708e9 decimals=8 latestAnswerRaw=11115618710200 latestAnswerScaled=111156.187102
+2025-10-30T09:24:27Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2025-10-30T09:24:28Z [USER LOG] msg="Data feed read" chain=ethereum-mainnet-arbitrum-1 feed=BTC/USD address=0x6ce185860a4963106506C203335A2910413708e9 decimals=8 latestAnswerRaw=10803231994131 latestAnswerScaled=108032.31994131
+2025-10-30T09:24:29Z [USER LOG] msg="Data feed read" chain=ethereum-mainnet-arbitrum-1 feed=ETH/USD address=0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612 decimals=8 latestAnswerRaw=378968000000 latestAnswerScaled=3789.68
 
 Workflow Simulation Result:
- "111156.187102"
-
-2025-10-29T16:08:12Z [SIMULATION] Execution finished signal received
-2025-10-29T16:08:12Z [SIMULATION] Skipping WorkflowEngineV2
+ "[{\"name\":\"BTC/USD\",\"address\":\"0x6ce185860a4963106506C203335A2910413708e9\",\"decimals\":8,\"latestAnswerRaw\":\"10803231994131\",\"scaled\":\"108032.31994131\"},{\"name\":\"ETH/USD\",\"address\":\"0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612\",\"decimals\":8,\"latestAnswerRaw\":\"378968000000\",\"scaled\":\"3789.68\"}]"
 ```
