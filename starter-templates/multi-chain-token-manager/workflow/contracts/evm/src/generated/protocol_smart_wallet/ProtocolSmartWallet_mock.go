@@ -29,7 +29,6 @@ type ProtocolSmartWalletMock struct {
 	GetRouter                 func() (common.Address, error)
 	Owner                     func() (common.Address, error)
 	Pool                      func() (common.Address, error)
-	SupportsInterface         func(SupportsInterfaceInput) (bool, error)
 }
 
 // NewProtocolSmartWalletMock creates a new ProtocolSmartWalletMock for testing.
@@ -156,30 +155,6 @@ func NewProtocolSmartWalletMock(address common.Address, clientMock *evmmock.Clie
 				return nil, err
 			}
 			return abi.Methods["pool"].Outputs.Pack(result)
-		},
-		string(abi.Methods["supportsInterface"].ID[:4]): func(payload []byte) ([]byte, error) {
-			if mock.SupportsInterface == nil {
-				return nil, errors.New("supportsInterface method not mocked")
-			}
-			inputs := abi.Methods["supportsInterface"].Inputs
-
-			values, err := inputs.Unpack(payload)
-			if err != nil {
-				return nil, errors.New("Failed to unpack payload")
-			}
-			if len(values) != 1 {
-				return nil, errors.New("expected 1 input value")
-			}
-
-			args := SupportsInterfaceInput{
-				InterfaceId: values[0].([4]byte),
-			}
-
-			result, err := mock.SupportsInterface(args)
-			if err != nil {
-				return nil, err
-			}
-			return abi.Methods["supportsInterface"].Outputs.Pack(result)
 		},
 	}
 

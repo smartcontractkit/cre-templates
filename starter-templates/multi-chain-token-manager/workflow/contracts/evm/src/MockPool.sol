@@ -8,10 +8,10 @@ pragma solidity ^0.8.26;
 
 import {IPool, DataTypes} from "./IPool.sol";
 
-import {SafeERC20} from
-    "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from
-    "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+    "@openzeppelin/contracts@5.0.2/token/ERC20/IERC20.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts@5.0.2/token/ERC20/utils/SafeERC20.sol";
 import {OwnerIsCreator} from "@chainlink/contracts/src/v0.8/shared/access/OwnerIsCreator.sol";
 
 contract MockPool is OwnerIsCreator, IPool{
@@ -35,7 +35,6 @@ contract MockPool is OwnerIsCreator, IPool{
     }
 
     // Implement IPool interface.
-    // TODO: mint aTokens
     function supply(address asset, uint256 amount, address onBehalfOf, uint16) external override {
         if (amount == 0) {
             revert AmountZero();
@@ -46,7 +45,6 @@ contract MockPool is OwnerIsCreator, IPool{
     }
 
     // Implement IPool interface.
-    // TODO: burn aTokens
     function withdraw(address asset, uint256 amount, address to) external returns (uint256) {
 
         uint256 bal = balanceOf[msg.sender][asset];

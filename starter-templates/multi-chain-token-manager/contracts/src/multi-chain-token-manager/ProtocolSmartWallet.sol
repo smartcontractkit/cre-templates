@@ -185,8 +185,7 @@ contract ProtocolSmartWallet is CCIPReceiver, IReceiver, OwnerIsCreator {
         }
 
         (bytes10 workflowName, address workflowOwner,) = metadata._extractMetadataInfo();
-        // TODO: allow multiple owners to support simulate
-        if (workflowOwner != owner()) {
+        if (allowedWorkflowOwners[workflowOwner] != true) {
             revert UnauthorizedWorkflowOwner(workflowOwner);
         }
 
@@ -274,8 +273,6 @@ contract ProtocolSmartWallet is CCIPReceiver, IReceiver, OwnerIsCreator {
         address token = tokenAmounts[0].token;
         uint256 amount = tokenAmounts[0].amount;
 
-        // TODO: consider dropping this check and simply deposit the amount
-        // that is received.
         Message memory message = abi.decode(any2EvmMessage.data, (Message));
         if (amount != message.amount) {
             revert MismatchedTokenAmount();
