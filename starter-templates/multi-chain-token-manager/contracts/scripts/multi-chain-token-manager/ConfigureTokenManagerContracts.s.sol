@@ -46,9 +46,11 @@ contract Deploy is Script {
 
     function getProtocolSmartWallet(uint256 chainid) internal pure returns (address) {
         if (chainid == 11155111) {
-            return 0x8D51aAE7F52B74D26D4a38803c0328dfD5C87af0;
+            // Ethereum Sepolia
+            return 0x8D51aAE7F52B74D26D4a38803c0328dfD5C87af0; // replace with your deployed ProtocolSmartWallet address
         } else if (chainid == 84532) {
-            return 0xe698BA634C9266962e19f3D21667e8036202CA33;
+            // Base Sepolia
+            return 0xe698BA634C9266962e19f3D21667e8036202CA33; // replace with your deployed ProtocolSmartWallet address
         }
         revert("chainid not configured");
     }

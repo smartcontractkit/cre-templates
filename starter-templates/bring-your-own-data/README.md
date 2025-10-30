@@ -9,16 +9,8 @@
 
 </div>
 
-# Bring Your Own Data - CRE Template
+# Bring Your Own Data - CRE Templates
 
 Examples of how to bring your own data on chain with the Chainlink Runtime Environment (CRE).
 
-## Workflows
-
-[Proof of Reserve (PoR)](./workflow/por/README.md)
-
-[Net Asset Value (NAV)](./workflow/nav/README.md)
-
-## Contracts
-
-[contracts/README.md](./contracts/README.md)
+Start here [./workflow/README.md](./workflow/README.md).

@@ -11,7 +11,7 @@
 
 # Deploying your own Bring Your Own Data contracts
 
-Instructions on how to deploy your own contracts for use with the Bring Your Own Data template.
+Instructions on how to deploy your own contracts for use with the Bring Your Own Data templates.
 
 ## Prerequisites
 
