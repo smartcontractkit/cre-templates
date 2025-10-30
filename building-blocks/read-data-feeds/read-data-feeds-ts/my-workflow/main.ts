@@ -81,7 +81,7 @@ function readFeed(
 	const decResp = evmClient
 		.callContract(runtime, {
 			call: encodeCallMsg({
-				from: zeroAddress,            // <-- required
+				from: zeroAddress,
 				to: address as Address,
 				data: decCallData,
 			}),
@@ -104,7 +104,7 @@ function readFeed(
 	const ansResp = evmClient
 		.callContract(runtime, {
 			call: encodeCallMsg({
-				from: zeroAddress,            // <-- required
+				from: zeroAddress,
 				to: address as Address,
 				data: ansCallData,
 			}),
@@ -142,7 +142,7 @@ function onCron(runtime: Runtime<Config>, _payload: CronPayload): string {
 		readFeed(runtime, evmClient, f.name, f.address),
 	);
 
-	// Return JSON (mirrors the Go workflow style)
+	// Return JSON
 	return safeJsonStringify(results);
 }
 
@@ -163,5 +163,4 @@ export async function main() {
 	await runner.run(initWorkflow);
 }
 
-// Execute when run directly
 main();
