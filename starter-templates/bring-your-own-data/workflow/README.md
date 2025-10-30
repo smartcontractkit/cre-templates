@@ -77,11 +77,7 @@ This will create Go binding files for all the contracts (DataFeedsCache, etc.) t
 Only required if you would like to test different configurations or if you deployed
 your own contracts in step 4.
 
-Configure `config.json` for the workflow you would like to run.
-
-[./por/README.md](./por/README.md)
-
-[./nav/README.md](./nav/README.md)
+Configure `config.json` for the workflow you would like to run. Refer to instructions for [POR](./por/README.md) and [NAV](./nav/README.md).
 
 ### 7. Simulate the workflow
 
