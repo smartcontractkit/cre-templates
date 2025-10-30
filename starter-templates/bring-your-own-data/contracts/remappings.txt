@@ -1,7 +1,3 @@
-@chainlink/contracts/=node_modules/@chainlink/contracts/
-@chainlink/contracts-ccip/contracts/=node_modules/@chainlink/contracts-ccip/contracts/
-@chainlink/local=node_modules/@chainlink/local
-@openzeppelin/contracts/=node_modules/@openzeppelin/contracts
-@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable
-
-forge-std/=vendor/forge-std/src/
+forge-std/=lib/forge-std/src/
+@chainlink/contracts/=lib/chainlink-evm/contracts/
+@openzeppelin/contracts@5.0.2=lib/openzeppelin-contracts/contracts

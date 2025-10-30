@@ -8,18 +8,17 @@ pragma solidity ^0.8.26;
 
 import {MockPool} from "./MockPool.sol";
 
-import {Client} from "@chainlink/contracts-ccip/contracts/libraries/Client.sol";
+import {Client} from "@chainlink/contracts-ccip/libraries/Client.sol";
 import {IReceiver} from "@chainlink/contracts/src/v0.8/keystone/interfaces/IReceiver.sol";
 import {KeystoneFeedDefaultMetadataLib} from "@chainlink/contracts/src/v0.8/keystone/lib/KeystoneFeedDefaultMetadataLib.sol";
-import {CCIPReceiver} from "@chainlink/contracts-ccip/contracts/applications/CCIPReceiver.sol";
+import {CCIPReceiver} from "@chainlink/contracts-ccip/applications/CCIPReceiver.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {IRouterClient} from "@chainlink/contracts-ccip/contracts/interfaces/IRouterClient.sol";
+import {IRouterClient} from "@chainlink/contracts-ccip/interfaces/IRouterClient.sol";
 import {IERC20} from
-    "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+    "@chainlink/contracts/src/v0.8/vendor/forge-std/src/interfaces/IERC20.sol";
 import {SafeERC20} from
-    "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC165} from
-  "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v5.0.2/contracts/utils/introspection/IERC165.sol";
+    "@openzeppelin/contracts@5.0.2/token/ERC20/utils/SafeERC20.sol";
+import {IERC165} from "@openzeppelin/contracts@5.0.2/utils/introspection/IERC165.sol";
 
 import {OwnerIsCreator} from "@chainlink/contracts/src/v0.8/shared/access/OwnerIsCreator.sol";
 
@@ -289,7 +288,7 @@ contract ProtocolSmartWallet is CCIPReceiver, IReceiver, OwnerIsCreator {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(CCIPReceiver,IERC165) returns (bool) {
+    ) public pure virtual override(CCIPReceiver,IERC165) returns (bool) {
         return super.supportsInterface(interfaceId) || interfaceId == type(IReceiver).interfaceId || interfaceId == type(IERC165).interfaceId;
     }
 }

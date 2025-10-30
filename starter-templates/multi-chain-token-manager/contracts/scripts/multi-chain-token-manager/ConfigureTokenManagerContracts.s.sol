@@ -35,11 +35,9 @@ contract Deploy is Script {
         );
 
         console.log(
-            "Set CCIP sender on chain",
+            "Set CCIP sender on chain %s for source chain selector %s to address %s",
             block.chainid,
-            "for source chain selector",
             sourceChainSelector,
-            "to",
             address(sourceChainProtocolSmartWallet)
         );
 

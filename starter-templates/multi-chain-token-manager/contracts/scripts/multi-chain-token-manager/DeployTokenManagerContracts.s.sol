@@ -6,7 +6,7 @@ import {MockPool} from "../../src/multi-chain-token-manager/MockPool.sol";
 import {ProtocolSmartWallet} from "../../src/multi-chain-token-manager/ProtocolSmartWallet.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {IERC20} from
-    "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+    "@openzeppelin/contracts@5.0.2/token/ERC20/IERC20.sol";
 import {Workflow} from "../../src/util/Workflow.sol";
 
 contract Deploy is Script {
@@ -58,6 +58,7 @@ contract Deploy is Script {
 
         ProtocolSmartWallet psw = new ProtocolSmartWallet(
             keystoneForwarders,
+            workflowOwners,
             address(pool),
             ccipRouter,
             linkToken
