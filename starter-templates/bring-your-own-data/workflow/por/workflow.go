@@ -131,6 +131,9 @@ func updateReserves(evmCfg EVMConfig, runtime cre.Runtime, dataIdHex string, tot
 		TotalReserve: totalReserveScaled,
 		LastUpdated:  uint32(lastUpdated.UTC().Unix()),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to encode Bundle struct: %w", err)
+	}
 
 	encodedStruct, err := encodeReceivedBundledReports(
 		[]receivedBundledReport{

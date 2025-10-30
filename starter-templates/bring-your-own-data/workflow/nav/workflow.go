@@ -95,8 +95,6 @@ func doNAV(config *Config, runtime cre.Runtime, runTime time.Time) (string, erro
 	}
 
 	logger.Info("NAVResponse", "navResponse", navResp)
-	// TODO: do we need to scale here? Need to scale for at least 6 decimal
-	// places.
 	navScaled := navResp.NAV.Mul(decimal.NewFromUint64(1e18)).BigInt()
 	logger.Info("NAVScaled", "navScaled", navScaled)
 
@@ -184,6 +182,9 @@ func fetchNAV(config *Config, logger *slog.Logger, sendRequester *http.SendReque
 	reqBody, err := json.Marshal(&body{
 		Method: "navDetails",
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal NAV request body: %w", err)
+	}
 	httpActionOut, err := sendRequester.SendRequest(&http.Request{
 		Method:        "POST",
 		Url:           config.URL,
