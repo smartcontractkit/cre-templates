@@ -22,7 +22,7 @@ See instructions in [../README.md](../README.md).
 
 ## Targeting your own contracts
 
-1. Deploy your DataFeedsCache contracts following the instructions in [../../contracts/README.md](../../contracts/README.md])
+1. Deploy your DataFeedsCache contracts following the instructions in [../../contracts/README.md](../../contracts/README.md)
 2. Update the target chains/contracts in [./config.json](./config.json)
 
 ## Targeting your own NAV API
