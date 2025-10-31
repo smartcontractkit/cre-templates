@@ -52,7 +52,7 @@ forge script ./scripts/multi-chain-token-manager/DeployTokenManagerContracts.s.s
 
 Configure ProtocolSmartWallet contracts for CCIP.
 
-This step configures each ProtocolSmartWallet contract with the addresses of the ProtocolSmartWallet contracts deployed on each other chain, which allows it to verify that the CCIP sender is a ProtocolSmartWallet on another chain when it receives a cross-chain token transfer with data
+This step sets up each ProtocolSmartWallet with the addresses of its counterparts on other chains, enabling it to verify that any incoming CCIP message comes from a legitimate ProtocolSmartWallet on another chain.
 
 First, update the `getProtocolSmartWallet` function in [ConfigureTokenManagerContracts.s.sol](./scripts/multi-chain-token-manager/ConfigureTokenManagerContracts.s.sol) to return the addresses of the contracts you deployed in the previous step.
 
