@@ -1,0 +1,35 @@
+{
+  "../../bring-your-own-data/contracts/lib/chainlink-evm": {
+    "rev": "4f39c8d6f35a6f81f80c5ed36b55e0558a4975a3"
+  },
+  "../../bring-your-own-data/contracts/lib/forge-std": {
+    "rev": "100b0d756adda67bc70aab816fa5a1a95dcf78b6"
+  },
+  "../../bring-your-own-data/contracts/lib/openzeppelin-contracts": {
+    "rev": "c2eee49b4eec34ab10fc05faee155af974b446c7"
+  },
+  "lib/chainlink-ccip": {
+    "tag": {
+      "name": "contracts-ccip-v1.6.0",
+      "rev": "e9476e9948c5f84fd4e980484a520085bcc1b9d5"
+    }
+  },
+  "lib/chainlink-evm": {
+    "tag": {
+      "name": "contracts-v1.4.0",
+      "rev": "e06cc226086ad91cfede63e96c63e5b3440c9801"
+    }
+  },
+  "lib/forge-std": {
+    "tag": {
+      "name": "v1.11.0",
+      "rev": "8e40513d678f392f398620b3ef2b418648b33e89"
+    }
+  },
+  "lib/openzeppelin-contracts": {
+    "tag": {
+      "name": "v5.0.2",
+      "rev": "dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+    }
+  }
+}

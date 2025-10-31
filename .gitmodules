@@ -1,0 +1,21 @@
+[submodule "starter-templates/bring-your-own-data/contracts/lib/openzeppelin-contracts"]
+	path = starter-templates/bring-your-own-data/contracts/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "starter-templates/bring-your-own-data/contracts/lib/chainlink-evm"]
+	path = starter-templates/bring-your-own-data/contracts/lib/chainlink-evm
+	url = https://github.com/smartcontractkit/chainlink-evm
+[submodule "starter-templates/bring-your-own-data/contracts/lib/forge-std"]
+	path = starter-templates/bring-your-own-data/contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "starter-templates/multi-chain-token-manager/contracts/lib/forge-std"]
+	path = starter-templates/multi-chain-token-manager/contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "starter-templates/multi-chain-token-manager/contracts/lib/chainlink-evm"]
+	path = starter-templates/multi-chain-token-manager/contracts/lib/chainlink-evm
+	url = https://github.com/smartcontractkit/chainlink-evm
+[submodule "starter-templates/multi-chain-token-manager/contracts/lib/openzeppelin-contracts"]
+	path = starter-templates/multi-chain-token-manager/contracts/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "starter-templates/multi-chain-token-manager/contracts/lib/chainlink-ccip"]
+	path = starter-templates/multi-chain-token-manager/contracts/lib/chainlink-ccip
+	url = https://github.com/smartcontractkit/chainlink-ccip

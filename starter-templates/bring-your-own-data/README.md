@@ -9,4 +9,8 @@
 
 </div>
 
-# Bring Your Own Data - CRE Template
+# Bring Your Own Data - CRE Templates
+
+Examples of how to bring your own data on chain with the Chainlink Runtime Environment (CRE).
+
+Start here [./workflow/README.md](./workflow/README.md).

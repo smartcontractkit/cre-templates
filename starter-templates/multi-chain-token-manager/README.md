@@ -10,3 +10,7 @@
 </div>
 
 # Multi-Chain Token Manager - CRE Template
+
+Example of how to maximize supply APY by rebalancing tokens cross-chain with CRE via CCIP.
+
+Start here [./workflow/README.md](./workflow/README.md).
