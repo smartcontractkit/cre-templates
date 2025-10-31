@@ -10,7 +10,10 @@ pragma solidity 0.8.26;
 library Workflow {
 
     function keystoneForwarder(uint256 chainid) internal pure returns (address) {
-        if (chainid == 11155111) {
+        if(chainid == 1) {
+            // ethereum mainnet
+            return 0x0b93082D9b3C7C97fAcd250082899BAcf3af3885;
+        } else if (chainid == 11155111) {
             // ethereum sepolia
             return 0xA73aFb610aC79A729A393D679029fCf9618854AD;
         } else if (chainid == 84532) {
@@ -22,7 +25,10 @@ library Workflow {
     }
 
     function mockKeystoneForwarder(uint256 chainid) internal pure returns (address) {
-        if (chainid == 11155111) {
+        if (chainid == 1) {
+            // ethereum mainnet
+            return 0xA3D1AD4Ac559a6575a114998AffB2fB2Ec97a7D9;
+        } else if (chainid == 11155111) {
             // ethereum sepolia
             return 0x15fC6ae953E024d975e77382eEeC56A9101f9F88;
         } else if (chainid == 84532) {
