@@ -11,26 +11,28 @@ import {Workflow} from "../../src/util/Workflow.sol";
 
 contract Deploy is Script {
     function run() external {
+
+        uint256 sepoliaChainID = 11155111;
+        uint256 baseSepoliaChainID = 84532;
+
         // Deploy on Sepolia
         uint256 sepoliaFork = vm.createSelectFork("sepolia");
-        uint256 sepoliaChainID = block.chainid;
         vm.startBroadcast();
         address sepoliaPSW = deployAndDeposit();
         vm.stopBroadcast();
  
         // Deploy and configure on Base Sepolia
         vm.createSelectFork("base-sepolia");
-        uint256 baseSepoliaChainID = block.chainid;
         vm.startBroadcast();
         address baseSepoliaPSW = deployAndDeposit();
-        configureProtocolSmartWallet(baseSepoliaPSW, sepoliaPSW, getChainSelector(sepoliaChainID));
+        configureProtocolSmartWallet(baseSepoliaPSW, sepoliaChainID, sepoliaPSW);
         vm.stopBroadcast();
 
         // Finally, configure on Sepolia now that the Base Sepolia
         // ProtocolSmartWallet contract address is known.
         vm.selectFork(sepoliaFork);
         vm.startBroadcast();
-        configureProtocolSmartWallet(sepoliaPSW, baseSepoliaPSW, getChainSelector(baseSepoliaChainID));
+        configureProtocolSmartWallet(sepoliaPSW, baseSepoliaChainID, baseSepoliaPSW);
         vm.stopBroadcast();
     }
 
@@ -130,9 +132,11 @@ contract Deploy is Script {
         return address(psw);
     }
 
-    function configureProtocolSmartWallet(address protocolSmartWallet, address sourceChainProtocolSmartWallet, uint64 sourceChainSelector) internal {
+    function configureProtocolSmartWallet(address protocolSmartWallet, uint256 sourceChainID, address sourceChainProtocolSmartWallet) internal {
 
-        console.log("Configuring ProtocolSmartWallet on chainid:", block.chainid);
+        uint64 sourceChainSelector = getChainSelector(sourceChainID);
+
+        console.log("Configuring ProtocolSmartWallet on chainid %s for source chainid %s", block.chainid, sourceChainID);
 
         ProtocolSmartWallet psw = ProtocolSmartWallet(protocolSmartWallet);
         psw.setSenderForSourceChain(
