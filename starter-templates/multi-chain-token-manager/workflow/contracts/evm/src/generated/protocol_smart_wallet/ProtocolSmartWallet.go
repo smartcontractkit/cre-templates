@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -46,10 +47,11 @@ var (
 	_ = cre.ResponseBufferTooSmall
 	_ = rpc.API{}
 	_ = json.Unmarshal
+	_ = reflect.Bool
 )
 
 var ProtocolSmartWalletMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_keystoneForwarders\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"_allowedWorkflowOwners\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"_pool\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_router\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_link\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"acceptOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"allowedCcipSenders\",\"inputs\":[{\"name\":\"chainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"allowedKeystoneForwarders\",\"inputs\":[{\"name\":\"keystoneForwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"allowed\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"allowedWorkflowOwners\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"allowed\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ccipReceive\",\"inputs\":[{\"name\":\"message\",\"type\":\"tuple\",\"internalType\":\"structClient.Any2EVMMessage\",\"components\":[{\"name\":\"messageId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"sender\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"destTokenAmounts\",\"type\":\"tuple[]\",\"internalType\":\"structClient.EVMTokenAmount[]\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"depositToPool\",\"inputs\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getPoolAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRouter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onReport\",\"inputs\":[{\"name\":\"metadata\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"report\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"pool\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractMockPool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"removeKeystoneForwarder\",\"inputs\":[{\"name\":\"_keystoneForwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeSenderForSourceChain\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeWorkflowOwner\",\"inputs\":[{\"name\":\"_workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setKeystoneForwarder\",\"inputs\":[{\"name\":\"_keystoneForwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPool\",\"inputs\":[{\"name\":\"_pool\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setSenderForSourceChain\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"_sender\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setWorkflowOwner\",\"inputs\":[{\"name\":\"_workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawFromPool\",\"inputs\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawFromPoolAndDepositCrossChain\",\"inputs\":[{\"name\":\"params\",\"type\":\"tuple\",\"internalType\":\"structProtocolSmartWallet.RebalanceParams\",\"components\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destinationChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"destinationProtocolSmartWallet\",\"type\":\"address\",\"internalType\":\"address\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"KeystoneForwarderRemoved\",\"inputs\":[{\"name\":\"keystoneForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"KeystoneForwarderSet\",\"inputs\":[{\"name\":\"keystoneForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"MessageReceived\",\"inputs\":[{\"name\":\"messageId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"tokenAmount\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structClient.EVMTokenAmount\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"MessageSent\",\"inputs\":[{\"name\":\"messageId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"destinationChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"receiver\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"tokenAmount\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structClient.EVMTokenAmount\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"fees\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferRequested\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ReportReceived\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"workflowName\",\"type\":\"bytes10\",\"indexed\":true,\"internalType\":\"bytes10\"},{\"name\":\"params\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structProtocolSmartWallet.RebalanceParams\",\"components\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destinationChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"destinationProtocolSmartWallet\",\"type\":\"address\",\"internalType\":\"address\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SenderForSourceChainRemoved\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"_sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SenderForSourceChainSet\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"_sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WorkflowOwnerRemoved\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WorkflowOwnerSet\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InsufficientFeeTokenAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InsufficientTokenAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidKeystoneForwarder\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRouter\",\"inputs\":[{\"name\":\"router\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidSenderAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSourceChain\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidWorkflowOwner\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MismatchedTokenAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MustBeKeystoneForwarder\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NoSenderOnSourceChain\",\"inputs\":[{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"UnauthorizedWorkflowOwner\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"WrongSenderForSourceChain\",\"inputs\":[{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"ZeroAddress\",\"inputs\":[{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_keystoneForwarders\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"_allowedWorkflowOwners\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"_pool\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_router\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_link\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"acceptOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"allowedCcipSenders\",\"inputs\":[{\"name\":\"chainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"allowedKeystoneForwarders\",\"inputs\":[{\"name\":\"keystoneForwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"allowed\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"allowedWorkflowOwners\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"allowed\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ccipReceive\",\"inputs\":[{\"name\":\"message\",\"type\":\"tuple\",\"internalType\":\"structClient.Any2EVMMessage\",\"components\":[{\"name\":\"messageId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"sender\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"destTokenAmounts\",\"type\":\"tuple[]\",\"internalType\":\"structClient.EVMTokenAmount[]\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"depositToPool\",\"inputs\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getPoolAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRouter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onReport\",\"inputs\":[{\"name\":\"metadata\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"report\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"pool\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractMockPool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"removeKeystoneForwarder\",\"inputs\":[{\"name\":\"_keystoneForwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeSenderForSourceChain\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeWorkflowOwner\",\"inputs\":[{\"name\":\"_workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setKeystoneForwarder\",\"inputs\":[{\"name\":\"_keystoneForwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPool\",\"inputs\":[{\"name\":\"_pool\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setSenderForSourceChain\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"_sender\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setWorkflowOwner\",\"inputs\":[{\"name\":\"_workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdraw\",\"inputs\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawFromPool\",\"inputs\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawFromPoolAndDepositCrossChain\",\"inputs\":[{\"name\":\"params\",\"type\":\"tuple\",\"internalType\":\"structProtocolSmartWallet.RebalanceParams\",\"components\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destinationChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"destinationProtocolSmartWallet\",\"type\":\"address\",\"internalType\":\"address\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Deposit\",\"inputs\":[{\"name\":\"aset\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"KeystoneForwarderRemoved\",\"inputs\":[{\"name\":\"keystoneForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"KeystoneForwarderSet\",\"inputs\":[{\"name\":\"keystoneForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"MessageReceived\",\"inputs\":[{\"name\":\"messageId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"tokenAmount\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structClient.EVMTokenAmount\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"MessageSent\",\"inputs\":[{\"name\":\"messageId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"destinationChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"receiver\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"tokenAmount\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structClient.EVMTokenAmount\",\"components\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"fees\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferRequested\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ReportReceived\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"workflowName\",\"type\":\"bytes10\",\"indexed\":true,\"internalType\":\"bytes10\"},{\"name\":\"params\",\"type\":\"tuple\",\"indexed\":false,\"internalType\":\"structProtocolSmartWallet.RebalanceParams\",\"components\":[{\"name\":\"asset\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destinationChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"destinationProtocolSmartWallet\",\"type\":\"address\",\"internalType\":\"address\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SenderForSourceChainRemoved\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"_sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SenderForSourceChainSet\",\"inputs\":[{\"name\":\"_sourceChainSelector\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"_sender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Withdraw\",\"inputs\":[{\"name\":\"asset\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WorkflowOwnerRemoved\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WorkflowOwnerSet\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InsufficientFeeTokenAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InsufficientTokenAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidKeystoneForwarder\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRouter\",\"inputs\":[{\"name\":\"router\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidSenderAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSourceChain\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidWorkflowOwner\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MismatchedTokenAmount\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MustBeKeystoneForwarder\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NoSenderOnSourceChain\",\"inputs\":[{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"SafeERC20FailedOperation\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"UnauthorizedWorkflowOwner\",\"inputs\":[{\"name\":\"workflowOwner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"WrongSenderForSourceChain\",\"inputs\":[{\"name\":\"sourceChainSelector\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"type\":\"error\",\"name\":\"ZeroAddress\",\"inputs\":[{\"name\":\"index\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}]",
 }
 
 // Structs
@@ -137,6 +139,12 @@ type TransferOwnershipInput struct {
 	To common.Address
 }
 
+type WithdrawInput struct {
+	Asset  common.Address
+	Amount *big.Int
+	To     common.Address
+}
+
 type WithdrawFromPoolInput struct {
 	Asset  common.Address
 	Amount *big.Int
@@ -182,6 +190,10 @@ type NoSenderOnSourceChain struct {
 	SourceChainSelector uint64
 }
 
+type SafeERC20FailedOperation struct {
+	Token common.Address
+}
+
 type UnauthorizedWorkflowOwner struct {
 	WorkflowOwner common.Address
 }
@@ -195,7 +207,8 @@ type ZeroAddress struct {
 }
 
 // Events
-// The <Event> struct should be used as a filter (for log triggers).
+// The <Event>Topics struct should be used as a filter (for log triggers).
+// Note: It is only possible to filter on indexed fields.
 // Indexed (string and bytes) fields will be of type common.Hash.
 // They need to he (crypto.Keccak256) hashed and passed in.
 // Indexed (tuple/slice/array) fields can be passed in as is, the Encode<Event>Topics function will handle the hashing.
@@ -203,7 +216,16 @@ type ZeroAddress struct {
 // The <Event>Decoded struct will be the result of calling decode (Adapt) on the log trigger result.
 // Indexed dynamic type fields will be of type common.Hash.
 
-type KeystoneForwarderRemoved struct {
+type DepositTopics struct {
+	Aset common.Address
+}
+
+type DepositDecoded struct {
+	Aset   common.Address
+	Amount *big.Int
+}
+
+type KeystoneForwarderRemovedTopics struct {
 	KeystoneForwarder common.Address
 }
 
@@ -211,7 +233,7 @@ type KeystoneForwarderRemovedDecoded struct {
 	KeystoneForwarder common.Address
 }
 
-type KeystoneForwarderSet struct {
+type KeystoneForwarderSetTopics struct {
 	KeystoneForwarder common.Address
 }
 
@@ -219,11 +241,9 @@ type KeystoneForwarderSetDecoded struct {
 	KeystoneForwarder common.Address
 }
 
-type MessageReceived struct {
+type MessageReceivedTopics struct {
 	MessageId           [32]byte
 	SourceChainSelector uint64
-	Sender              common.Address
-	TokenAmount         ClientEVMTokenAmount
 }
 
 type MessageReceivedDecoded struct {
@@ -233,12 +253,9 @@ type MessageReceivedDecoded struct {
 	TokenAmount         ClientEVMTokenAmount
 }
 
-type MessageSent struct {
+type MessageSentTopics struct {
 	MessageId                [32]byte
 	DestinationChainSelector uint64
-	Receiver                 common.Address
-	TokenAmount              ClientEVMTokenAmount
-	Fees                     *big.Int
 }
 
 type MessageSentDecoded struct {
@@ -249,7 +266,7 @@ type MessageSentDecoded struct {
 	Fees                     *big.Int
 }
 
-type OwnershipTransferRequested struct {
+type OwnershipTransferRequestedTopics struct {
 	From common.Address
 	To   common.Address
 }
@@ -259,7 +276,7 @@ type OwnershipTransferRequestedDecoded struct {
 	To   common.Address
 }
 
-type OwnershipTransferred struct {
+type OwnershipTransferredTopics struct {
 	From common.Address
 	To   common.Address
 }
@@ -269,10 +286,9 @@ type OwnershipTransferredDecoded struct {
 	To   common.Address
 }
 
-type ReportReceived struct {
+type ReportReceivedTopics struct {
 	WorkflowOwner common.Address
 	WorkflowName  [10]byte
-	Params        RebalanceParams
 }
 
 type ReportReceivedDecoded struct {
@@ -281,7 +297,7 @@ type ReportReceivedDecoded struct {
 	Params        RebalanceParams
 }
 
-type SenderForSourceChainRemoved struct {
+type SenderForSourceChainRemovedTopics struct {
 	SourceChainSelector uint64
 	Sender              common.Address
 }
@@ -291,7 +307,7 @@ type SenderForSourceChainRemovedDecoded struct {
 	Sender              common.Address
 }
 
-type SenderForSourceChainSet struct {
+type SenderForSourceChainSetTopics struct {
 	SourceChainSelector uint64
 	Sender              common.Address
 }
@@ -301,7 +317,18 @@ type SenderForSourceChainSetDecoded struct {
 	Sender              common.Address
 }
 
-type WorkflowOwnerRemoved struct {
+type WithdrawTopics struct {
+	Asset common.Address
+	To    common.Address
+}
+
+type WithdrawDecoded struct {
+	Asset  common.Address
+	To     common.Address
+	Amount *big.Int
+}
+
+type WorkflowOwnerRemovedTopics struct {
 	WorkflowOwner common.Address
 }
 
@@ -309,7 +336,7 @@ type WorkflowOwnerRemovedDecoded struct {
 	WorkflowOwner common.Address
 }
 
-type WorkflowOwnerSet struct {
+type WorkflowOwnerSetTopics struct {
 	WorkflowOwner common.Address
 }
 
@@ -355,43 +382,51 @@ type ProtocolSmartWalletCodec interface {
 	EncodeSupportsInterfaceMethodCall(in SupportsInterfaceInput) ([]byte, error)
 	DecodeSupportsInterfaceMethodOutput(data []byte) (bool, error)
 	EncodeTransferOwnershipMethodCall(in TransferOwnershipInput) ([]byte, error)
+	EncodeWithdrawMethodCall(in WithdrawInput) ([]byte, error)
+	DecodeWithdrawMethodOutput(data []byte) (*big.Int, error)
 	EncodeWithdrawFromPoolMethodCall(in WithdrawFromPoolInput) ([]byte, error)
 	EncodeWithdrawFromPoolAndDepositCrossChainMethodCall(in WithdrawFromPoolAndDepositCrossChainInput) ([]byte, error)
 	EncodeClientAny2EVMMessageStruct(in ClientAny2EVMMessage) ([]byte, error)
 	EncodeClientEVMTokenAmountStruct(in ClientEVMTokenAmount) ([]byte, error)
 	EncodeRebalanceParamsStruct(in RebalanceParams) ([]byte, error)
+	DepositLogHash() []byte
+	EncodeDepositTopics(evt abi.Event, values []DepositTopics) ([]*evm.TopicValues, error)
+	DecodeDeposit(log *evm.Log) (*DepositDecoded, error)
 	KeystoneForwarderRemovedLogHash() []byte
-	EncodeKeystoneForwarderRemovedTopics(evt abi.Event, values []KeystoneForwarderRemoved) ([]*evm.TopicValues, error)
+	EncodeKeystoneForwarderRemovedTopics(evt abi.Event, values []KeystoneForwarderRemovedTopics) ([]*evm.TopicValues, error)
 	DecodeKeystoneForwarderRemoved(log *evm.Log) (*KeystoneForwarderRemovedDecoded, error)
 	KeystoneForwarderSetLogHash() []byte
-	EncodeKeystoneForwarderSetTopics(evt abi.Event, values []KeystoneForwarderSet) ([]*evm.TopicValues, error)
+	EncodeKeystoneForwarderSetTopics(evt abi.Event, values []KeystoneForwarderSetTopics) ([]*evm.TopicValues, error)
 	DecodeKeystoneForwarderSet(log *evm.Log) (*KeystoneForwarderSetDecoded, error)
 	MessageReceivedLogHash() []byte
-	EncodeMessageReceivedTopics(evt abi.Event, values []MessageReceived) ([]*evm.TopicValues, error)
+	EncodeMessageReceivedTopics(evt abi.Event, values []MessageReceivedTopics) ([]*evm.TopicValues, error)
 	DecodeMessageReceived(log *evm.Log) (*MessageReceivedDecoded, error)
 	MessageSentLogHash() []byte
-	EncodeMessageSentTopics(evt abi.Event, values []MessageSent) ([]*evm.TopicValues, error)
+	EncodeMessageSentTopics(evt abi.Event, values []MessageSentTopics) ([]*evm.TopicValues, error)
 	DecodeMessageSent(log *evm.Log) (*MessageSentDecoded, error)
 	OwnershipTransferRequestedLogHash() []byte
-	EncodeOwnershipTransferRequestedTopics(evt abi.Event, values []OwnershipTransferRequested) ([]*evm.TopicValues, error)
+	EncodeOwnershipTransferRequestedTopics(evt abi.Event, values []OwnershipTransferRequestedTopics) ([]*evm.TopicValues, error)
 	DecodeOwnershipTransferRequested(log *evm.Log) (*OwnershipTransferRequestedDecoded, error)
 	OwnershipTransferredLogHash() []byte
-	EncodeOwnershipTransferredTopics(evt abi.Event, values []OwnershipTransferred) ([]*evm.TopicValues, error)
+	EncodeOwnershipTransferredTopics(evt abi.Event, values []OwnershipTransferredTopics) ([]*evm.TopicValues, error)
 	DecodeOwnershipTransferred(log *evm.Log) (*OwnershipTransferredDecoded, error)
 	ReportReceivedLogHash() []byte
-	EncodeReportReceivedTopics(evt abi.Event, values []ReportReceived) ([]*evm.TopicValues, error)
+	EncodeReportReceivedTopics(evt abi.Event, values []ReportReceivedTopics) ([]*evm.TopicValues, error)
 	DecodeReportReceived(log *evm.Log) (*ReportReceivedDecoded, error)
 	SenderForSourceChainRemovedLogHash() []byte
-	EncodeSenderForSourceChainRemovedTopics(evt abi.Event, values []SenderForSourceChainRemoved) ([]*evm.TopicValues, error)
+	EncodeSenderForSourceChainRemovedTopics(evt abi.Event, values []SenderForSourceChainRemovedTopics) ([]*evm.TopicValues, error)
 	DecodeSenderForSourceChainRemoved(log *evm.Log) (*SenderForSourceChainRemovedDecoded, error)
 	SenderForSourceChainSetLogHash() []byte
-	EncodeSenderForSourceChainSetTopics(evt abi.Event, values []SenderForSourceChainSet) ([]*evm.TopicValues, error)
+	EncodeSenderForSourceChainSetTopics(evt abi.Event, values []SenderForSourceChainSetTopics) ([]*evm.TopicValues, error)
 	DecodeSenderForSourceChainSet(log *evm.Log) (*SenderForSourceChainSetDecoded, error)
+	WithdrawLogHash() []byte
+	EncodeWithdrawTopics(evt abi.Event, values []WithdrawTopics) ([]*evm.TopicValues, error)
+	DecodeWithdraw(log *evm.Log) (*WithdrawDecoded, error)
 	WorkflowOwnerRemovedLogHash() []byte
-	EncodeWorkflowOwnerRemovedTopics(evt abi.Event, values []WorkflowOwnerRemoved) ([]*evm.TopicValues, error)
+	EncodeWorkflowOwnerRemovedTopics(evt abi.Event, values []WorkflowOwnerRemovedTopics) ([]*evm.TopicValues, error)
 	DecodeWorkflowOwnerRemoved(log *evm.Log) (*WorkflowOwnerRemovedDecoded, error)
 	WorkflowOwnerSetLogHash() []byte
-	EncodeWorkflowOwnerSetTopics(evt abi.Event, values []WorkflowOwnerSet) ([]*evm.TopicValues, error)
+	EncodeWorkflowOwnerSetTopics(evt abi.Event, values []WorkflowOwnerSetTopics) ([]*evm.TopicValues, error)
 	DecodeWorkflowOwnerSet(log *evm.Log) (*WorkflowOwnerSetDecoded, error)
 }
 
@@ -653,6 +688,28 @@ func (c *Codec) EncodeTransferOwnershipMethodCall(in TransferOwnershipInput) ([]
 	return c.abi.Pack("transferOwnership", in.To)
 }
 
+func (c *Codec) EncodeWithdrawMethodCall(in WithdrawInput) ([]byte, error) {
+	return c.abi.Pack("withdraw", in.Asset, in.Amount, in.To)
+}
+
+func (c *Codec) DecodeWithdrawMethodOutput(data []byte) (*big.Int, error) {
+	vals, err := c.abi.Methods["withdraw"].Outputs.Unpack(data)
+	if err != nil {
+		return *new(*big.Int), err
+	}
+	jsonData, err := json.Marshal(vals[0])
+	if err != nil {
+		return *new(*big.Int), fmt.Errorf("failed to marshal ABI result: %w", err)
+	}
+
+	var result *big.Int
+	if err := json.Unmarshal(jsonData, &result); err != nil {
+		return *new(*big.Int), fmt.Errorf("failed to unmarshal to *big.Int: %w", err)
+	}
+
+	return result, nil
+}
+
 func (c *Codec) EncodeWithdrawFromPoolMethodCall(in WithdrawFromPoolInput) ([]byte, error) {
 	return c.abi.Pack("withdrawFromPool", in.Asset, in.Amount, in.To)
 }
@@ -718,16 +775,80 @@ func (c *Codec) EncodeRebalanceParamsStruct(in RebalanceParams) ([]byte, error) 
 	return args.Pack(in)
 }
 
+func (c *Codec) DepositLogHash() []byte {
+	return c.abi.Events["Deposit"].ID.Bytes()
+}
+
+func (c *Codec) EncodeDepositTopics(
+	evt abi.Event,
+	values []DepositTopics,
+) ([]*evm.TopicValues, error) {
+	var asetRule []interface{}
+	for _, v := range values {
+		if reflect.ValueOf(v.Aset).IsZero() {
+			asetRule = append(asetRule, common.Hash{})
+			continue
+		}
+		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Aset)
+		if err != nil {
+			return nil, err
+		}
+		asetRule = append(asetRule, fieldVal)
+	}
+
+	rawTopics, err := abi.MakeTopics(
+		asetRule,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
+}
+
+// DecodeDeposit decodes a log into a Deposit struct.
+func (c *Codec) DecodeDeposit(log *evm.Log) (*DepositDecoded, error) {
+	event := new(DepositDecoded)
+	if err := c.abi.UnpackIntoInterface(event, "Deposit", log.Data); err != nil {
+		return nil, err
+	}
+	var indexed abi.Arguments
+	for _, arg := range c.abi.Events["Deposit"].Inputs {
+		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
+			indexed = append(indexed, arg)
+		}
+	}
+	// Convert [][]byte → []common.Hash
+	topics := make([]common.Hash, len(log.Topics))
+	for i, t := range log.Topics {
+		topics[i] = common.BytesToHash(t)
+	}
+
+	if err := abi.ParseTopics(event, indexed, topics[1:]); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 func (c *Codec) KeystoneForwarderRemovedLogHash() []byte {
 	return c.abi.Events["KeystoneForwarderRemoved"].ID.Bytes()
 }
 
 func (c *Codec) EncodeKeystoneForwarderRemovedTopics(
 	evt abi.Event,
-	values []KeystoneForwarderRemoved,
+	values []KeystoneForwarderRemovedTopics,
 ) ([]*evm.TopicValues, error) {
 	var keystoneForwarderRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.KeystoneForwarder).IsZero() {
+			keystoneForwarderRule = append(keystoneForwarderRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.KeystoneForwarder)
 		if err != nil {
 			return nil, err
@@ -742,18 +863,7 @@ func (c *Codec) EncodeKeystoneForwarderRemovedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeKeystoneForwarderRemoved decodes a log into a KeystoneForwarderRemoved struct.
@@ -791,10 +901,14 @@ func (c *Codec) KeystoneForwarderSetLogHash() []byte {
 
 func (c *Codec) EncodeKeystoneForwarderSetTopics(
 	evt abi.Event,
-	values []KeystoneForwarderSet,
+	values []KeystoneForwarderSetTopics,
 ) ([]*evm.TopicValues, error) {
 	var keystoneForwarderRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.KeystoneForwarder).IsZero() {
+			keystoneForwarderRule = append(keystoneForwarderRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.KeystoneForwarder)
 		if err != nil {
 			return nil, err
@@ -809,18 +923,7 @@ func (c *Codec) EncodeKeystoneForwarderSetTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeKeystoneForwarderSet decodes a log into a KeystoneForwarderSet struct.
@@ -858,10 +961,14 @@ func (c *Codec) MessageReceivedLogHash() []byte {
 
 func (c *Codec) EncodeMessageReceivedTopics(
 	evt abi.Event,
-	values []MessageReceived,
+	values []MessageReceivedTopics,
 ) ([]*evm.TopicValues, error) {
 	var messageIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.MessageId).IsZero() {
+			messageIdRule = append(messageIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.MessageId)
 		if err != nil {
 			return nil, err
@@ -870,6 +977,10 @@ func (c *Codec) EncodeMessageReceivedTopics(
 	}
 	var sourceChainSelectorRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.SourceChainSelector).IsZero() {
+			sourceChainSelectorRule = append(sourceChainSelectorRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.SourceChainSelector)
 		if err != nil {
 			return nil, err
@@ -885,18 +996,7 @@ func (c *Codec) EncodeMessageReceivedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeMessageReceived decodes a log into a MessageReceived struct.
@@ -934,10 +1034,14 @@ func (c *Codec) MessageSentLogHash() []byte {
 
 func (c *Codec) EncodeMessageSentTopics(
 	evt abi.Event,
-	values []MessageSent,
+	values []MessageSentTopics,
 ) ([]*evm.TopicValues, error) {
 	var messageIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.MessageId).IsZero() {
+			messageIdRule = append(messageIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.MessageId)
 		if err != nil {
 			return nil, err
@@ -946,6 +1050,10 @@ func (c *Codec) EncodeMessageSentTopics(
 	}
 	var destinationChainSelectorRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DestinationChainSelector).IsZero() {
+			destinationChainSelectorRule = append(destinationChainSelectorRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.DestinationChainSelector)
 		if err != nil {
 			return nil, err
@@ -961,18 +1069,7 @@ func (c *Codec) EncodeMessageSentTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeMessageSent decodes a log into a MessageSent struct.
@@ -1010,10 +1107,14 @@ func (c *Codec) OwnershipTransferRequestedLogHash() []byte {
 
 func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 	evt abi.Event,
-	values []OwnershipTransferRequested,
+	values []OwnershipTransferRequestedTopics,
 ) ([]*evm.TopicValues, error) {
 	var fromRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.From).IsZero() {
+			fromRule = append(fromRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.From)
 		if err != nil {
 			return nil, err
@@ -1022,6 +1123,10 @@ func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
 		if err != nil {
 			return nil, err
@@ -1037,18 +1142,7 @@ func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeOwnershipTransferRequested decodes a log into a OwnershipTransferRequested struct.
@@ -1086,10 +1180,14 @@ func (c *Codec) OwnershipTransferredLogHash() []byte {
 
 func (c *Codec) EncodeOwnershipTransferredTopics(
 	evt abi.Event,
-	values []OwnershipTransferred,
+	values []OwnershipTransferredTopics,
 ) ([]*evm.TopicValues, error) {
 	var fromRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.From).IsZero() {
+			fromRule = append(fromRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.From)
 		if err != nil {
 			return nil, err
@@ -1098,6 +1196,10 @@ func (c *Codec) EncodeOwnershipTransferredTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
 		if err != nil {
 			return nil, err
@@ -1113,18 +1215,7 @@ func (c *Codec) EncodeOwnershipTransferredTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeOwnershipTransferred decodes a log into a OwnershipTransferred struct.
@@ -1162,10 +1253,14 @@ func (c *Codec) ReportReceivedLogHash() []byte {
 
 func (c *Codec) EncodeReportReceivedTopics(
 	evt abi.Event,
-	values []ReportReceived,
+	values []ReportReceivedTopics,
 ) ([]*evm.TopicValues, error) {
 	var workflowOwnerRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.WorkflowOwner).IsZero() {
+			workflowOwnerRule = append(workflowOwnerRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.WorkflowOwner)
 		if err != nil {
 			return nil, err
@@ -1174,6 +1269,10 @@ func (c *Codec) EncodeReportReceivedTopics(
 	}
 	var workflowNameRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.WorkflowName).IsZero() {
+			workflowNameRule = append(workflowNameRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.WorkflowName)
 		if err != nil {
 			return nil, err
@@ -1189,18 +1288,7 @@ func (c *Codec) EncodeReportReceivedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeReportReceived decodes a log into a ReportReceived struct.
@@ -1238,10 +1326,14 @@ func (c *Codec) SenderForSourceChainRemovedLogHash() []byte {
 
 func (c *Codec) EncodeSenderForSourceChainRemovedTopics(
 	evt abi.Event,
-	values []SenderForSourceChainRemoved,
+	values []SenderForSourceChainRemovedTopics,
 ) ([]*evm.TopicValues, error) {
 	var sourceChainSelectorRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.SourceChainSelector).IsZero() {
+			sourceChainSelectorRule = append(sourceChainSelectorRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.SourceChainSelector)
 		if err != nil {
 			return nil, err
@@ -1250,6 +1342,10 @@ func (c *Codec) EncodeSenderForSourceChainRemovedTopics(
 	}
 	var senderRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Sender).IsZero() {
+			senderRule = append(senderRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.Sender)
 		if err != nil {
 			return nil, err
@@ -1265,18 +1361,7 @@ func (c *Codec) EncodeSenderForSourceChainRemovedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeSenderForSourceChainRemoved decodes a log into a SenderForSourceChainRemoved struct.
@@ -1314,10 +1399,14 @@ func (c *Codec) SenderForSourceChainSetLogHash() []byte {
 
 func (c *Codec) EncodeSenderForSourceChainSetTopics(
 	evt abi.Event,
-	values []SenderForSourceChainSet,
+	values []SenderForSourceChainSetTopics,
 ) ([]*evm.TopicValues, error) {
 	var sourceChainSelectorRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.SourceChainSelector).IsZero() {
+			sourceChainSelectorRule = append(sourceChainSelectorRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.SourceChainSelector)
 		if err != nil {
 			return nil, err
@@ -1326,6 +1415,10 @@ func (c *Codec) EncodeSenderForSourceChainSetTopics(
 	}
 	var senderRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Sender).IsZero() {
+			senderRule = append(senderRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.Sender)
 		if err != nil {
 			return nil, err
@@ -1341,18 +1434,7 @@ func (c *Codec) EncodeSenderForSourceChainSetTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeSenderForSourceChainSet decodes a log into a SenderForSourceChainSet struct.
@@ -1384,16 +1466,93 @@ func (c *Codec) DecodeSenderForSourceChainSet(log *evm.Log) (*SenderForSourceCha
 	return event, nil
 }
 
+func (c *Codec) WithdrawLogHash() []byte {
+	return c.abi.Events["Withdraw"].ID.Bytes()
+}
+
+func (c *Codec) EncodeWithdrawTopics(
+	evt abi.Event,
+	values []WithdrawTopics,
+) ([]*evm.TopicValues, error) {
+	var assetRule []interface{}
+	for _, v := range values {
+		if reflect.ValueOf(v.Asset).IsZero() {
+			assetRule = append(assetRule, common.Hash{})
+			continue
+		}
+		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Asset)
+		if err != nil {
+			return nil, err
+		}
+		assetRule = append(assetRule, fieldVal)
+	}
+	var toRule []interface{}
+	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
+		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
+		if err != nil {
+			return nil, err
+		}
+		toRule = append(toRule, fieldVal)
+	}
+
+	rawTopics, err := abi.MakeTopics(
+		assetRule,
+		toRule,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
+}
+
+// DecodeWithdraw decodes a log into a Withdraw struct.
+func (c *Codec) DecodeWithdraw(log *evm.Log) (*WithdrawDecoded, error) {
+	event := new(WithdrawDecoded)
+	if err := c.abi.UnpackIntoInterface(event, "Withdraw", log.Data); err != nil {
+		return nil, err
+	}
+	var indexed abi.Arguments
+	for _, arg := range c.abi.Events["Withdraw"].Inputs {
+		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
+			indexed = append(indexed, arg)
+		}
+	}
+	// Convert [][]byte → []common.Hash
+	topics := make([]common.Hash, len(log.Topics))
+	for i, t := range log.Topics {
+		topics[i] = common.BytesToHash(t)
+	}
+
+	if err := abi.ParseTopics(event, indexed, topics[1:]); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
 func (c *Codec) WorkflowOwnerRemovedLogHash() []byte {
 	return c.abi.Events["WorkflowOwnerRemoved"].ID.Bytes()
 }
 
 func (c *Codec) EncodeWorkflowOwnerRemovedTopics(
 	evt abi.Event,
-	values []WorkflowOwnerRemoved,
+	values []WorkflowOwnerRemovedTopics,
 ) ([]*evm.TopicValues, error) {
 	var workflowOwnerRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.WorkflowOwner).IsZero() {
+			workflowOwnerRule = append(workflowOwnerRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.WorkflowOwner)
 		if err != nil {
 			return nil, err
@@ -1408,18 +1567,7 @@ func (c *Codec) EncodeWorkflowOwnerRemovedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeWorkflowOwnerRemoved decodes a log into a WorkflowOwnerRemoved struct.
@@ -1457,10 +1605,14 @@ func (c *Codec) WorkflowOwnerSetLogHash() []byte {
 
 func (c *Codec) EncodeWorkflowOwnerSetTopics(
 	evt abi.Event,
-	values []WorkflowOwnerSet,
+	values []WorkflowOwnerSetTopics,
 ) ([]*evm.TopicValues, error) {
 	var workflowOwnerRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.WorkflowOwner).IsZero() {
+			workflowOwnerRule = append(workflowOwnerRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.WorkflowOwner)
 		if err != nil {
 			return nil, err
@@ -1475,18 +1627,7 @@ func (c *Codec) EncodeWorkflowOwnerSetTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeWorkflowOwnerSet decodes a log into a WorkflowOwnerSet struct.
@@ -2071,6 +2212,32 @@ func (e *NoSenderOnSourceChain) Error() string {
 	return fmt.Sprintf("NoSenderOnSourceChain error: sourceChainSelector=%v;", e.SourceChainSelector)
 }
 
+// DecodeSafeERC20FailedOperationError decodes a SafeERC20FailedOperation error from revert data.
+func (c *ProtocolSmartWallet) DecodeSafeERC20FailedOperationError(data []byte) (*SafeERC20FailedOperation, error) {
+	args := c.ABI.Errors["SafeERC20FailedOperation"].Inputs
+	values, err := args.Unpack(data[4:])
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack error: %w", err)
+	}
+	if len(values) != 1 {
+		return nil, fmt.Errorf("expected 1 values, got %d", len(values))
+	}
+
+	token, ok0 := values[0].(common.Address)
+	if !ok0 {
+		return nil, fmt.Errorf("unexpected type for token in SafeERC20FailedOperation error")
+	}
+
+	return &SafeERC20FailedOperation{
+		Token: token,
+	}, nil
+}
+
+// Error implements the error interface for SafeERC20FailedOperation.
+func (e *SafeERC20FailedOperation) Error() string {
+	return fmt.Sprintf("SafeERC20FailedOperation error: token=%v;", e.Token)
+}
+
 // DecodeUnauthorizedWorkflowOwnerError decodes a UnauthorizedWorkflowOwner error from revert data.
 func (c *ProtocolSmartWallet) DecodeUnauthorizedWorkflowOwnerError(data []byte) (*UnauthorizedWorkflowOwner, error) {
 	args := c.ABI.Errors["UnauthorizedWorkflowOwner"].Inputs
@@ -2171,6 +2338,8 @@ func (c *ProtocolSmartWallet) UnpackError(data []byte) (any, error) {
 		return c.DecodeMustBeKeystoneForwarderError(data)
 	case common.Bytes2Hex(c.ABI.Errors["NoSenderOnSourceChain"].ID.Bytes()[:4]):
 		return c.DecodeNoSenderOnSourceChainError(data)
+	case common.Bytes2Hex(c.ABI.Errors["SafeERC20FailedOperation"].ID.Bytes()[:4]):
+		return c.DecodeSafeERC20FailedOperationError(data)
 	case common.Bytes2Hex(c.ABI.Errors["UnauthorizedWorkflowOwner"].ID.Bytes()[:4]):
 		return c.DecodeUnauthorizedWorkflowOwnerError(data)
 	case common.Bytes2Hex(c.ABI.Errors["WrongSenderForSourceChain"].ID.Bytes()[:4]):
@@ -2180,6 +2349,64 @@ func (c *ProtocolSmartWallet) UnpackError(data []byte) (any, error) {
 	default:
 		return nil, errors.New("unknown error selector")
 	}
+}
+
+// DepositTrigger wraps the raw log trigger and provides decoded DepositDecoded data
+type DepositTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]                      // Embed the raw trigger
+	contract                        *ProtocolSmartWallet // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into Deposit data
+func (t *DepositTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[DepositDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeDeposit(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Deposit log: %w", err)
+	}
+
+	return &bindings.DecodedLog[DepositDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *ProtocolSmartWallet) LogTriggerDepositLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []DepositTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[DepositDecoded]], error) {
+	event := c.ABI.Events["Deposit"]
+	topics, err := c.Codec.EncodeDepositTopics(event, filters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode topics for Deposit: %w", err)
+	}
+
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+		Addresses:  [][]byte{c.Address.Bytes()},
+		Topics:     topics,
+		Confidence: confidence,
+	})
+
+	return &DepositTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
+}
+
+func (c *ProtocolSmartWallet) FilterLogsDeposit(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
+	if options == nil {
+		options = &bindings.FilterOptions{
+			ToBlock: options.ToBlock,
+		}
+	}
+	return c.client.FilterLogs(runtime, &evm.FilterLogsRequest{
+		FilterQuery: &evm.FilterQuery{
+			Addresses: [][]byte{c.Address.Bytes()},
+			Topics: []*evm.Topics{
+				{Topic: [][]byte{c.Codec.DepositLogHash()}},
+			},
+			BlockHash: options.BlockHash,
+			FromBlock: pb.NewBigIntFromInt(options.FromBlock),
+			ToBlock:   pb.NewBigIntFromInt(options.ToBlock),
+		},
+	})
 }
 
 // KeystoneForwarderRemovedTrigger wraps the raw log trigger and provides decoded KeystoneForwarderRemovedDecoded data
@@ -2202,7 +2429,7 @@ func (t *KeystoneForwarderRemovedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLo
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerKeystoneForwarderRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []KeystoneForwarderRemoved) (cre.Trigger[*evm.Log, *bindings.DecodedLog[KeystoneForwarderRemovedDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerKeystoneForwarderRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []KeystoneForwarderRemovedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[KeystoneForwarderRemovedDecoded]], error) {
 	event := c.ABI.Events["KeystoneForwarderRemoved"]
 	topics, err := c.Codec.EncodeKeystoneForwarderRemovedTopics(event, filters)
 	if err != nil {
@@ -2260,7 +2487,7 @@ func (t *KeystoneForwarderSetTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Ke
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerKeystoneForwarderSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []KeystoneForwarderSet) (cre.Trigger[*evm.Log, *bindings.DecodedLog[KeystoneForwarderSetDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerKeystoneForwarderSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []KeystoneForwarderSetTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[KeystoneForwarderSetDecoded]], error) {
 	event := c.ABI.Events["KeystoneForwarderSet"]
 	topics, err := c.Codec.EncodeKeystoneForwarderSetTopics(event, filters)
 	if err != nil {
@@ -2318,7 +2545,7 @@ func (t *MessageReceivedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Message
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerMessageReceivedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []MessageReceived) (cre.Trigger[*evm.Log, *bindings.DecodedLog[MessageReceivedDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerMessageReceivedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []MessageReceivedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[MessageReceivedDecoded]], error) {
 	event := c.ABI.Events["MessageReceived"]
 	topics, err := c.Codec.EncodeMessageReceivedTopics(event, filters)
 	if err != nil {
@@ -2376,7 +2603,7 @@ func (t *MessageSentTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[MessageSent
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerMessageSentLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []MessageSent) (cre.Trigger[*evm.Log, *bindings.DecodedLog[MessageSentDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerMessageSentLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []MessageSentTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[MessageSentDecoded]], error) {
 	event := c.ABI.Events["MessageSent"]
 	topics, err := c.Codec.EncodeMessageSentTopics(event, filters)
 	if err != nil {
@@ -2434,7 +2661,7 @@ func (t *OwnershipTransferRequestedTrigger) Adapt(l *evm.Log) (*bindings.Decoded
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequested) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequestedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferRequested"]
 	topics, err := c.Codec.EncodeOwnershipTransferRequestedTopics(event, filters)
 	if err != nil {
@@ -2492,7 +2719,7 @@ func (t *OwnershipTransferredTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Ow
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferred) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferredTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferred"]
 	topics, err := c.Codec.EncodeOwnershipTransferredTopics(event, filters)
 	if err != nil {
@@ -2550,7 +2777,7 @@ func (t *ReportReceivedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[ReportRe
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerReportReceivedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []ReportReceived) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ReportReceivedDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerReportReceivedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []ReportReceivedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ReportReceivedDecoded]], error) {
 	event := c.ABI.Events["ReportReceived"]
 	topics, err := c.Codec.EncodeReportReceivedTopics(event, filters)
 	if err != nil {
@@ -2608,7 +2835,7 @@ func (t *SenderForSourceChainRemovedTrigger) Adapt(l *evm.Log) (*bindings.Decode
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerSenderForSourceChainRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []SenderForSourceChainRemoved) (cre.Trigger[*evm.Log, *bindings.DecodedLog[SenderForSourceChainRemovedDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerSenderForSourceChainRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []SenderForSourceChainRemovedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[SenderForSourceChainRemovedDecoded]], error) {
 	event := c.ABI.Events["SenderForSourceChainRemoved"]
 	topics, err := c.Codec.EncodeSenderForSourceChainRemovedTopics(event, filters)
 	if err != nil {
@@ -2666,7 +2893,7 @@ func (t *SenderForSourceChainSetTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerSenderForSourceChainSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []SenderForSourceChainSet) (cre.Trigger[*evm.Log, *bindings.DecodedLog[SenderForSourceChainSetDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerSenderForSourceChainSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []SenderForSourceChainSetTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[SenderForSourceChainSetDecoded]], error) {
 	event := c.ABI.Events["SenderForSourceChainSet"]
 	topics, err := c.Codec.EncodeSenderForSourceChainSetTopics(event, filters)
 	if err != nil {
@@ -2704,6 +2931,64 @@ func (c *ProtocolSmartWallet) FilterLogsSenderForSourceChainSet(runtime cre.Runt
 	})
 }
 
+// WithdrawTrigger wraps the raw log trigger and provides decoded WithdrawDecoded data
+type WithdrawTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]                      // Embed the raw trigger
+	contract                        *ProtocolSmartWallet // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into Withdraw data
+func (t *WithdrawTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[WithdrawDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeWithdraw(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode Withdraw log: %w", err)
+	}
+
+	return &bindings.DecodedLog[WithdrawDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *ProtocolSmartWallet) LogTriggerWithdrawLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []WithdrawTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[WithdrawDecoded]], error) {
+	event := c.ABI.Events["Withdraw"]
+	topics, err := c.Codec.EncodeWithdrawTopics(event, filters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode topics for Withdraw: %w", err)
+	}
+
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+		Addresses:  [][]byte{c.Address.Bytes()},
+		Topics:     topics,
+		Confidence: confidence,
+	})
+
+	return &WithdrawTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
+}
+
+func (c *ProtocolSmartWallet) FilterLogsWithdraw(runtime cre.Runtime, options *bindings.FilterOptions) cre.Promise[*evm.FilterLogsReply] {
+	if options == nil {
+		options = &bindings.FilterOptions{
+			ToBlock: options.ToBlock,
+		}
+	}
+	return c.client.FilterLogs(runtime, &evm.FilterLogsRequest{
+		FilterQuery: &evm.FilterQuery{
+			Addresses: [][]byte{c.Address.Bytes()},
+			Topics: []*evm.Topics{
+				{Topic: [][]byte{c.Codec.WithdrawLogHash()}},
+			},
+			BlockHash: options.BlockHash,
+			FromBlock: pb.NewBigIntFromInt(options.FromBlock),
+			ToBlock:   pb.NewBigIntFromInt(options.ToBlock),
+		},
+	})
+}
+
 // WorkflowOwnerRemovedTrigger wraps the raw log trigger and provides decoded WorkflowOwnerRemovedDecoded data
 type WorkflowOwnerRemovedTrigger struct {
 	cre.Trigger[*evm.Log, *evm.Log]                      // Embed the raw trigger
@@ -2724,7 +3009,7 @@ func (t *WorkflowOwnerRemovedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Wo
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerWorkflowOwnerRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []WorkflowOwnerRemoved) (cre.Trigger[*evm.Log, *bindings.DecodedLog[WorkflowOwnerRemovedDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerWorkflowOwnerRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []WorkflowOwnerRemovedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[WorkflowOwnerRemovedDecoded]], error) {
 	event := c.ABI.Events["WorkflowOwnerRemoved"]
 	topics, err := c.Codec.EncodeWorkflowOwnerRemovedTopics(event, filters)
 	if err != nil {
@@ -2782,7 +3067,7 @@ func (t *WorkflowOwnerSetTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Workfl
 	}, nil
 }
 
-func (c *ProtocolSmartWallet) LogTriggerWorkflowOwnerSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []WorkflowOwnerSet) (cre.Trigger[*evm.Log, *bindings.DecodedLog[WorkflowOwnerSetDecoded]], error) {
+func (c *ProtocolSmartWallet) LogTriggerWorkflowOwnerSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []WorkflowOwnerSetTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[WorkflowOwnerSetDecoded]], error) {
 	event := c.ABI.Events["WorkflowOwnerSet"]
 	topics, err := c.Codec.EncodeWorkflowOwnerSetTopics(event, filters)
 	if err != nil {

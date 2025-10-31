@@ -7,9 +7,9 @@ import {ITypeAndVersion} from "../shared/interfaces/ITypeAndVersion.sol";
 import {IDataFeedsCache} from "./interfaces/IDataFeedsCache.sol";
 import {ITokenRecover} from "./interfaces/ITokenRecover.sol";
 
-import {IERC165} from "../vendor/openzeppelin-solidity/v5.0.2/contracts/interfaces/IERC165.sol";
-import {IERC20} from "../vendor/openzeppelin-solidity/v5.0.2/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "../vendor/openzeppelin-solidity/v5.0.2/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC165} from "@openzeppelin/contracts@5.0.2/interfaces/IERC165.sol";
+import {IERC20} from "@openzeppelin/contracts@5.0.2/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts@5.0.2/token/ERC20/utils/SafeERC20.sol";
 
 contract DataFeedsCache is IDataFeedsCache, IReceiver, ITokenRecover, ITypeAndVersion, OwnerIsCreator {
   using SafeERC20 for IERC20;
@@ -28,7 +28,8 @@ contract DataFeedsCache is IDataFeedsCache, IReceiver, ITokenRecover, ITypeAndVe
   }
 
   struct FeedConfig {
-    uint8[] bundleDecimals; // Only appliciable to Bundle reports - Decimal reports have decimals encoded into the DataId.
+    uint8[] bundleDecimals; // Only appliciable to Bundle reports - Decimal reports have decimals encoded into the
+      // DataId.
     string description; // Description of the feed (e.g. "LINK / USD")
     WorkflowMetadata[] workflowMetadata; // Metadata for the feed
   }
@@ -58,7 +59,8 @@ contract DataFeedsCache is IDataFeedsCache, IReceiver, ITokenRecover, ITypeAndVe
   /// The message sender determines which feed is being requested, as each proxy has a single associated feed
   mapping(address aggProxy => bytes16 dataId) private s_aggregatorProxyToDataId;
 
-  /// The latest decimal reports for each decimal feed. This will always equal s_decimalReports[s_dataIdToRoundId[dataId]][dataId]
+  /// The latest decimal reports for each decimal feed. This will always equal
+  /// s_decimalReports[s_dataIdToRoundId[dataId]][dataId]
   mapping(bytes16 dataId => StoredDecimalReport) private s_latestDecimalReports;
 
   /// Decimal reports for each feed, per round

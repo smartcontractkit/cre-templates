@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -46,6 +47,7 @@ var (
 	_ = cre.ResponseBufferTooSmall
 	_ = rpc.API{}
 	_ = json.Unmarshal
+	_ = reflect.Bool
 )
 
 var MockPoolMetaData = &bind.MetaData{
@@ -128,7 +130,8 @@ type SafeERC20FailedOperation struct {
 }
 
 // Events
-// The <Event> struct should be used as a filter (for log triggers).
+// The <Event>Topics struct should be used as a filter (for log triggers).
+// Note: It is only possible to filter on indexed fields.
 // Indexed (string and bytes) fields will be of type common.Hash.
 // They need to he (crypto.Keccak256) hashed and passed in.
 // Indexed (tuple/slice/array) fields can be passed in as is, the Encode<Event>Topics function will handle the hashing.
@@ -136,9 +139,8 @@ type SafeERC20FailedOperation struct {
 // The <Event>Decoded struct will be the result of calling decode (Adapt) on the log trigger result.
 // Indexed dynamic type fields will be of type common.Hash.
 
-type CurrentLiquidityRateUpdated struct {
-	Asset                common.Address
-	CurrentLiquidityRate *big.Int
+type CurrentLiquidityRateUpdatedTopics struct {
+	Asset common.Address
 }
 
 type CurrentLiquidityRateUpdatedDecoded struct {
@@ -146,7 +148,7 @@ type CurrentLiquidityRateUpdatedDecoded struct {
 	CurrentLiquidityRate *big.Int
 }
 
-type OwnershipTransferRequested struct {
+type OwnershipTransferRequestedTopics struct {
 	From common.Address
 	To   common.Address
 }
@@ -156,7 +158,7 @@ type OwnershipTransferRequestedDecoded struct {
 	To   common.Address
 }
 
-type OwnershipTransferred struct {
+type OwnershipTransferredTopics struct {
 	From common.Address
 	To   common.Address
 }
@@ -166,11 +168,9 @@ type OwnershipTransferredDecoded struct {
 	To   common.Address
 }
 
-type Supply struct {
+type SupplyTopics struct {
 	Reserve      common.Address
-	User         common.Address
 	OnBehalfOf   common.Address
-	Amount       *big.Int
 	ReferralCode uint16
 }
 
@@ -182,11 +182,10 @@ type SupplyDecoded struct {
 	ReferralCode uint16
 }
 
-type Withdraw struct {
+type WithdrawTopics struct {
 	Reserve common.Address
 	User    common.Address
 	To      common.Address
-	Amount  *big.Int
 }
 
 type WithdrawDecoded struct {
@@ -223,19 +222,19 @@ type MockPoolCodec interface {
 	EncodeDataTypesReserveConfigurationMapStruct(in DataTypesReserveConfigurationMap) ([]byte, error)
 	EncodeDataTypesReserveDataLegacyStruct(in DataTypesReserveDataLegacy) ([]byte, error)
 	CurrentLiquidityRateUpdatedLogHash() []byte
-	EncodeCurrentLiquidityRateUpdatedTopics(evt abi.Event, values []CurrentLiquidityRateUpdated) ([]*evm.TopicValues, error)
+	EncodeCurrentLiquidityRateUpdatedTopics(evt abi.Event, values []CurrentLiquidityRateUpdatedTopics) ([]*evm.TopicValues, error)
 	DecodeCurrentLiquidityRateUpdated(log *evm.Log) (*CurrentLiquidityRateUpdatedDecoded, error)
 	OwnershipTransferRequestedLogHash() []byte
-	EncodeOwnershipTransferRequestedTopics(evt abi.Event, values []OwnershipTransferRequested) ([]*evm.TopicValues, error)
+	EncodeOwnershipTransferRequestedTopics(evt abi.Event, values []OwnershipTransferRequestedTopics) ([]*evm.TopicValues, error)
 	DecodeOwnershipTransferRequested(log *evm.Log) (*OwnershipTransferRequestedDecoded, error)
 	OwnershipTransferredLogHash() []byte
-	EncodeOwnershipTransferredTopics(evt abi.Event, values []OwnershipTransferred) ([]*evm.TopicValues, error)
+	EncodeOwnershipTransferredTopics(evt abi.Event, values []OwnershipTransferredTopics) ([]*evm.TopicValues, error)
 	DecodeOwnershipTransferred(log *evm.Log) (*OwnershipTransferredDecoded, error)
 	SupplyLogHash() []byte
-	EncodeSupplyTopics(evt abi.Event, values []Supply) ([]*evm.TopicValues, error)
+	EncodeSupplyTopics(evt abi.Event, values []SupplyTopics) ([]*evm.TopicValues, error)
 	DecodeSupply(log *evm.Log) (*SupplyDecoded, error)
 	WithdrawLogHash() []byte
-	EncodeWithdrawTopics(evt abi.Event, values []Withdraw) ([]*evm.TopicValues, error)
+	EncodeWithdrawTopics(evt abi.Event, values []WithdrawTopics) ([]*evm.TopicValues, error)
 	DecodeWithdraw(log *evm.Log) (*WithdrawDecoded, error)
 }
 
@@ -452,10 +451,14 @@ func (c *Codec) CurrentLiquidityRateUpdatedLogHash() []byte {
 
 func (c *Codec) EncodeCurrentLiquidityRateUpdatedTopics(
 	evt abi.Event,
-	values []CurrentLiquidityRateUpdated,
+	values []CurrentLiquidityRateUpdatedTopics,
 ) ([]*evm.TopicValues, error) {
 	var assetRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Asset).IsZero() {
+			assetRule = append(assetRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Asset)
 		if err != nil {
 			return nil, err
@@ -470,18 +473,7 @@ func (c *Codec) EncodeCurrentLiquidityRateUpdatedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeCurrentLiquidityRateUpdated decodes a log into a CurrentLiquidityRateUpdated struct.
@@ -519,10 +511,14 @@ func (c *Codec) OwnershipTransferRequestedLogHash() []byte {
 
 func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 	evt abi.Event,
-	values []OwnershipTransferRequested,
+	values []OwnershipTransferRequestedTopics,
 ) ([]*evm.TopicValues, error) {
 	var fromRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.From).IsZero() {
+			fromRule = append(fromRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.From)
 		if err != nil {
 			return nil, err
@@ -531,6 +527,10 @@ func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
 		if err != nil {
 			return nil, err
@@ -546,18 +546,7 @@ func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeOwnershipTransferRequested decodes a log into a OwnershipTransferRequested struct.
@@ -595,10 +584,14 @@ func (c *Codec) OwnershipTransferredLogHash() []byte {
 
 func (c *Codec) EncodeOwnershipTransferredTopics(
 	evt abi.Event,
-	values []OwnershipTransferred,
+	values []OwnershipTransferredTopics,
 ) ([]*evm.TopicValues, error) {
 	var fromRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.From).IsZero() {
+			fromRule = append(fromRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.From)
 		if err != nil {
 			return nil, err
@@ -607,6 +600,10 @@ func (c *Codec) EncodeOwnershipTransferredTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
 		if err != nil {
 			return nil, err
@@ -622,18 +619,7 @@ func (c *Codec) EncodeOwnershipTransferredTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeOwnershipTransferred decodes a log into a OwnershipTransferred struct.
@@ -671,10 +657,14 @@ func (c *Codec) SupplyLogHash() []byte {
 
 func (c *Codec) EncodeSupplyTopics(
 	evt abi.Event,
-	values []Supply,
+	values []SupplyTopics,
 ) ([]*evm.TopicValues, error) {
 	var reserveRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Reserve).IsZero() {
+			reserveRule = append(reserveRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Reserve)
 		if err != nil {
 			return nil, err
@@ -683,6 +673,10 @@ func (c *Codec) EncodeSupplyTopics(
 	}
 	var onBehalfOfRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.OnBehalfOf).IsZero() {
+			onBehalfOfRule = append(onBehalfOfRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[2], v.OnBehalfOf)
 		if err != nil {
 			return nil, err
@@ -691,6 +685,10 @@ func (c *Codec) EncodeSupplyTopics(
 	}
 	var referralCodeRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.ReferralCode).IsZero() {
+			referralCodeRule = append(referralCodeRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[4], v.ReferralCode)
 		if err != nil {
 			return nil, err
@@ -707,18 +705,7 @@ func (c *Codec) EncodeSupplyTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeSupply decodes a log into a Supply struct.
@@ -756,10 +743,14 @@ func (c *Codec) WithdrawLogHash() []byte {
 
 func (c *Codec) EncodeWithdrawTopics(
 	evt abi.Event,
-	values []Withdraw,
+	values []WithdrawTopics,
 ) ([]*evm.TopicValues, error) {
 	var reserveRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Reserve).IsZero() {
+			reserveRule = append(reserveRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Reserve)
 		if err != nil {
 			return nil, err
@@ -768,6 +759,10 @@ func (c *Codec) EncodeWithdrawTopics(
 	}
 	var userRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.User).IsZero() {
+			userRule = append(userRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.User)
 		if err != nil {
 			return nil, err
@@ -776,6 +771,10 @@ func (c *Codec) EncodeWithdrawTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[2], v.To)
 		if err != nil {
 			return nil, err
@@ -792,18 +791,7 @@ func (c *Codec) EncodeWithdrawTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeWithdraw decodes a log into a Withdraw struct.
@@ -1166,7 +1154,7 @@ func (t *CurrentLiquidityRateUpdatedTrigger) Adapt(l *evm.Log) (*bindings.Decode
 	}, nil
 }
 
-func (c *MockPool) LogTriggerCurrentLiquidityRateUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []CurrentLiquidityRateUpdated) (cre.Trigger[*evm.Log, *bindings.DecodedLog[CurrentLiquidityRateUpdatedDecoded]], error) {
+func (c *MockPool) LogTriggerCurrentLiquidityRateUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []CurrentLiquidityRateUpdatedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[CurrentLiquidityRateUpdatedDecoded]], error) {
 	event := c.ABI.Events["CurrentLiquidityRateUpdated"]
 	topics, err := c.Codec.EncodeCurrentLiquidityRateUpdatedTopics(event, filters)
 	if err != nil {
@@ -1224,7 +1212,7 @@ func (t *OwnershipTransferRequestedTrigger) Adapt(l *evm.Log) (*bindings.Decoded
 	}, nil
 }
 
-func (c *MockPool) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequested) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
+func (c *MockPool) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequestedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferRequested"]
 	topics, err := c.Codec.EncodeOwnershipTransferRequestedTopics(event, filters)
 	if err != nil {
@@ -1282,7 +1270,7 @@ func (t *OwnershipTransferredTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Ow
 	}, nil
 }
 
-func (c *MockPool) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferred) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
+func (c *MockPool) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferredTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferred"]
 	topics, err := c.Codec.EncodeOwnershipTransferredTopics(event, filters)
 	if err != nil {
@@ -1340,7 +1328,7 @@ func (t *SupplyTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[SupplyDecoded], 
 	}, nil
 }
 
-func (c *MockPool) LogTriggerSupplyLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []Supply) (cre.Trigger[*evm.Log, *bindings.DecodedLog[SupplyDecoded]], error) {
+func (c *MockPool) LogTriggerSupplyLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []SupplyTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[SupplyDecoded]], error) {
 	event := c.ABI.Events["Supply"]
 	topics, err := c.Codec.EncodeSupplyTopics(event, filters)
 	if err != nil {
@@ -1398,7 +1386,7 @@ func (t *WithdrawTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[WithdrawDecode
 	}, nil
 }
 
-func (c *MockPool) LogTriggerWithdrawLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []Withdraw) (cre.Trigger[*evm.Log, *bindings.DecodedLog[WithdrawDecoded]], error) {
+func (c *MockPool) LogTriggerWithdrawLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []WithdrawTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[WithdrawDecoded]], error) {
 	event := c.ABI.Events["Withdraw"]
 	topics, err := c.Codec.EncodeWithdrawTopics(event, filters)
 	if err != nil {

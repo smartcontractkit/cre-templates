@@ -15,7 +15,7 @@ import {CCIPReceiver} from "@chainlink/contracts-ccip/applications/CCIPReceiver.
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/interfaces/IRouterClient.sol";
 import {IERC20} from
-    "@chainlink/contracts/src/v0.8/vendor/forge-std/src/interfaces/IERC20.sol";
+    "@openzeppelin/contracts@5.0.2/token/ERC20/IERC20.sol";
 import {SafeERC20} from
     "@openzeppelin/contracts@5.0.2/token/ERC20/utils/SafeERC20.sol";
 import {IERC165} from "@openzeppelin/contracts@5.0.2/utils/introspection/IERC165.sol";
@@ -64,6 +64,9 @@ contract ProtocolSmartWallet is CCIPReceiver, IReceiver, OwnerIsCreator {
     // Include RebalanceParams so `cre generate-bindings evm` picks up this 
     // type in abigen.
     event ReportReceived(address indexed workflowOwner, bytes10 indexed workflowName, RebalanceParams params);
+
+    event Deposit(address indexed aset, uint256 amount);
+    event Withdraw(address indexed asset, address indexed to, uint256 amount);
 
     error MustBeKeystoneForwarder();
     error InvalidKeystoneForwarder();
@@ -167,10 +170,23 @@ contract ProtocolSmartWallet is CCIPReceiver, IReceiver, OwnerIsCreator {
     function _depositToPool(address asset, uint256 amount) internal {
         IERC20(asset).approve(address(pool), amount);
         pool.supply(asset, amount, address(this), 0);
+        emit Deposit(asset, amount);
     }
 
     function withdrawFromPool(address asset, uint256 amount, address to) onlyOwner external {
         pool.withdraw(asset, amount, to);
+    }
+
+    function withdraw(address asset, uint256 amount, address to) onlyOwner external returns (uint256) {
+        uint256 bal = IERC20(asset).balanceOf(address(this));
+        if (bal == 0 || amount > bal) {
+            revert InsufficientTokenAmount();
+        }
+
+        IERC20(asset).safeTransfer(to, amount);
+
+        emit Withdraw(asset, to, amount);
+        return amount;
     }
 
     function getPoolAddress() external view returns (address) {

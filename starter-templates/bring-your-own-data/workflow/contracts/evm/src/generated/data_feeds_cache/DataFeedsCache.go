@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"reflect"
 	"strings"
 
 	ethereum "github.com/ethereum/go-ethereum"
@@ -46,10 +47,11 @@ var (
 	_ = cre.ResponseBufferTooSmall
 	_ = rpc.API{}
 	_ = json.Unmarshal
+	_ = reflect.Bool
 )
 
 var DataFeedsCacheMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"AddressEmptyCode\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"AddressInsufficientBalance\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ArrayLengthMismatch\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"EmptyConfig\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"}],\"name\":\"ErrorSendingNative\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"FailedInnerCall\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"FeedNotConfigured\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"requiredBalance\",\"type\":\"uint256\"}],\"name\":\"InsufficientBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"InvalidAddress\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidDataId\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes10\",\"name\":\"workflowName\",\"type\":\"bytes10\"}],\"name\":\"InvalidWorkflowName\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"proxy\",\"type\":\"address\"}],\"name\":\"NoMappingForSender\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"caller\",\"type\":\"address\"}],\"name\":\"UnauthorizedCaller\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"int256\",\"name\":\"current\",\"type\":\"int256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"}],\"name\":\"AnswerUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"indexed\":false,\"internalType\":\"uint8[]\",\"name\":\"decimals\",\"type\":\"uint8[]\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"allowedSender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"allowedWorkflowOwner\",\"type\":\"address\"},{\"internalType\":\"bytes10\",\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\"}],\"indexed\":false,\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"name\":\"workflowMetadata\",\"type\":\"tuple[]\"}],\"name\":\"BundleFeedConfigSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"bundle\",\"type\":\"bytes\"}],\"name\":\"BundleReportUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"description\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"allowedSender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"allowedWorkflowOwner\",\"type\":\"address\"},{\"internalType\":\"bytes10\",\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\"}],\"indexed\":false,\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"name\":\"workflowMetadata\",\"type\":\"tuple[]\"}],\"name\":\"DecimalFeedConfigSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint224\",\"name\":\"answer\",\"type\":\"uint224\"}],\"name\":\"DecimalReportUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"feedAdmin\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bool\",\"name\":\"isAdmin\",\"type\":\"bool\"}],\"name\":\"FeedAdminSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"FeedConfigRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"workflowOwner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes10\",\"name\":\"workflowName\",\"type\":\"bytes10\"}],\"name\":\"InvalidUpdatePermission\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"roundId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"startedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"}],\"name\":\"NewRound\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"OwnershipTransferRequested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"proxy\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"ProxyDataIdRemoved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"proxy\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"ProxyDataIdUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reportTimestamp\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"latestTimestamp\",\"type\":\"uint256\"}],\"name\":\"StaleBundleReport\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reportTimestamp\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"latestTimestamp\",\"type\":\"uint256\"}],\"name\":\"StaleDecimalReport\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TokenRecovered\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"acceptOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"bundleDecimals\",\"outputs\":[{\"internalType\":\"uint8[]\",\"name\":\"bundleFeedDecimals\",\"type\":\"uint8[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"allowedSender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"allowedWorkflowOwner\",\"type\":\"address\"},{\"internalType\":\"bytes10\",\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\"}],\"internalType\":\"structDataFeedsCache.WorkflowMetadata\",\"name\":\"workflowMetadata\",\"type\":\"tuple\"}],\"name\":\"checkFeedPermission\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"hasPermission\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"feedDecimals\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"description\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"feedDescription\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundId\",\"type\":\"uint256\"}],\"name\":\"getAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getBundleDecimals\",\"outputs\":[{\"internalType\":\"uint8[]\",\"name\":\"bundleFeedDecimals\",\"type\":\"uint8[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"proxy\",\"type\":\"address\"}],\"name\":\"getDataIdForProxy\",\"outputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getDecimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"feedDecimals\",\"type\":\"uint8\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getDescription\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"feedDescription\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"},{\"internalType\":\"uint256\",\"name\":\"startIndex\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxCount\",\"type\":\"uint256\"}],\"name\":\"getFeedMetadata\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"allowedSender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"allowedWorkflowOwner\",\"type\":\"address\"},{\"internalType\":\"bytes10\",\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\"}],\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"name\":\"workflowMetadata\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getLatestAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getLatestBundle\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"bundle\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getLatestBundleTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getLatestRoundData\",\"outputs\":[{\"internalType\":\"uint80\",\"name\":\"id\",\"type\":\"uint80\"},{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint80\",\"name\":\"answeredInRound\",\"type\":\"uint80\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16\",\"name\":\"dataId\",\"type\":\"bytes16\"}],\"name\":\"getLatestTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint80\",\"name\":\"roundId\",\"type\":\"uint80\"}],\"name\":\"getRoundData\",\"outputs\":[{\"internalType\":\"uint80\",\"name\":\"id\",\"type\":\"uint80\"},{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint80\",\"name\":\"answeredInRound\",\"type\":\"uint80\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"roundId\",\"type\":\"uint256\"}],\"name\":\"getTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"feedAdmin\",\"type\":\"address\"}],\"name\":\"isFeedAdmin\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestBundle\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"bundle\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestBundleTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestRound\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"round\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestRoundData\",\"outputs\":[{\"internalType\":\"uint80\",\"name\":\"id\",\"type\":\"uint80\"},{\"internalType\":\"int256\",\"name\":\"answer\",\"type\":\"int256\"},{\"internalType\":\"uint256\",\"name\":\"startedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"updatedAt\",\"type\":\"uint256\"},{\"internalType\":\"uint80\",\"name\":\"answeredInRound\",\"type\":\"uint80\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestTimestamp\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"metadata\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"report\",\"type\":\"bytes\"}],\"name\":\"onReport\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contractIERC20\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"recoverTokens\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"proxies\",\"type\":\"address[]\"}],\"name\":\"removeDataIdMappingsForProxies\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16[]\",\"name\":\"dataIds\",\"type\":\"bytes16[]\"}],\"name\":\"removeFeedConfigs\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16[]\",\"name\":\"dataIds\",\"type\":\"bytes16[]\"},{\"internalType\":\"string[]\",\"name\":\"descriptions\",\"type\":\"string[]\"},{\"internalType\":\"uint8[][]\",\"name\":\"decimalsMatrix\",\"type\":\"uint8[][]\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"allowedSender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"allowedWorkflowOwner\",\"type\":\"address\"},{\"internalType\":\"bytes10\",\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\"}],\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"name\":\"workflowMetadata\",\"type\":\"tuple[]\"}],\"name\":\"setBundleFeedConfigs\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes16[]\",\"name\":\"dataIds\",\"type\":\"bytes16[]\"},{\"internalType\":\"string[]\",\"name\":\"descriptions\",\"type\":\"string[]\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"allowedSender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"allowedWorkflowOwner\",\"type\":\"address\"},{\"internalType\":\"bytes10\",\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\"}],\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"name\":\"workflowMetadata\",\"type\":\"tuple[]\"}],\"name\":\"setDecimalFeedConfigs\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"feedAdmin\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isAdmin\",\"type\":\"bool\"}],\"name\":\"setFeedAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"typeAndVersion\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"proxies\",\"type\":\"address[]\"},{\"internalType\":\"bytes16[]\",\"name\":\"dataIds\",\"type\":\"bytes16[]\"}],\"name\":\"updateDataIdMappingsForProxies\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"version\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"acceptOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"bundleDecimals\",\"inputs\":[],\"outputs\":[{\"name\":\"bundleFeedDecimals\",\"type\":\"uint8[]\",\"internalType\":\"uint8[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"checkFeedPermission\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"},{\"name\":\"workflowMetadata\",\"type\":\"tuple\",\"internalType\":\"structDataFeedsCache.WorkflowMetadata\",\"components\":[{\"name\":\"allowedSender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]}],\"outputs\":[{\"name\":\"hasPermission\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"decimals\",\"inputs\":[],\"outputs\":[{\"name\":\"feedDecimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"description\",\"inputs\":[],\"outputs\":[{\"name\":\"feedDescription\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getAnswer\",\"inputs\":[{\"name\":\"roundId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"answer\",\"type\":\"int256\",\"internalType\":\"int256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getBundleDecimals\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"bundleFeedDecimals\",\"type\":\"uint8[]\",\"internalType\":\"uint8[]\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDataIdForProxy\",\"inputs\":[{\"name\":\"proxy\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getDecimals\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"feedDecimals\",\"type\":\"uint8\",\"internalType\":\"uint8\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"getDescription\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"feedDescription\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getFeedMetadata\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"},{\"name\":\"startIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"maxCount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"workflowMetadata\",\"type\":\"tuple[]\",\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"components\":[{\"name\":\"allowedSender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getLatestAnswer\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"answer\",\"type\":\"int256\",\"internalType\":\"int256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getLatestBundle\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"bundle\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getLatestBundleTimestamp\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"timestamp\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getLatestRoundData\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"id\",\"type\":\"uint80\",\"internalType\":\"uint80\"},{\"name\":\"answer\",\"type\":\"int256\",\"internalType\":\"int256\"},{\"name\":\"startedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"answeredInRound\",\"type\":\"uint80\",\"internalType\":\"uint80\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getLatestTimestamp\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}],\"outputs\":[{\"name\":\"timestamp\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getRoundData\",\"inputs\":[{\"name\":\"roundId\",\"type\":\"uint80\",\"internalType\":\"uint80\"}],\"outputs\":[{\"name\":\"id\",\"type\":\"uint80\",\"internalType\":\"uint80\"},{\"name\":\"answer\",\"type\":\"int256\",\"internalType\":\"int256\"},{\"name\":\"startedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"answeredInRound\",\"type\":\"uint80\",\"internalType\":\"uint80\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getTimestamp\",\"inputs\":[{\"name\":\"roundId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"timestamp\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"isFeedAdmin\",\"inputs\":[{\"name\":\"feedAdmin\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"latestAnswer\",\"inputs\":[],\"outputs\":[{\"name\":\"answer\",\"type\":\"int256\",\"internalType\":\"int256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"latestBundle\",\"inputs\":[],\"outputs\":[{\"name\":\"bundle\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"latestBundleTimestamp\",\"inputs\":[],\"outputs\":[{\"name\":\"timestamp\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"latestRound\",\"inputs\":[],\"outputs\":[{\"name\":\"round\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"latestRoundData\",\"inputs\":[],\"outputs\":[{\"name\":\"id\",\"type\":\"uint80\",\"internalType\":\"uint80\"},{\"name\":\"answer\",\"type\":\"int256\",\"internalType\":\"int256\"},{\"name\":\"startedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"answeredInRound\",\"type\":\"uint80\",\"internalType\":\"uint80\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"latestTimestamp\",\"inputs\":[],\"outputs\":[{\"name\":\"timestamp\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onReport\",\"inputs\":[{\"name\":\"metadata\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"report\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"recoverTokens\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"contractIERC20\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeDataIdMappingsForProxies\",\"inputs\":[{\"name\":\"proxies\",\"type\":\"address[]\",\"internalType\":\"address[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"removeFeedConfigs\",\"inputs\":[{\"name\":\"dataIds\",\"type\":\"bytes16[]\",\"internalType\":\"bytes16[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setBundleFeedConfigs\",\"inputs\":[{\"name\":\"dataIds\",\"type\":\"bytes16[]\",\"internalType\":\"bytes16[]\"},{\"name\":\"descriptions\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"decimalsMatrix\",\"type\":\"uint8[][]\",\"internalType\":\"uint8[][]\"},{\"name\":\"workflowMetadata\",\"type\":\"tuple[]\",\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"components\":[{\"name\":\"allowedSender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setDecimalFeedConfigs\",\"inputs\":[{\"name\":\"dataIds\",\"type\":\"bytes16[]\",\"internalType\":\"bytes16[]\"},{\"name\":\"descriptions\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"workflowMetadata\",\"type\":\"tuple[]\",\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"components\":[{\"name\":\"allowedSender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setFeedAdmin\",\"inputs\":[{\"name\":\"feedAdmin\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"isAdmin\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"typeAndVersion\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateDataIdMappingsForProxies\",\"inputs\":[{\"name\":\"proxies\",\"type\":\"address[]\",\"internalType\":\"address[]\"},{\"name\":\"dataIds\",\"type\":\"bytes16[]\",\"internalType\":\"bytes16[]\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"version\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"AnswerUpdated\",\"inputs\":[{\"name\":\"current\",\"type\":\"int256\",\"indexed\":true,\"internalType\":\"int256\"},{\"name\":\"roundId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"updatedAt\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BundleFeedConfigSet\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"},{\"name\":\"decimals\",\"type\":\"uint8[]\",\"indexed\":false,\"internalType\":\"uint8[]\"},{\"name\":\"description\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"workflowMetadata\",\"type\":\"tuple[]\",\"indexed\":false,\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"components\":[{\"name\":\"allowedSender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"BundleReportUpdated\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"},{\"name\":\"timestamp\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"bundle\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DecimalFeedConfigSet\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"},{\"name\":\"decimals\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"uint8\"},{\"name\":\"description\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"workflowMetadata\",\"type\":\"tuple[]\",\"indexed\":false,\"internalType\":\"structDataFeedsCache.WorkflowMetadata[]\",\"components\":[{\"name\":\"allowedSender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowOwner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"allowedWorkflowName\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"DecimalReportUpdated\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"},{\"name\":\"roundId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"timestamp\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"answer\",\"type\":\"uint224\",\"indexed\":false,\"internalType\":\"uint224\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"FeedAdminSet\",\"inputs\":[{\"name\":\"feedAdmin\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"isAdmin\",\"type\":\"bool\",\"indexed\":true,\"internalType\":\"bool\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"FeedConfigRemoved\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"InvalidUpdatePermission\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"workflowOwner\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"workflowName\",\"type\":\"bytes10\",\"indexed\":false,\"internalType\":\"bytes10\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"NewRound\",\"inputs\":[{\"name\":\"roundId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"startedBy\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"startedAt\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferRequested\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ProxyDataIdRemoved\",\"inputs\":[{\"name\":\"proxy\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ProxyDataIdUpdated\",\"inputs\":[{\"name\":\"proxy\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"StaleBundleReport\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"},{\"name\":\"reportTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"latestTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"StaleDecimalReport\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"indexed\":true,\"internalType\":\"bytes16\"},{\"name\":\"reportTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"latestTimestamp\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TokenRecovered\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"ArrayLengthMismatch\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"EmptyConfig\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ErrorSendingNative\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"type\":\"error\",\"name\":\"FeedNotConfigured\",\"inputs\":[{\"name\":\"dataId\",\"type\":\"bytes16\",\"internalType\":\"bytes16\"}]},{\"type\":\"error\",\"name\":\"InsufficientBalance\",\"inputs\":[{\"name\":\"balance\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"requiredBalance\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"InvalidAddress\",\"inputs\":[{\"name\":\"addr\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidDataId\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidWorkflowName\",\"inputs\":[{\"name\":\"workflowName\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]},{\"type\":\"error\",\"name\":\"NoMappingForSender\",\"inputs\":[{\"name\":\"proxy\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"SafeERC20FailedOperation\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"UnauthorizedCaller\",\"inputs\":[{\"name\":\"caller\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
 }
 
 // Structs
@@ -199,14 +201,6 @@ type LatestRoundDataOutput struct {
 }
 
 // Errors
-type AddressEmptyCode struct {
-	Target common.Address
-}
-
-type AddressInsufficientBalance struct {
-	Account common.Address
-}
-
 type ArrayLengthMismatch struct {
 }
 
@@ -217,9 +211,6 @@ type ErrorSendingNative struct {
 	To     common.Address
 	Amount *big.Int
 	Data   []byte
-}
-
-type FailedInnerCall struct {
 }
 
 type FeedNotConfigured struct {
@@ -255,7 +246,8 @@ type UnauthorizedCaller struct {
 }
 
 // Events
-// The <Event> struct should be used as a filter (for log triggers).
+// The <Event>Topics struct should be used as a filter (for log triggers).
+// Note: It is only possible to filter on indexed fields.
 // Indexed (string and bytes) fields will be of type common.Hash.
 // They need to he (crypto.Keccak256) hashed and passed in.
 // Indexed (tuple/slice/array) fields can be passed in as is, the Encode<Event>Topics function will handle the hashing.
@@ -263,10 +255,9 @@ type UnauthorizedCaller struct {
 // The <Event>Decoded struct will be the result of calling decode (Adapt) on the log trigger result.
 // Indexed dynamic type fields will be of type common.Hash.
 
-type AnswerUpdated struct {
-	Current   *big.Int
-	RoundId   *big.Int
-	UpdatedAt *big.Int
+type AnswerUpdatedTopics struct {
+	Current *big.Int
+	RoundId *big.Int
 }
 
 type AnswerUpdatedDecoded struct {
@@ -275,11 +266,8 @@ type AnswerUpdatedDecoded struct {
 	UpdatedAt *big.Int
 }
 
-type BundleFeedConfigSet struct {
-	DataId           [16]byte
-	Decimals         []uint8
-	Description      string
-	WorkflowMetadata []WorkflowMetadata
+type BundleFeedConfigSetTopics struct {
+	DataId [16]byte
 }
 
 type BundleFeedConfigSetDecoded struct {
@@ -289,10 +277,9 @@ type BundleFeedConfigSetDecoded struct {
 	WorkflowMetadata []WorkflowMetadata
 }
 
-type BundleReportUpdated struct {
+type BundleReportUpdatedTopics struct {
 	DataId    [16]byte
 	Timestamp *big.Int
-	Bundle    []byte
 }
 
 type BundleReportUpdatedDecoded struct {
@@ -301,11 +288,8 @@ type BundleReportUpdatedDecoded struct {
 	Bundle    []byte
 }
 
-type DecimalFeedConfigSet struct {
-	DataId           [16]byte
-	Decimals         uint8
-	Description      string
-	WorkflowMetadata []WorkflowMetadata
+type DecimalFeedConfigSetTopics struct {
+	DataId [16]byte
 }
 
 type DecimalFeedConfigSetDecoded struct {
@@ -315,11 +299,10 @@ type DecimalFeedConfigSetDecoded struct {
 	WorkflowMetadata []WorkflowMetadata
 }
 
-type DecimalReportUpdated struct {
+type DecimalReportUpdatedTopics struct {
 	DataId    [16]byte
 	RoundId   *big.Int
 	Timestamp *big.Int
-	Answer    *big.Int
 }
 
 type DecimalReportUpdatedDecoded struct {
@@ -329,7 +312,7 @@ type DecimalReportUpdatedDecoded struct {
 	Answer    *big.Int
 }
 
-type FeedAdminSet struct {
+type FeedAdminSetTopics struct {
 	FeedAdmin common.Address
 	IsAdmin   bool
 }
@@ -339,7 +322,7 @@ type FeedAdminSetDecoded struct {
 	IsAdmin   bool
 }
 
-type FeedConfigRemoved struct {
+type FeedConfigRemovedTopics struct {
 	DataId [16]byte
 }
 
@@ -347,11 +330,8 @@ type FeedConfigRemovedDecoded struct {
 	DataId [16]byte
 }
 
-type InvalidUpdatePermission struct {
-	DataId        [16]byte
-	Sender        common.Address
-	WorkflowOwner common.Address
-	WorkflowName  [10]byte
+type InvalidUpdatePermissionTopics struct {
+	DataId [16]byte
 }
 
 type InvalidUpdatePermissionDecoded struct {
@@ -361,10 +341,9 @@ type InvalidUpdatePermissionDecoded struct {
 	WorkflowName  [10]byte
 }
 
-type NewRound struct {
+type NewRoundTopics struct {
 	RoundId   *big.Int
 	StartedBy common.Address
-	StartedAt *big.Int
 }
 
 type NewRoundDecoded struct {
@@ -373,7 +352,7 @@ type NewRoundDecoded struct {
 	StartedAt *big.Int
 }
 
-type OwnershipTransferRequested struct {
+type OwnershipTransferRequestedTopics struct {
 	From common.Address
 	To   common.Address
 }
@@ -383,7 +362,7 @@ type OwnershipTransferRequestedDecoded struct {
 	To   common.Address
 }
 
-type OwnershipTransferred struct {
+type OwnershipTransferredTopics struct {
 	From common.Address
 	To   common.Address
 }
@@ -393,7 +372,7 @@ type OwnershipTransferredDecoded struct {
 	To   common.Address
 }
 
-type ProxyDataIdRemoved struct {
+type ProxyDataIdRemovedTopics struct {
 	Proxy  common.Address
 	DataId [16]byte
 }
@@ -403,7 +382,7 @@ type ProxyDataIdRemovedDecoded struct {
 	DataId [16]byte
 }
 
-type ProxyDataIdUpdated struct {
+type ProxyDataIdUpdatedTopics struct {
 	Proxy  common.Address
 	DataId [16]byte
 }
@@ -413,10 +392,8 @@ type ProxyDataIdUpdatedDecoded struct {
 	DataId [16]byte
 }
 
-type StaleBundleReport struct {
-	DataId          [16]byte
-	ReportTimestamp *big.Int
-	LatestTimestamp *big.Int
+type StaleBundleReportTopics struct {
+	DataId [16]byte
 }
 
 type StaleBundleReportDecoded struct {
@@ -425,10 +402,8 @@ type StaleBundleReportDecoded struct {
 	LatestTimestamp *big.Int
 }
 
-type StaleDecimalReport struct {
-	DataId          [16]byte
-	ReportTimestamp *big.Int
-	LatestTimestamp *big.Int
+type StaleDecimalReportTopics struct {
+	DataId [16]byte
 }
 
 type StaleDecimalReportDecoded struct {
@@ -437,10 +412,9 @@ type StaleDecimalReportDecoded struct {
 	LatestTimestamp *big.Int
 }
 
-type TokenRecovered struct {
-	Token  common.Address
-	To     common.Address
-	Amount *big.Int
+type TokenRecoveredTopics struct {
+	Token common.Address
+	To    common.Address
 }
 
 type TokenRecoveredDecoded struct {
@@ -527,52 +501,52 @@ type DataFeedsCacheCodec interface {
 	DecodeVersionMethodOutput(data []byte) (*big.Int, error)
 	EncodeWorkflowMetadataStruct(in WorkflowMetadata) ([]byte, error)
 	AnswerUpdatedLogHash() []byte
-	EncodeAnswerUpdatedTopics(evt abi.Event, values []AnswerUpdated) ([]*evm.TopicValues, error)
+	EncodeAnswerUpdatedTopics(evt abi.Event, values []AnswerUpdatedTopics) ([]*evm.TopicValues, error)
 	DecodeAnswerUpdated(log *evm.Log) (*AnswerUpdatedDecoded, error)
 	BundleFeedConfigSetLogHash() []byte
-	EncodeBundleFeedConfigSetTopics(evt abi.Event, values []BundleFeedConfigSet) ([]*evm.TopicValues, error)
+	EncodeBundleFeedConfigSetTopics(evt abi.Event, values []BundleFeedConfigSetTopics) ([]*evm.TopicValues, error)
 	DecodeBundleFeedConfigSet(log *evm.Log) (*BundleFeedConfigSetDecoded, error)
 	BundleReportUpdatedLogHash() []byte
-	EncodeBundleReportUpdatedTopics(evt abi.Event, values []BundleReportUpdated) ([]*evm.TopicValues, error)
+	EncodeBundleReportUpdatedTopics(evt abi.Event, values []BundleReportUpdatedTopics) ([]*evm.TopicValues, error)
 	DecodeBundleReportUpdated(log *evm.Log) (*BundleReportUpdatedDecoded, error)
 	DecimalFeedConfigSetLogHash() []byte
-	EncodeDecimalFeedConfigSetTopics(evt abi.Event, values []DecimalFeedConfigSet) ([]*evm.TopicValues, error)
+	EncodeDecimalFeedConfigSetTopics(evt abi.Event, values []DecimalFeedConfigSetTopics) ([]*evm.TopicValues, error)
 	DecodeDecimalFeedConfigSet(log *evm.Log) (*DecimalFeedConfigSetDecoded, error)
 	DecimalReportUpdatedLogHash() []byte
-	EncodeDecimalReportUpdatedTopics(evt abi.Event, values []DecimalReportUpdated) ([]*evm.TopicValues, error)
+	EncodeDecimalReportUpdatedTopics(evt abi.Event, values []DecimalReportUpdatedTopics) ([]*evm.TopicValues, error)
 	DecodeDecimalReportUpdated(log *evm.Log) (*DecimalReportUpdatedDecoded, error)
 	FeedAdminSetLogHash() []byte
-	EncodeFeedAdminSetTopics(evt abi.Event, values []FeedAdminSet) ([]*evm.TopicValues, error)
+	EncodeFeedAdminSetTopics(evt abi.Event, values []FeedAdminSetTopics) ([]*evm.TopicValues, error)
 	DecodeFeedAdminSet(log *evm.Log) (*FeedAdminSetDecoded, error)
 	FeedConfigRemovedLogHash() []byte
-	EncodeFeedConfigRemovedTopics(evt abi.Event, values []FeedConfigRemoved) ([]*evm.TopicValues, error)
+	EncodeFeedConfigRemovedTopics(evt abi.Event, values []FeedConfigRemovedTopics) ([]*evm.TopicValues, error)
 	DecodeFeedConfigRemoved(log *evm.Log) (*FeedConfigRemovedDecoded, error)
 	InvalidUpdatePermissionLogHash() []byte
-	EncodeInvalidUpdatePermissionTopics(evt abi.Event, values []InvalidUpdatePermission) ([]*evm.TopicValues, error)
+	EncodeInvalidUpdatePermissionTopics(evt abi.Event, values []InvalidUpdatePermissionTopics) ([]*evm.TopicValues, error)
 	DecodeInvalidUpdatePermission(log *evm.Log) (*InvalidUpdatePermissionDecoded, error)
 	NewRoundLogHash() []byte
-	EncodeNewRoundTopics(evt abi.Event, values []NewRound) ([]*evm.TopicValues, error)
+	EncodeNewRoundTopics(evt abi.Event, values []NewRoundTopics) ([]*evm.TopicValues, error)
 	DecodeNewRound(log *evm.Log) (*NewRoundDecoded, error)
 	OwnershipTransferRequestedLogHash() []byte
-	EncodeOwnershipTransferRequestedTopics(evt abi.Event, values []OwnershipTransferRequested) ([]*evm.TopicValues, error)
+	EncodeOwnershipTransferRequestedTopics(evt abi.Event, values []OwnershipTransferRequestedTopics) ([]*evm.TopicValues, error)
 	DecodeOwnershipTransferRequested(log *evm.Log) (*OwnershipTransferRequestedDecoded, error)
 	OwnershipTransferredLogHash() []byte
-	EncodeOwnershipTransferredTopics(evt abi.Event, values []OwnershipTransferred) ([]*evm.TopicValues, error)
+	EncodeOwnershipTransferredTopics(evt abi.Event, values []OwnershipTransferredTopics) ([]*evm.TopicValues, error)
 	DecodeOwnershipTransferred(log *evm.Log) (*OwnershipTransferredDecoded, error)
 	ProxyDataIdRemovedLogHash() []byte
-	EncodeProxyDataIdRemovedTopics(evt abi.Event, values []ProxyDataIdRemoved) ([]*evm.TopicValues, error)
+	EncodeProxyDataIdRemovedTopics(evt abi.Event, values []ProxyDataIdRemovedTopics) ([]*evm.TopicValues, error)
 	DecodeProxyDataIdRemoved(log *evm.Log) (*ProxyDataIdRemovedDecoded, error)
 	ProxyDataIdUpdatedLogHash() []byte
-	EncodeProxyDataIdUpdatedTopics(evt abi.Event, values []ProxyDataIdUpdated) ([]*evm.TopicValues, error)
+	EncodeProxyDataIdUpdatedTopics(evt abi.Event, values []ProxyDataIdUpdatedTopics) ([]*evm.TopicValues, error)
 	DecodeProxyDataIdUpdated(log *evm.Log) (*ProxyDataIdUpdatedDecoded, error)
 	StaleBundleReportLogHash() []byte
-	EncodeStaleBundleReportTopics(evt abi.Event, values []StaleBundleReport) ([]*evm.TopicValues, error)
+	EncodeStaleBundleReportTopics(evt abi.Event, values []StaleBundleReportTopics) ([]*evm.TopicValues, error)
 	DecodeStaleBundleReport(log *evm.Log) (*StaleBundleReportDecoded, error)
 	StaleDecimalReportLogHash() []byte
-	EncodeStaleDecimalReportTopics(evt abi.Event, values []StaleDecimalReport) ([]*evm.TopicValues, error)
+	EncodeStaleDecimalReportTopics(evt abi.Event, values []StaleDecimalReportTopics) ([]*evm.TopicValues, error)
 	DecodeStaleDecimalReport(log *evm.Log) (*StaleDecimalReportDecoded, error)
 	TokenRecoveredLogHash() []byte
-	EncodeTokenRecoveredTopics(evt abi.Event, values []TokenRecovered) ([]*evm.TopicValues, error)
+	EncodeTokenRecoveredTopics(evt abi.Event, values []TokenRecoveredTopics) ([]*evm.TopicValues, error)
 	DecodeTokenRecovered(log *evm.Log) (*TokenRecoveredDecoded, error)
 }
 
@@ -1426,10 +1400,14 @@ func (c *Codec) AnswerUpdatedLogHash() []byte {
 
 func (c *Codec) EncodeAnswerUpdatedTopics(
 	evt abi.Event,
-	values []AnswerUpdated,
+	values []AnswerUpdatedTopics,
 ) ([]*evm.TopicValues, error) {
 	var currentRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Current).IsZero() {
+			currentRule = append(currentRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Current)
 		if err != nil {
 			return nil, err
@@ -1438,6 +1416,10 @@ func (c *Codec) EncodeAnswerUpdatedTopics(
 	}
 	var roundIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.RoundId).IsZero() {
+			roundIdRule = append(roundIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.RoundId)
 		if err != nil {
 			return nil, err
@@ -1453,18 +1435,7 @@ func (c *Codec) EncodeAnswerUpdatedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeAnswerUpdated decodes a log into a AnswerUpdated struct.
@@ -1502,10 +1473,14 @@ func (c *Codec) BundleFeedConfigSetLogHash() []byte {
 
 func (c *Codec) EncodeBundleFeedConfigSetTopics(
 	evt abi.Event,
-	values []BundleFeedConfigSet,
+	values []BundleFeedConfigSetTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -1520,18 +1495,7 @@ func (c *Codec) EncodeBundleFeedConfigSetTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeBundleFeedConfigSet decodes a log into a BundleFeedConfigSet struct.
@@ -1569,10 +1533,14 @@ func (c *Codec) BundleReportUpdatedLogHash() []byte {
 
 func (c *Codec) EncodeBundleReportUpdatedTopics(
 	evt abi.Event,
-	values []BundleReportUpdated,
+	values []BundleReportUpdatedTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -1581,6 +1549,10 @@ func (c *Codec) EncodeBundleReportUpdatedTopics(
 	}
 	var timestampRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Timestamp).IsZero() {
+			timestampRule = append(timestampRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.Timestamp)
 		if err != nil {
 			return nil, err
@@ -1596,18 +1568,7 @@ func (c *Codec) EncodeBundleReportUpdatedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeBundleReportUpdated decodes a log into a BundleReportUpdated struct.
@@ -1645,10 +1606,14 @@ func (c *Codec) DecimalFeedConfigSetLogHash() []byte {
 
 func (c *Codec) EncodeDecimalFeedConfigSetTopics(
 	evt abi.Event,
-	values []DecimalFeedConfigSet,
+	values []DecimalFeedConfigSetTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -1663,18 +1628,7 @@ func (c *Codec) EncodeDecimalFeedConfigSetTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeDecimalFeedConfigSet decodes a log into a DecimalFeedConfigSet struct.
@@ -1712,10 +1666,14 @@ func (c *Codec) DecimalReportUpdatedLogHash() []byte {
 
 func (c *Codec) EncodeDecimalReportUpdatedTopics(
 	evt abi.Event,
-	values []DecimalReportUpdated,
+	values []DecimalReportUpdatedTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -1724,6 +1682,10 @@ func (c *Codec) EncodeDecimalReportUpdatedTopics(
 	}
 	var roundIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.RoundId).IsZero() {
+			roundIdRule = append(roundIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.RoundId)
 		if err != nil {
 			return nil, err
@@ -1732,6 +1694,10 @@ func (c *Codec) EncodeDecimalReportUpdatedTopics(
 	}
 	var timestampRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Timestamp).IsZero() {
+			timestampRule = append(timestampRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[2], v.Timestamp)
 		if err != nil {
 			return nil, err
@@ -1748,18 +1714,7 @@ func (c *Codec) EncodeDecimalReportUpdatedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeDecimalReportUpdated decodes a log into a DecimalReportUpdated struct.
@@ -1797,10 +1752,14 @@ func (c *Codec) FeedAdminSetLogHash() []byte {
 
 func (c *Codec) EncodeFeedAdminSetTopics(
 	evt abi.Event,
-	values []FeedAdminSet,
+	values []FeedAdminSetTopics,
 ) ([]*evm.TopicValues, error) {
 	var feedAdminRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.FeedAdmin).IsZero() {
+			feedAdminRule = append(feedAdminRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.FeedAdmin)
 		if err != nil {
 			return nil, err
@@ -1809,6 +1768,10 @@ func (c *Codec) EncodeFeedAdminSetTopics(
 	}
 	var isAdminRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.IsAdmin).IsZero() {
+			isAdminRule = append(isAdminRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.IsAdmin)
 		if err != nil {
 			return nil, err
@@ -1824,18 +1787,7 @@ func (c *Codec) EncodeFeedAdminSetTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeFeedAdminSet decodes a log into a FeedAdminSet struct.
@@ -1873,10 +1825,14 @@ func (c *Codec) FeedConfigRemovedLogHash() []byte {
 
 func (c *Codec) EncodeFeedConfigRemovedTopics(
 	evt abi.Event,
-	values []FeedConfigRemoved,
+	values []FeedConfigRemovedTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -1891,18 +1847,7 @@ func (c *Codec) EncodeFeedConfigRemovedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeFeedConfigRemoved decodes a log into a FeedConfigRemoved struct.
@@ -1940,10 +1885,14 @@ func (c *Codec) InvalidUpdatePermissionLogHash() []byte {
 
 func (c *Codec) EncodeInvalidUpdatePermissionTopics(
 	evt abi.Event,
-	values []InvalidUpdatePermission,
+	values []InvalidUpdatePermissionTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -1958,18 +1907,7 @@ func (c *Codec) EncodeInvalidUpdatePermissionTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeInvalidUpdatePermission decodes a log into a InvalidUpdatePermission struct.
@@ -2007,10 +1945,14 @@ func (c *Codec) NewRoundLogHash() []byte {
 
 func (c *Codec) EncodeNewRoundTopics(
 	evt abi.Event,
-	values []NewRound,
+	values []NewRoundTopics,
 ) ([]*evm.TopicValues, error) {
 	var roundIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.RoundId).IsZero() {
+			roundIdRule = append(roundIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.RoundId)
 		if err != nil {
 			return nil, err
@@ -2019,6 +1961,10 @@ func (c *Codec) EncodeNewRoundTopics(
 	}
 	var startedByRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.StartedBy).IsZero() {
+			startedByRule = append(startedByRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.StartedBy)
 		if err != nil {
 			return nil, err
@@ -2034,18 +1980,7 @@ func (c *Codec) EncodeNewRoundTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeNewRound decodes a log into a NewRound struct.
@@ -2083,10 +2018,14 @@ func (c *Codec) OwnershipTransferRequestedLogHash() []byte {
 
 func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 	evt abi.Event,
-	values []OwnershipTransferRequested,
+	values []OwnershipTransferRequestedTopics,
 ) ([]*evm.TopicValues, error) {
 	var fromRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.From).IsZero() {
+			fromRule = append(fromRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.From)
 		if err != nil {
 			return nil, err
@@ -2095,6 +2034,10 @@ func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
 		if err != nil {
 			return nil, err
@@ -2110,18 +2053,7 @@ func (c *Codec) EncodeOwnershipTransferRequestedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeOwnershipTransferRequested decodes a log into a OwnershipTransferRequested struct.
@@ -2159,10 +2091,14 @@ func (c *Codec) OwnershipTransferredLogHash() []byte {
 
 func (c *Codec) EncodeOwnershipTransferredTopics(
 	evt abi.Event,
-	values []OwnershipTransferred,
+	values []OwnershipTransferredTopics,
 ) ([]*evm.TopicValues, error) {
 	var fromRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.From).IsZero() {
+			fromRule = append(fromRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.From)
 		if err != nil {
 			return nil, err
@@ -2171,6 +2107,10 @@ func (c *Codec) EncodeOwnershipTransferredTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
 		if err != nil {
 			return nil, err
@@ -2186,18 +2126,7 @@ func (c *Codec) EncodeOwnershipTransferredTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeOwnershipTransferred decodes a log into a OwnershipTransferred struct.
@@ -2235,10 +2164,14 @@ func (c *Codec) ProxyDataIdRemovedLogHash() []byte {
 
 func (c *Codec) EncodeProxyDataIdRemovedTopics(
 	evt abi.Event,
-	values []ProxyDataIdRemoved,
+	values []ProxyDataIdRemovedTopics,
 ) ([]*evm.TopicValues, error) {
 	var proxyRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Proxy).IsZero() {
+			proxyRule = append(proxyRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Proxy)
 		if err != nil {
 			return nil, err
@@ -2247,6 +2180,10 @@ func (c *Codec) EncodeProxyDataIdRemovedTopics(
 	}
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.DataId)
 		if err != nil {
 			return nil, err
@@ -2262,18 +2199,7 @@ func (c *Codec) EncodeProxyDataIdRemovedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeProxyDataIdRemoved decodes a log into a ProxyDataIdRemoved struct.
@@ -2311,10 +2237,14 @@ func (c *Codec) ProxyDataIdUpdatedLogHash() []byte {
 
 func (c *Codec) EncodeProxyDataIdUpdatedTopics(
 	evt abi.Event,
-	values []ProxyDataIdUpdated,
+	values []ProxyDataIdUpdatedTopics,
 ) ([]*evm.TopicValues, error) {
 	var proxyRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Proxy).IsZero() {
+			proxyRule = append(proxyRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Proxy)
 		if err != nil {
 			return nil, err
@@ -2323,6 +2253,10 @@ func (c *Codec) EncodeProxyDataIdUpdatedTopics(
 	}
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.DataId)
 		if err != nil {
 			return nil, err
@@ -2338,18 +2272,7 @@ func (c *Codec) EncodeProxyDataIdUpdatedTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeProxyDataIdUpdated decodes a log into a ProxyDataIdUpdated struct.
@@ -2387,10 +2310,14 @@ func (c *Codec) StaleBundleReportLogHash() []byte {
 
 func (c *Codec) EncodeStaleBundleReportTopics(
 	evt abi.Event,
-	values []StaleBundleReport,
+	values []StaleBundleReportTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -2405,18 +2332,7 @@ func (c *Codec) EncodeStaleBundleReportTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeStaleBundleReport decodes a log into a StaleBundleReport struct.
@@ -2454,10 +2370,14 @@ func (c *Codec) StaleDecimalReportLogHash() []byte {
 
 func (c *Codec) EncodeStaleDecimalReportTopics(
 	evt abi.Event,
-	values []StaleDecimalReport,
+	values []StaleDecimalReportTopics,
 ) ([]*evm.TopicValues, error) {
 	var dataIdRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.DataId).IsZero() {
+			dataIdRule = append(dataIdRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.DataId)
 		if err != nil {
 			return nil, err
@@ -2472,18 +2392,7 @@ func (c *Codec) EncodeStaleDecimalReportTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeStaleDecimalReport decodes a log into a StaleDecimalReport struct.
@@ -2521,10 +2430,14 @@ func (c *Codec) TokenRecoveredLogHash() []byte {
 
 func (c *Codec) EncodeTokenRecoveredTopics(
 	evt abi.Event,
-	values []TokenRecovered,
+	values []TokenRecoveredTopics,
 ) ([]*evm.TopicValues, error) {
 	var tokenRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.Token).IsZero() {
+			tokenRule = append(tokenRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[0], v.Token)
 		if err != nil {
 			return nil, err
@@ -2533,6 +2446,10 @@ func (c *Codec) EncodeTokenRecoveredTopics(
 	}
 	var toRule []interface{}
 	for _, v := range values {
+		if reflect.ValueOf(v.To).IsZero() {
+			toRule = append(toRule, common.Hash{})
+			continue
+		}
 		fieldVal, err := bindings.PrepareTopicArg(evt.Inputs[1], v.To)
 		if err != nil {
 			return nil, err
@@ -2548,18 +2465,7 @@ func (c *Codec) EncodeTokenRecoveredTopics(
 		return nil, err
 	}
 
-	topics := make([]*evm.TopicValues, len(rawTopics)+1)
-	topics[0] = &evm.TopicValues{
-		Values: [][]byte{evt.ID.Bytes()},
-	}
-	for i, hashList := range rawTopics {
-		bs := make([][]byte, len(hashList))
-		for j, h := range hashList {
-			bs[j] = h.Bytes()
-		}
-		topics[i+1] = &evm.TopicValues{Values: bs}
-	}
-	return topics, nil
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
 }
 
 // DecodeTokenRecovered decodes a log into a TokenRecovered struct.
@@ -3604,58 +3510,6 @@ func (c DataFeedsCache) WriteReport(
 	})
 }
 
-// DecodeAddressEmptyCodeError decodes a AddressEmptyCode error from revert data.
-func (c *DataFeedsCache) DecodeAddressEmptyCodeError(data []byte) (*AddressEmptyCode, error) {
-	args := c.ABI.Errors["AddressEmptyCode"].Inputs
-	values, err := args.Unpack(data[4:])
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpack error: %w", err)
-	}
-	if len(values) != 1 {
-		return nil, fmt.Errorf("expected 1 values, got %d", len(values))
-	}
-
-	target, ok0 := values[0].(common.Address)
-	if !ok0 {
-		return nil, fmt.Errorf("unexpected type for target in AddressEmptyCode error")
-	}
-
-	return &AddressEmptyCode{
-		Target: target,
-	}, nil
-}
-
-// Error implements the error interface for AddressEmptyCode.
-func (e *AddressEmptyCode) Error() string {
-	return fmt.Sprintf("AddressEmptyCode error: target=%v;", e.Target)
-}
-
-// DecodeAddressInsufficientBalanceError decodes a AddressInsufficientBalance error from revert data.
-func (c *DataFeedsCache) DecodeAddressInsufficientBalanceError(data []byte) (*AddressInsufficientBalance, error) {
-	args := c.ABI.Errors["AddressInsufficientBalance"].Inputs
-	values, err := args.Unpack(data[4:])
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpack error: %w", err)
-	}
-	if len(values) != 1 {
-		return nil, fmt.Errorf("expected 1 values, got %d", len(values))
-	}
-
-	account, ok0 := values[0].(common.Address)
-	if !ok0 {
-		return nil, fmt.Errorf("unexpected type for account in AddressInsufficientBalance error")
-	}
-
-	return &AddressInsufficientBalance{
-		Account: account,
-	}, nil
-}
-
-// Error implements the error interface for AddressInsufficientBalance.
-func (e *AddressInsufficientBalance) Error() string {
-	return fmt.Sprintf("AddressInsufficientBalance error: account=%v;", e.Account)
-}
-
 // DecodeArrayLengthMismatchError decodes a ArrayLengthMismatch error from revert data.
 func (c *DataFeedsCache) DecodeArrayLengthMismatchError(data []byte) (*ArrayLengthMismatch, error) {
 	args := c.ABI.Errors["ArrayLengthMismatch"].Inputs
@@ -3730,25 +3584,6 @@ func (c *DataFeedsCache) DecodeErrorSendingNativeError(data []byte) (*ErrorSendi
 // Error implements the error interface for ErrorSendingNative.
 func (e *ErrorSendingNative) Error() string {
 	return fmt.Sprintf("ErrorSendingNative error: to=%v; amount=%v; data=%v;", e.To, e.Amount, e.Data)
-}
-
-// DecodeFailedInnerCallError decodes a FailedInnerCall error from revert data.
-func (c *DataFeedsCache) DecodeFailedInnerCallError(data []byte) (*FailedInnerCall, error) {
-	args := c.ABI.Errors["FailedInnerCall"].Inputs
-	values, err := args.Unpack(data[4:])
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpack error: %w", err)
-	}
-	if len(values) != 0 {
-		return nil, fmt.Errorf("expected 0 values, got %d", len(values))
-	}
-
-	return &FailedInnerCall{}, nil
-}
-
-// Error implements the error interface for FailedInnerCall.
-func (e *FailedInnerCall) Error() string {
-	return fmt.Sprintf("FailedInnerCall error:")
 }
 
 // DecodeFeedNotConfiguredError decodes a FeedNotConfigured error from revert data.
@@ -3960,18 +3795,12 @@ func (e *UnauthorizedCaller) Error() string {
 
 func (c *DataFeedsCache) UnpackError(data []byte) (any, error) {
 	switch common.Bytes2Hex(data[:4]) {
-	case common.Bytes2Hex(c.ABI.Errors["AddressEmptyCode"].ID.Bytes()[:4]):
-		return c.DecodeAddressEmptyCodeError(data)
-	case common.Bytes2Hex(c.ABI.Errors["AddressInsufficientBalance"].ID.Bytes()[:4]):
-		return c.DecodeAddressInsufficientBalanceError(data)
 	case common.Bytes2Hex(c.ABI.Errors["ArrayLengthMismatch"].ID.Bytes()[:4]):
 		return c.DecodeArrayLengthMismatchError(data)
 	case common.Bytes2Hex(c.ABI.Errors["EmptyConfig"].ID.Bytes()[:4]):
 		return c.DecodeEmptyConfigError(data)
 	case common.Bytes2Hex(c.ABI.Errors["ErrorSendingNative"].ID.Bytes()[:4]):
 		return c.DecodeErrorSendingNativeError(data)
-	case common.Bytes2Hex(c.ABI.Errors["FailedInnerCall"].ID.Bytes()[:4]):
-		return c.DecodeFailedInnerCallError(data)
 	case common.Bytes2Hex(c.ABI.Errors["FeedNotConfigured"].ID.Bytes()[:4]):
 		return c.DecodeFeedNotConfiguredError(data)
 	case common.Bytes2Hex(c.ABI.Errors["InsufficientBalance"].ID.Bytes()[:4]):
@@ -4013,7 +3842,7 @@ func (t *AnswerUpdatedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[AnswerUpd
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerAnswerUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []AnswerUpdated) (cre.Trigger[*evm.Log, *bindings.DecodedLog[AnswerUpdatedDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerAnswerUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []AnswerUpdatedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[AnswerUpdatedDecoded]], error) {
 	event := c.ABI.Events["AnswerUpdated"]
 	topics, err := c.Codec.EncodeAnswerUpdatedTopics(event, filters)
 	if err != nil {
@@ -4071,7 +3900,7 @@ func (t *BundleFeedConfigSetTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Bun
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerBundleFeedConfigSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []BundleFeedConfigSet) (cre.Trigger[*evm.Log, *bindings.DecodedLog[BundleFeedConfigSetDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerBundleFeedConfigSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []BundleFeedConfigSetTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[BundleFeedConfigSetDecoded]], error) {
 	event := c.ABI.Events["BundleFeedConfigSet"]
 	topics, err := c.Codec.EncodeBundleFeedConfigSetTopics(event, filters)
 	if err != nil {
@@ -4129,7 +3958,7 @@ func (t *BundleReportUpdatedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Bun
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerBundleReportUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []BundleReportUpdated) (cre.Trigger[*evm.Log, *bindings.DecodedLog[BundleReportUpdatedDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerBundleReportUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []BundleReportUpdatedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[BundleReportUpdatedDecoded]], error) {
 	event := c.ABI.Events["BundleReportUpdated"]
 	topics, err := c.Codec.EncodeBundleReportUpdatedTopics(event, filters)
 	if err != nil {
@@ -4187,7 +4016,7 @@ func (t *DecimalFeedConfigSetTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[De
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerDecimalFeedConfigSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []DecimalFeedConfigSet) (cre.Trigger[*evm.Log, *bindings.DecodedLog[DecimalFeedConfigSetDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerDecimalFeedConfigSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []DecimalFeedConfigSetTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[DecimalFeedConfigSetDecoded]], error) {
 	event := c.ABI.Events["DecimalFeedConfigSet"]
 	topics, err := c.Codec.EncodeDecimalFeedConfigSetTopics(event, filters)
 	if err != nil {
@@ -4245,7 +4074,7 @@ func (t *DecimalReportUpdatedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[De
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerDecimalReportUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []DecimalReportUpdated) (cre.Trigger[*evm.Log, *bindings.DecodedLog[DecimalReportUpdatedDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerDecimalReportUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []DecimalReportUpdatedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[DecimalReportUpdatedDecoded]], error) {
 	event := c.ABI.Events["DecimalReportUpdated"]
 	topics, err := c.Codec.EncodeDecimalReportUpdatedTopics(event, filters)
 	if err != nil {
@@ -4303,7 +4132,7 @@ func (t *FeedAdminSetTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[FeedAdminS
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerFeedAdminSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []FeedAdminSet) (cre.Trigger[*evm.Log, *bindings.DecodedLog[FeedAdminSetDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerFeedAdminSetLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []FeedAdminSetTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[FeedAdminSetDecoded]], error) {
 	event := c.ABI.Events["FeedAdminSet"]
 	topics, err := c.Codec.EncodeFeedAdminSetTopics(event, filters)
 	if err != nil {
@@ -4361,7 +4190,7 @@ func (t *FeedConfigRemovedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[FeedC
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerFeedConfigRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []FeedConfigRemoved) (cre.Trigger[*evm.Log, *bindings.DecodedLog[FeedConfigRemovedDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerFeedConfigRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []FeedConfigRemovedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[FeedConfigRemovedDecoded]], error) {
 	event := c.ABI.Events["FeedConfigRemoved"]
 	topics, err := c.Codec.EncodeFeedConfigRemovedTopics(event, filters)
 	if err != nil {
@@ -4419,7 +4248,7 @@ func (t *InvalidUpdatePermissionTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerInvalidUpdatePermissionLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []InvalidUpdatePermission) (cre.Trigger[*evm.Log, *bindings.DecodedLog[InvalidUpdatePermissionDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerInvalidUpdatePermissionLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []InvalidUpdatePermissionTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[InvalidUpdatePermissionDecoded]], error) {
 	event := c.ABI.Events["InvalidUpdatePermission"]
 	topics, err := c.Codec.EncodeInvalidUpdatePermissionTopics(event, filters)
 	if err != nil {
@@ -4477,7 +4306,7 @@ func (t *NewRoundTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[NewRoundDecode
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerNewRoundLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []NewRound) (cre.Trigger[*evm.Log, *bindings.DecodedLog[NewRoundDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerNewRoundLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []NewRoundTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[NewRoundDecoded]], error) {
 	event := c.ABI.Events["NewRound"]
 	topics, err := c.Codec.EncodeNewRoundTopics(event, filters)
 	if err != nil {
@@ -4535,7 +4364,7 @@ func (t *OwnershipTransferRequestedTrigger) Adapt(l *evm.Log) (*bindings.Decoded
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequested) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerOwnershipTransferRequestedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferRequestedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferRequestedDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferRequested"]
 	topics, err := c.Codec.EncodeOwnershipTransferRequestedTopics(event, filters)
 	if err != nil {
@@ -4593,7 +4422,7 @@ func (t *OwnershipTransferredTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Ow
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferred) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerOwnershipTransferredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []OwnershipTransferredTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[OwnershipTransferredDecoded]], error) {
 	event := c.ABI.Events["OwnershipTransferred"]
 	topics, err := c.Codec.EncodeOwnershipTransferredTopics(event, filters)
 	if err != nil {
@@ -4651,7 +4480,7 @@ func (t *ProxyDataIdRemovedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Prox
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerProxyDataIdRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []ProxyDataIdRemoved) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ProxyDataIdRemovedDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerProxyDataIdRemovedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []ProxyDataIdRemovedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ProxyDataIdRemovedDecoded]], error) {
 	event := c.ABI.Events["ProxyDataIdRemoved"]
 	topics, err := c.Codec.EncodeProxyDataIdRemovedTopics(event, filters)
 	if err != nil {
@@ -4709,7 +4538,7 @@ func (t *ProxyDataIdUpdatedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Prox
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerProxyDataIdUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []ProxyDataIdUpdated) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ProxyDataIdUpdatedDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerProxyDataIdUpdatedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []ProxyDataIdUpdatedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ProxyDataIdUpdatedDecoded]], error) {
 	event := c.ABI.Events["ProxyDataIdUpdated"]
 	topics, err := c.Codec.EncodeProxyDataIdUpdatedTopics(event, filters)
 	if err != nil {
@@ -4767,7 +4596,7 @@ func (t *StaleBundleReportTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Stale
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerStaleBundleReportLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []StaleBundleReport) (cre.Trigger[*evm.Log, *bindings.DecodedLog[StaleBundleReportDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerStaleBundleReportLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []StaleBundleReportTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[StaleBundleReportDecoded]], error) {
 	event := c.ABI.Events["StaleBundleReport"]
 	topics, err := c.Codec.EncodeStaleBundleReportTopics(event, filters)
 	if err != nil {
@@ -4825,7 +4654,7 @@ func (t *StaleDecimalReportTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[Stal
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerStaleDecimalReportLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []StaleDecimalReport) (cre.Trigger[*evm.Log, *bindings.DecodedLog[StaleDecimalReportDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerStaleDecimalReportLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []StaleDecimalReportTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[StaleDecimalReportDecoded]], error) {
 	event := c.ABI.Events["StaleDecimalReport"]
 	topics, err := c.Codec.EncodeStaleDecimalReportTopics(event, filters)
 	if err != nil {
@@ -4883,7 +4712,7 @@ func (t *TokenRecoveredTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[TokenRec
 	}, nil
 }
 
-func (c *DataFeedsCache) LogTriggerTokenRecoveredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []TokenRecovered) (cre.Trigger[*evm.Log, *bindings.DecodedLog[TokenRecoveredDecoded]], error) {
+func (c *DataFeedsCache) LogTriggerTokenRecoveredLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []TokenRecoveredTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[TokenRecoveredDecoded]], error) {
 	event := c.ABI.Events["TokenRecovered"]
 	topics, err := c.Codec.EncodeTokenRecoveredTopics(event, filters)
 	if err != nil {

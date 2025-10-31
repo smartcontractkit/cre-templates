@@ -7,8 +7,8 @@ toolchain go1.24.9
 require (
 	github.com/ethereum/go-ethereum v1.16.4
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20250918131840-564fe2776a35
-	github.com/smartcontractkit/cre-sdk-go v0.9.0
-	github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm v0.9.0
+	github.com/smartcontractkit/cre-sdk-go v1.0.0-beta.0
+	github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm v1.0.0-beta.0
 	github.com/smartcontractkit/cre-sdk-go/capabilities/scheduler/cron v0.9.0
 	google.golang.org/protobuf v1.36.7
 )
