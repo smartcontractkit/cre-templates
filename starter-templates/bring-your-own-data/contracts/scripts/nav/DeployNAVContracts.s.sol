@@ -27,7 +27,7 @@ contract Deploy is Script {
 
         DataFeedsCache.WorkflowMetadata[] memory workflowMetadata;
 
-        if (vm.envOr("ENABLE_SIMULATE_WORKFLOW", false) == true) {
+        if (vm.envOr("ENABLE_WORKFLOW_SIMULATION", false) == true) {
             address mockKeystoneForwarder = Workflow.mockKeystoneForwarder(block.chainid);
 
             // Enables writing data feeds cache with `cre workflow simulate`,

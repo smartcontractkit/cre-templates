@@ -45,7 +45,7 @@ contract Deploy is Script {
         address bnmToken;
         uint128 apr;
 
-        if (vm.envOr("ENABLE_SIMULATE_WORKFLOW", false) == true) {
+        if (vm.envOr("ENABLE_WORKFLOW_SIMULATION", false) == true) {
             // Enables `cre workflow simulate` which uses the mock keystone 
             // forwarder on-chain.
             keystoneForwarders = new address[](2);
