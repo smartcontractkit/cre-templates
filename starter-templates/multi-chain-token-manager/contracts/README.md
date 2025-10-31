@@ -31,6 +31,10 @@ Faucets:
 - Native gas tokens and LINK tokens https://faucets.chain.link
 - CCIP BnM tokens https://docs.chain.link/ccip/test-tokens
 
+### Configure RPC URLs
+
+Populate the RPC URLs for sepolia and base-sepolia in [foundry.toml](./foundry.toml).
+
 ### Deploy
 
 Deploy multi-chain token manager contracts. Needs to be run once per chain you are targeting.
@@ -39,32 +43,19 @@ This script will:
 - Deploy the ProtocolSmartWallet (PSW) and MockPool contracts
 - Transfer 1 LINK to the PSW contract for CCIP fees
 - Transfer 1 CCIP BnM to the PSW contract that is then deposited into to the MockPool contract
+- Configure ProtocolSmartWallet contracts for CCIP
+  - This step sets up each ProtocolSmartWallet with the addresses of its counterparts on other chains, enabling it to verify that any incoming CCIP message comes from a legitimate ProtocolSmartWallet on another chain.
 
 ```
 ENABLE_WORKFLOW_SIMULATION=true \
 forge script ./scripts/multi-chain-token-manager/DeployTokenManagerContracts.s.sol \
---rpc-url "<RPC URL for target chain>" \
 --private-key <EOA funded on target chain> \
---broadcast
+--slow \
+--multi \
+--broadcast # omit this flag to simulate the deployment
 ```
 
-## Configure
-
-Configure ProtocolSmartWallet contracts for CCIP.
-
-This step sets up each ProtocolSmartWallet with the addresses of its counterparts on other chains, enabling it to verify that any incoming CCIP message comes from a legitimate ProtocolSmartWallet on another chain.
-
-First, update the `getProtocolSmartWallet` function in [ConfigureTokenManagerContracts.s.sol](./scripts/multi-chain-token-manager/ConfigureTokenManagerContracts.s.sol) to return the addresses of the contracts you deployed in the previous step.
-
-Now configure your deployed ProtocolSmartWallet contracts. Needs to be run once per chain you deployed on in the previous step.
-
-```
-ENABLE_WORKFLOW_SIMULATION=true \
-forge script ./scripts/multi-chain-token-manager/ConfigureTokenManagerContracts.s.sol \
---rpc-url "<RPC URL for target chain>" \
---private-key <EOA funded on target chain> \
---broadcast
-```
+Add `--verify` and populate the Etherscan API keys in [foundry.toml](./foundry.toml) to automatically verify the contracts on Etherscan.
 
 ## Live APY Rebalancing
 

@@ -17,6 +17,10 @@ Instructions on how to deploy your own contracts for use with the Bring Your Own
 
 Install [Foundry](https://getfoundry.sh/introduction/installation/).
 
+### Configure RPC URLs
+
+Populate the RPC URLs for sepolia and base-sepolia in [foundry.toml](./foundry.toml).
+
 ## Proof-of-Reserve (PoR)
 
 ```
@@ -34,9 +38,12 @@ Update the PoR workflow config with the newly deployed contract addresses as per
 ```
 ENABLE_WORKFLOW_SIMULATION=true \
 forge script ./scripts/por/DeployPoRContracts.s.sol \
---rpc-url <RPC URL for target chain> \
 --private-key <EOA funded on target chain> \
 --broadcast
 ```
 
 Update the NAV workflow config with the newly deployed contract addresses as per [../workflow/por/README.md](../workflow/nav/README.md).
+
+## Verifying Contracts
+
+Add `--verify` and populate the Etherscan API keys in [foundry.toml](./foundry.toml) to automatically verify the contracts on Etherscan.

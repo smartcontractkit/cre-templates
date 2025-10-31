@@ -15,3 +15,11 @@ libs = ['./node_modules', './lib']
 bytecode_hash = "none"
 ffi = false
 via_ir = true
+
+[rpc_endpoints]
+sepolia = "${SEPOLIA_URL}"
+base-sepolia = "${BASE_SEPOLIA_URL}"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+base-sepolia = { key = "${ETHERSCAN_API_KEY}" }

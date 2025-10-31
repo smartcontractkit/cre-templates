@@ -11,7 +11,32 @@ import {Workflow} from "../../src/util/Workflow.sol";
 
 contract Deploy is Script {
     function run() external {
+        // Deploy on Sepolia
+        uint256 sepoliaFork = vm.createSelectFork("sepolia");
+        uint256 sepoliaChainID = block.chainid;
         vm.startBroadcast();
+        address sepoliaPSW = deployAndDeposit();
+        vm.stopBroadcast();
+ 
+        // Deploy and configure on Base Sepolia
+        vm.createSelectFork("base-sepolia");
+        uint256 baseSepoliaChainID = block.chainid;
+        vm.startBroadcast();
+        address baseSepoliaPSW = deployAndDeposit();
+        configureProtocolSmartWallet(baseSepoliaPSW, sepoliaPSW, getChainSelector(sepoliaChainID));
+        vm.stopBroadcast();
+
+        // Finally, configure on Sepolia now that the Base Sepolia
+        // ProtocolSmartWallet contract address is known.
+        vm.selectFork(sepoliaFork);
+        vm.startBroadcast();
+        configureProtocolSmartWallet(sepoliaPSW, baseSepoliaPSW, getChainSelector(baseSepoliaChainID));
+        vm.stopBroadcast();
+    }
+
+    // Returns address of the deployed ProtocolSmartWallet.
+    function deployAndDeposit() internal returns (address) {
+        console.log("Deploying to chainid:", block.chainid);
 
         address[] memory keystoneForwarders;
         address[] memory workflowOwners;
@@ -102,6 +127,33 @@ contract Deploy is Script {
             "BNM into the Pool from PSW"
         );
 
-        vm.stopBroadcast();
+        return address(psw);
+    }
+
+    function configureProtocolSmartWallet(address protocolSmartWallet, address sourceChainProtocolSmartWallet, uint64 sourceChainSelector) internal {
+
+        console.log("Configuring ProtocolSmartWallet on chainid:", block.chainid);
+
+        ProtocolSmartWallet psw = ProtocolSmartWallet(protocolSmartWallet);
+        psw.setSenderForSourceChain(
+            sourceChainSelector,
+            sourceChainProtocolSmartWallet
+        );
+
+        console.log(
+            "Set CCIP sender on chain %s for source chain selector %s to address %s",
+            block.chainid,
+            sourceChainSelector,
+            address(sourceChainProtocolSmartWallet)
+        );
+    }
+
+    function getChainSelector(uint256 chainid) internal pure returns (uint64) {
+        if (chainid == 11155111) {
+            return 16015286601757825753;
+        } else if (chainid == 84532) {
+            return 10344971235874465080;
+        }
+        revert("chainid not configured");
     }
 }
