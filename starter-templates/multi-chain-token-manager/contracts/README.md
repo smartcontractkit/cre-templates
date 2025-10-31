@@ -22,7 +22,7 @@ Install [Foundry](https://getfoundry.sh/introduction/installation/).
 ### Fund Deployer Wallet
 
 First your deployer wallet needs:
-- Native gas tokens to deploy the contracts (e.g., SepoliaETH)
+- Native gas tokens (e.g., SepoliaETH) to deploy the contracts
 - LINK tokens that will be transferred to the ProtocolSmartWallet to pay CCIP fees for cross-chain token transfers
 - CCIP BnM tokens (testnet only)
   - Another CCIP Cross-Chain Token (CCT) can be used. Simply update the BNM token addresses in the [deploy script](./scripts/multi-chain-token-manager/DeployTokenManagerContracts.s.sol) and [workflow config](../workflow/workflow/config.json) to the target CCT.

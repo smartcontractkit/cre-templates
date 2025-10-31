@@ -21,13 +21,19 @@ Install [Foundry](https://getfoundry.sh/introduction/installation/).
 
 Populate the RPC URLs for sepolia and base-sepolia in [foundry.toml](./foundry.toml).
 
+### Fund Deployer Wallet
+
+First your deployer wallet needs native gas tokens (e.g., SepoliaETH) to deploy the contracts, which can be obtained from the Chainlink testnet faucet https://faucets.chain.link.
+
 ## Proof-of-Reserve (PoR)
+
+Deploys the DataFeedsCache and BundleAggregatorProxy contracts for use with the PoR workflow.
 
 ```
 ENABLE_WORKFLOW_SIMULATION=true \
 forge script ./scripts/por/DeployPoRContracts.s.sol \
---rpc-url "<RPC URL for target chain>" \
---private-key <EOA funded on target chain> \
+--rpc-url <sepolia|base-sepolia> \
+--private-key "<EOA funded on target chain>" \
 --broadcast
 ```
 
@@ -35,10 +41,13 @@ Update the PoR workflow config with the newly deployed contract addresses as per
 
 ## Net Asset Value (NAV)
 
+Deploys the DataFeedsCache and DecimalAggregatorProxy contracts for use with the NAV workflow.
+
 ```
 ENABLE_WORKFLOW_SIMULATION=true \
 forge script ./scripts/por/DeployPoRContracts.s.sol \
---private-key <EOA funded on target chain> \
+--rpc-url <sepolia|base-sepolia> \
+--private-key "<EOA funded on target chain>" \
 --broadcast
 ```
 
