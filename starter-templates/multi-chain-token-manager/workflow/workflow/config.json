@@ -4,15 +4,15 @@
   "evms": [
     {
       "assetAddress": "0xFd57b4ddBf88a4e07fF4e34C487b99af2Fe82a05",
-      "poolAddress": "0x1Feac342C432770cD804C1EB8EC8ef514BAAf1E7",
-      "protocolSmartWalletAddress": "0x8D51aAE7F52B74D26D4a38803c0328dfD5C87af0",
+      "poolAddress": "0xBBccb575c318C786E6129d9F8C6C71F0Aea4dF06",
+      "protocolSmartWalletAddress": "0xA08c284a0Ade4867cbdcf8090245FD520F8778c6",
       "chainName": "ethereum-testnet-sepolia",
       "gasLimit": 1000000
     },
     {
       "assetAddress": "0x88A2d74F47a237a62e7A51cdDa67270CE381555e",
-      "poolAddress": "0xd79773a680885012863f1Ab2446a96fb830A825e",
-      "protocolSmartWalletAddress": "0xe698BA634C9266962e19f3D21667e8036202CA33",
+      "poolAddress": "0xecb405a1b8e78Bf84419cD007E833C61F77Cc54F",
+      "protocolSmartWalletAddress": "0x11e32bc5BDAD3ecD98c7217CF3B88dA9a0Ff2D7A",
       "chainName": "ethereum-testnet-sepolia-base-1",
       "gasLimit": 1000000
     }
