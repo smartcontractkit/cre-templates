@@ -43,7 +43,7 @@ This creates Go bindings under something like:
 contracts/evm/src/generated/price_feed_aggregator/...
 ```
 
-> After generation, if your module picked up new deps, run:
+After generation, if your module picked up new deps, run:
 
 ```bash
 go mod tidy
