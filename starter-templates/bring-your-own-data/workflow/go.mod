@@ -4,10 +4,6 @@ go 1.24.5
 
 toolchain go1.24.9
 
-// Patch for https://github.com/advisories/GHSA-fj2x-735w-74vq until upgraded
-// upstream.
-replace github.com/consensys/gnark-crypto => github.com/consensys/gnark-crypto v0.18.1
-
 require (
 	github.com/ethereum/go-ethereum v1.16.4
 	github.com/shopspring/decimal v1.4.0
@@ -23,7 +19,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
-	github.com/consensys/gnark-crypto v0.18.0 // indirect
+	github.com/consensys/gnark-crypto v0.18.1 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.4.0 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
