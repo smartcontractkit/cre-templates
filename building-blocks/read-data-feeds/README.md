@@ -23,7 +23,7 @@ Source: [https://arbiscan.io/address/0x6ce185860a4963106506C203335A2910413708e9#
 
 ### 1) Add the ABI (TypeScript)
 
-Place your ABI under `contracts/abi` as a `.ts` module and export it as `as const`. Then re-export it from `contracts/abi/index.ts` for clean imports.
+Place your ABI under `contracts/abi` as a `.ts` module and export it as `as const`. Then optionally re-export it from `contracts/abi/index.ts` for clean imports.
 
 ```ts
 // contracts/abi/PriceFeedAggregator.ts
