@@ -9,4 +9,63 @@
 
 </div>
 
-# Bring Your Own Data - CRE Template
+# Bring Your Own Data - CRE Templates
+
+A template for bringing your own off-chain data on chain with the **Chainlink Runtime Environment (CRE)**.
+
+---
+
+**⚠️ DISCLAIMER**
+
+This tutorial represents an educational example to use a Chainlink system, product, or service and is provided to demonstrate how to interact with Chainlink's systems, products, and services to integrate them into your own. This template is provided "AS IS" and "AS AVAILABLE" without warranties of any kind, it has not been audited, and it may be missing key checks or error handling to make the usage of the system, product or service more clear. Do not use the code in this example in a production environment without completing your own audits and application of best practices. Neither Chainlink Labs, the Chainlink Foundation, nor Chainlink node operators are responsible for unintended outputs that are generated due to errors in code.
+
+---
+
+## Table of Contents
+
+* [What This Template Does](#what-this-template-does)
+* [Getting Started](#getting-started)
+* [Security Considerations](#security-considerations)
+* [License](#license)
+
+---
+
+## What This Template Does
+
+This template provides an end-to-end staring point for bringing your own off-chain Proof-of-Reserve (PoR) or Net-Asset-Value (NAV) data on-chain with the **Chainlink Runtime Environment (CRE)**.
+
+The template consists of two components:
+- [Contracts](./contracts/README.md) (deployed on multiple chains)
+  - [DataFeedsCache](./contracts/lib/chainlink-evm/contracts/src/v0.8/data-feeds/DataFeedsCache.sol) contract that receives data on-chain
+  - [DecimalAggregatorProxy](./contracts/src/nav/DecimalAggregatorProxy.sol) proxy contract for PoR data stored in the DataFeedsCache contract
+  - [BundleAggregatorProxy](./contracts/lib/chainlink-evm/contracts/src/v0.8/data-feeds/BundleAggregatorProxy.sol) proxy contract for NAV data stored in the DataFeedsCache contract
+- [CRE Workflows](./workflow/README.md)
+  - [PoR Workflow](./workflow/por/workflow.go) CRE workflow for Proof-of-Reserve (PoR)
+  - [NAV Workflow](./workflow/nav/workflow.go) CRE workflow for Net-Asset-Value (NAV)
+
+**Key Technologies:**
+- **CRE (Chainlink Runtime Environment)** - Orchestrates workflows with DON consensus
+
+<img width="1600" height="900" alt="por" src="https://github.com/user-attachments/assets/39f811b5-7afe-4944-822f-cb2d97af7156" />
+
+---
+
+## Getting Started
+
+Start [here](./workflow/README.md).
+
+---
+
+## Security Considerations
+
+**⚠️ Important Notes:**
+
+1. **This is a demo project** - Not production-ready
+2. **DecimalAggregatorProxy contract is demo contract** - Not audited and not production-ready
+3. **Use your own RPC for stability** - For stable deployment and chainwrite operations it is advised to use your own private RPCs
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](../../LICENSE) file for details.

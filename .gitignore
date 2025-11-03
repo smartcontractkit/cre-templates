@@ -28,6 +28,7 @@ cre-admin
 dist
 *.wasm
 *.wasm.br
+*.wasm.br.b64
 
 # env files
 *.env
