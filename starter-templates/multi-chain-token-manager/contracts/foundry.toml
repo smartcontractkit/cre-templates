@@ -17,8 +17,8 @@ ffi = false
 via_ir = true
 
 [rpc_endpoints]
-sepolia = "${SEPOLIA_URL}"
-base-sepolia = "${BASE_SEPOLIA_URL}"
+sepolia = "https://ethereum-sepolia-rpc.publicnode.com"
+base-sepolia = "https://base-sepolia-rpc.publicnode.com"
 
 [etherscan]
 sepolia = { key = "${ETHERSCAN_API_KEY}" }

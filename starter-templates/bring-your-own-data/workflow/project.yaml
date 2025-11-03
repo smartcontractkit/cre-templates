@@ -19,11 +19,11 @@ default: &default
     don-family: "zone-a"
   rpcs:
     - chain-name: ethereum-mainnet
-      url: https://mainnet.infura.io/v3/<YOUR-API-KEY>
+      url: https://ethereum.publicnode.com/
     - chain-name: ethereum-testnet-sepolia
-      url: <select your own rpc url>
+      url: https://ethereum-sepolia-rpc.publicnode.com
     - chain-name: ethereum-testnet-sepolia-base-1
-      url: <select your own rpc url>
+      url: https://base-sepolia-rpc.publicnode.com
 
 local-simulation: *default
 
