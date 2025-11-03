@@ -306,6 +306,9 @@ func doHighestSupplyAPY(config *Config, runtime cre.Runtime, runTime time.Time) 
 				errorMsg = *resp.ErrorMessage
 			}
 			return "", fmt.Errorf("transaction failed with status %v: %s", resp.TxStatus, errorMsg)
+		} else if resp.ReceiverContractExecutionStatus != nil &&
+			*resp.ReceiverContractExecutionStatus != evm.ReceiverContractExecutionStatus_RECEIVER_CONTRACT_EXECUTION_STATUS_SUCCESS {
+			return "", fmt.Errorf("failed to execute receiver contract")
 		}
 
 		logger.Info("Write report transaction succeeded at", "txHash", common.BytesToHash(resp.TxHash).Hex(), "chainName", evmCfg.ChainName)
