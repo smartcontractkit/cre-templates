@@ -4,6 +4,10 @@ go 1.24.5
 
 toolchain go1.24.9
 
+// Patch for https://github.com/advisories/GHSA-fj2x-735w-74vq until upgraded
+// upstream.
+replace github.com/consensys/gnark-crypto => github.com/consensys/gnark-crypto v0.18.1
+
 require (
 	github.com/ethereum/go-ethereum v1.16.4
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20250918131840-564fe2776a35
