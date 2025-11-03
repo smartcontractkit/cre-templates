@@ -11,7 +11,7 @@
 
 # Read Data Feeds - CRE Building Blocks
 
-A minimal example that, on a cron schedule (every 10 minutes), reads `decimals()` and `latestAnswer()` from a **Chainlink BTC/USD** Data Feed on **Arbitrum One (mainnet)** and logs the scaled value.
+A minimal example that, on a cron schedule (every 10 minutes), reads `decimals()` and `latestAnswer()` from **Chainlink BTC/USD** Data Feed and **Chainlink ETH/USD** Data Feed on **Arbitrum One (mainnet)** and logs the scaled value.
 
 **Production contract (Arbitrum One):**
 `0x6ce185860a4963106506C203335A2910413708e9`
@@ -26,7 +26,7 @@ Source: [https://arbiscan.io/address/0x6ce185860a4963106506C203335A2910413708e9#
 Copy the feed’s ABI into your repo at:
 
 ```
-contract/abi/BTCUSDPriceFeed.json
+contract/abi/PriceFeedAggregator.abi
 ```
 
 ### 2) Generate bindings
@@ -40,7 +40,7 @@ cre generate-bindings evm
 This creates Go bindings under something like:
 
 ```
-contracts/evm/src/generated/btcusd_price_feed/...
+contracts/evm/src/generated/price_feed_aggregator/...
 ```
 
 > After generation, if your module picked up new deps, run:
