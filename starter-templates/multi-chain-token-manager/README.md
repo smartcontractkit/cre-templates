@@ -41,7 +41,7 @@ The template consists of two components:
 - [CRE Workflow](./workflow/workflow/workflow.go) that monitors supply APY of a target asset on each chain and automatically rebalances lending positions (to maximize supply APY)
 
 **Key Technologies:**
-- **CRE (Chainlink Runtime Environment)** - Orchestrates multi-service workflows with DON consensus
+- **CRE (Chainlink Runtime Environment)** - Orchestrates workflow with DON consensus
 - **CCIP (Cross-Chain Interoperability Protocol)** - Secure token bridging with instructions
 
 <img width="1600" height="900" alt="mctm" src="https://github.com/user-attachments/assets/591441d3-a41f-4ee9-b354-f2d23cf1e329" />
@@ -50,7 +50,7 @@ The template consists of two components:
 
 ## Getting Started
 
-Start here [./workflow/README.md](./workflow/README.md).
+Start [here](./workflow/README.md).
 
 ---
 
@@ -67,7 +67,3 @@ Start here [./workflow/README.md](./workflow/README.md).
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](../../LICENSE) file for details.
-
----
-
-**Built with ❤️ using Chainlink's service stack: CRE and CCIP**
