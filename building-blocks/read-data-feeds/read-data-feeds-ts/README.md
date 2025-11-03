@@ -84,14 +84,22 @@ Create or update `config.json`:
 ```yaml
 staging-settings:
   user-workflow:
-    workflow-name: "workflow01"
+    workflow-name: "my-workflow"
   workflow-artifacts:
     workflow-path: "."
     config-path: "./config.json"
     secrets-path: ""
 ```
 
-### 5) Run a local simulation
+### 5) Install dependencies
+
+From your project root:
+
+```bash
+bun install --cwd ./my-workflow
+```
+
+### 6) Run a local simulation
 
 From your project root:
 
