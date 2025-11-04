@@ -15,8 +15,6 @@
 #       url: "https://mainnet.infura.io/v3/KEY"
 
 default: &default
-  cre-cli:
-    don-family: "zone-a"
   rpcs:
     - chain-name: ethereum-mainnet
       url: https://ethereum.publicnode.com/
