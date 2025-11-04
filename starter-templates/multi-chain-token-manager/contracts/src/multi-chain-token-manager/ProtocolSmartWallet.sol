@@ -18,7 +18,8 @@ import {IERC20} from
     "@openzeppelin/contracts@5.0.2/token/ERC20/IERC20.sol";
 import {SafeERC20} from
     "@openzeppelin/contracts@5.0.2/token/ERC20/utils/SafeERC20.sol";
-import {IERC165} from "@openzeppelin/contracts@5.0.2/utils/introspection/IERC165.sol";
+import {IERC165} from
+  "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v5.0.2/contracts/utils/introspection/IERC165.sol";
 
 import {OwnerIsCreator} from "@chainlink/contracts/src/v0.8/shared/access/OwnerIsCreator.sol";
 
@@ -301,7 +302,7 @@ contract ProtocolSmartWallet is CCIPReceiver, IReceiver, OwnerIsCreator {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public pure virtual override(CCIPReceiver,IERC165) returns (bool) {
+    ) public view virtual override(CCIPReceiver,IERC165) returns (bool) {
         return super.supportsInterface(interfaceId) || interfaceId == type(IReceiver).interfaceId || interfaceId == type(IERC165).interfaceId;
     }
 }
