@@ -15,8 +15,6 @@
 #       url: "https://mainnet.infura.io/v3/KEY"
 
 default: &default
-  cre-cli:
-    don-family: "zone-a"
   rpcs:
     - chain-name: ethereum-mainnet
       url: https://ethereum.publicnode.com/
@@ -24,8 +22,6 @@ default: &default
       url: https://ethereum-sepolia-rpc.publicnode.com
     - chain-name: ethereum-testnet-sepolia-base-1
       url: https://base-sepolia-rpc.publicnode.com
-
-local-simulation: *default
 
 staging-settings: *default
 

@@ -25,8 +25,6 @@ default: &default
     - chain-name: ethereum-testnet-sepolia-base-1
       url: https://base-sepolia-rpc.publicnode.com
 
-local-simulation: *default
-
 staging-settings: *default
 
 production-settings: *default

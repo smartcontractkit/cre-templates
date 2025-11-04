@@ -38,7 +38,9 @@ The template consists of two components:
 - [Contracts](./contracts/README.md) (deployed on multiple chains)
   - [MockPool](./contracts/src/multi-chain-token-manager/MockPool.sol) contract that mimics an AAVE liquidity pool
   - [ProtocolSmartWallet](./contracts/src/multi-chain-token-manager/ProtocolSmartWallet.sol) contract that manages lending positions
-- [CRE Workflow](./workflow/workflow/workflow.go) that monitors supply APY of a target asset on each chain and automatically rebalances lending positions (to maximize supply APY)
+- CRE Workflow that monitors supply APY of a target asset on each chain and automatically rebalances lending positions (to maximize supply APY)
+  - [Golang](./workflow-go/workflow/workflow.go) workflow targeting the **Golang CRE SDK**
+  - [Typescript](./workflow-ts/workflow/main.ts) workflow targeting the **Typescript CRE SDK**
 
 **Key Technologies:**
 - **CRE (Chainlink Runtime Environment)** - Orchestrates workflow with DON consensus
@@ -50,7 +52,15 @@ The template consists of two components:
 
 ## Getting Started
 
-Start [here](./workflow/README.md).
+You can build with the **CRE SDK** in either **Golang** or **TypeScript**.
+
+### Golang SDK
+
+Start [here](./workflow-go/README.md)
+
+### TypeScript SDK
+
+Start [here](./workflow-ts/README.md)
 
 ---
 
