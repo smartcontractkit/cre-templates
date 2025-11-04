@@ -4,33 +4,41 @@
     </a>
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/smartcontractkit/cre-templates/blob/main/LICENSE)
-[![CRE Home](https://img.shields.io/static/v1?label=CRE&message=Home&color=blue)](https://chain.link/chainlink-runtime-environment)
-[![CRE Documentation](https://img.shields.io/static/v1?label=CRE&message=Docs&color=blue)](https://docs.chain.link/cre)
+[![CRE Home](https://img.shields.io/static/v1?label=CRE\&message=Home\&color=blue)](https://chain.link/chainlink-runtime-environment)
+[![CRE Documentation](https://img.shields.io/static/v1?label=CRE\&message=Docs\&color=blue)](https://docs.chain.link/cre)
 
 </div>
 
-# Key Value Storage using AWS S3 - CRE Building Blocks
+# Key-Value Store (AWS S3) - CRE Building Blocks
 
-This example workflow demonstrates how to use the Chainlink Runtime Environment (CRE) Go SDK to create a simple, stateful counter that uses an AWS S3 object as its persistent storage.
+A minimal example that, on a cron schedule, reads a value from an **AWS S3 object**, increments it, and writes it back—using **CRE (Chainlink Runtime Environment)** with SigV4-signed HTTP requests.
 
-## Description
+The workflow:
+- Retrieves `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from CRE Secrets
+- Signs the request with AWS **SigV4** (timestamp sourced from the consensus runtime)
+- Reads the S3 object (initializes to `0` if missing)
+- Aggregates the **current value** across nodes (median), increments once, and writes the **agreed next value** back
 
-This workflow runs on a schedule defined by a cron expression. On each run, it:
+---
 
-1. Securely fetches AWS credentials (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`) from the CRE Secrets API.
-2. Authenticates with AWS S3 by generating a SigV4 signature using the consensus-based `nodeRuntime.Now()` timestamp.
-3. Reads the current value from a specified S3 object (e.g., `cre-counter.txt`).
-4. If the object doesn't exist or is empty, it initializes the value to "0".
-5. Increments the numeric value by 1.
-6. Writes the new value back to the S3 object, overwriting the previous content.
+## Setup & Run
 
-This example showcases CRE capabilities, including using the `http` capability, fetching secrets, and performing stateful business logic using a 3rd party service.
+### 1) Provide AWS credentials as secrets
 
-## How to Use
+Add the following secrets to your CRE environment:
 
-### 1. Configure the Workflow
+```
 
-Open the `my-go-workflow/config.json` file and set the S3 object details.
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+
+````
+
+(For local testing, ensure these are available to the simulator via your environment variables.)
+
+### 2) Configure the workflow
+
+Create/update `my-workflow/config.json` with your S3 details:
 
 ```json
 {
@@ -39,9 +47,39 @@ Open the `my-go-workflow/config.json` file and set the S3 object details.
   "s3_bucket": "product-release-bucket",
   "s3_key": "cre-counter.txt"
 }
+````
+
+* `schedule` uses a **6-field** cron expression with seconds (e.g., `* * */1 * * *` runs every hour).
+* `aws_region` is the AWS region of your bucket.
+* `s3_bucket` is the bucket name.
+* `s3_key` is the object path that stores the counter.
+
+### 3) Run a local simulation
+
+From your project root:
+
+```bash
+cre workflow simulate my-workflow
 ```
 
-  * **`schedule`**: The cron expression for how often to run (e.g., "`* * */1 * * *`" for every hour).
-  * **`aws_region`**: The AWS region where your S3 bucket is located.
-  * **`s3_bucket`**: The name of your S3 bucket.
-  * **`s3_key`**: The path to the object (file) that will store the counter.
+You should see output similar to:
+
+```
+Workflow compiled
+2025-11-03T16:31:45Z [SIMULATION] Simulator Initialized
+
+2025-11-03T16:31:45Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2025-11-03T16:31:45Z [USER LOG] msg="Cron trigger fired. Fetching AWS credentials..."
+2025-11-03T16:31:45Z [USER LOG] msg="AWS credentials fetched. Performing consensus read, then write."
+2025-11-03T16:31:45Z [USER LOG] msg="Consensus old value computed. Incrementing." old=2 new=3
+2025-11-03T16:31:45Z [USER LOG] msg="Workflow finished successfully." old=2 new=3
+
+Workflow Simulation Result:
+ {
+  "NewValue": "3",
+  "OldValue": "2"
+}
+
+2025-11-03T16:31:45Z [SIMULATION] Execution finished signal received
+2025-11-03T16:31:45Z [SIMULATION] Skipping WorkflowEngineV2
+```

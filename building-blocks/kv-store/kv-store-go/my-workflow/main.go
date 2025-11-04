@@ -16,6 +16,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	"github.com/shopspring/decimal"
 	protos "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	crehttp "github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/scheduler/cron"
@@ -23,6 +24,27 @@ import (
 	"github.com/smartcontractkit/cre-sdk-go/cre/wasm"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
+
+func main() {
+	wasm.NewRunner(cre.ParseJSON[Config]).Run(InitWorkflow)
+}
+
+// ---------------------------
+// Workflow Definition (entry)
+// ---------------------------
+
+func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.SecretsProvider) (cre.Workflow[*Config], error) {
+	return cre.Workflow[*Config]{
+		cre.Handler(
+			cron.Trigger(&cron.Config{Schedule: config.Schedule}),
+			onCronTrigger,
+		),
+	}, nil
+}
+
+// ---------------------------
+// Types & Constants
+// ---------------------------
 
 // Config struct defines the parameters that can be passed to the workflow.
 type Config struct {
@@ -32,10 +54,11 @@ type Config struct {
 	S3Key     string `json:"s3_key"`
 }
 
-// The result of our workflow
+// The result of our workflow.
+// We aggregate consensus on OldValue (median) across DON nodes, and require NewValue to be identical.
 type MyResult struct {
-	OldValue string `json:"old_value"`
-	NewValue string `json:"new_value"`
+	OldValue decimal.Decimal `consensus_aggregation:"median" json:"old_value"`
+	NewValue string          `consensus_aggregation:"identical" json:"new_value"`
 }
 
 // emptyPayloadHash is the SHA256 hash of an empty string.
@@ -53,7 +76,6 @@ type S3Client struct {
 	creds       aws.Credentials
 	signer      *v4.Signer
 	httpClient  *crehttp.Client
-	ctx         context.Context
 }
 
 func NewS3Client(cfg *Config, nodeRuntime cre.NodeRuntime, creds aws.Credentials, signer *v4.Signer) *S3Client {
@@ -63,24 +85,23 @@ func NewS3Client(cfg *Config, nodeRuntime cre.NodeRuntime, creds aws.Credentials
 		creds:       creds,
 		signer:      signer,
 		httpClient:  &crehttp.Client{},
-		ctx:         context.Background(),
 	}
 }
 
-func (c *S3Client) ReadValue() (string, error) {
+func (c *S3Client) ReadValue(ctx context.Context) (string, error) {
 	host, path := c.endpoint()
-	fullUrl := "https://" + host + path
+	fullURL := "https://" + host + path
 	method := "GET"
 	consensusTime := c.nodeRuntime.Now()
 
-	req, err := http.NewRequest(method, fullUrl, nil)
+	req, err := http.NewRequest(method, fullURL, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to create http request: %w", err)
 	}
 
 	req.Header.Set("x-amz-content-sha256", emptyPayloadHash)
 
-	if err := c.signer.SignHTTP(c.ctx, c.creds, req, emptyPayloadHash, "s3", c.cfg.AWSRegion, consensusTime); err != nil {
+	if err := c.signer.SignHTTP(ctx, c.creds, req, emptyPayloadHash, "s3", c.cfg.AWSRegion, consensusTime); err != nil {
 		return "", fmt.Errorf("failed to sign request with AWS SDK: %w", err)
 	}
 
@@ -101,14 +122,14 @@ func (c *S3Client) ReadValue() (string, error) {
 	return string(resp.Body), nil
 }
 
-func (c *S3Client) WriteValue(value string) error {
+func (c *S3Client) WriteValue(ctx context.Context, value string) error {
 	host, path := c.endpoint()
-	fullUrl := "https://" + host + path
+	fullURL := "https://" + host + path
 	method := "PUT"
 	body := []byte(value)
 	consensusTime := c.nodeRuntime.Now()
 
-	req, err := http.NewRequest(method, fullUrl, bytes.NewReader(body))
+	req, err := http.NewRequest(method, fullURL, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create http request: %w", err)
 	}
@@ -119,7 +140,7 @@ func (c *S3Client) WriteValue(value string) error {
 	payloadHash := sha256Hex(body)
 	req.Header.Set("x-amz-content-sha256", payloadHash)
 
-	if err := c.signer.SignHTTP(c.ctx, c.creds, req, payloadHash, "s3", c.cfg.AWSRegion, consensusTime); err != nil {
+	if err := c.signer.SignHTTP(ctx, c.creds, req, payloadHash, "s3", c.cfg.AWSRegion, consensusTime); err != nil {
 		return fmt.Errorf("failed to sign request with AWS SDK: %w", err)
 	}
 
@@ -174,17 +195,8 @@ func (c *S3Client) endpoint() (string, string) {
 }
 
 // ---------------------------
-// Workflow Definition
+// Workflow Logic
 // ---------------------------
-
-func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.SecretsProvider) (cre.Workflow[*Config], error) {
-	return cre.Workflow[*Config]{
-		cre.Handler(
-			cron.Trigger(&cron.Config{Schedule: config.Schedule}),
-			onCronTrigger,
-		),
-	}, nil
-}
 
 // fetchAWSCredentials uses the runtime to get secrets and returns them in the AWS SDK's struct.
 func fetchAWSCredentials(runtime cre.Runtime) (aws.Credentials, error) {
@@ -215,20 +227,43 @@ func onCronTrigger(config *Config, runtime cre.Runtime, trigger *cron.Payload) (
 		logger.Error("Workflow failed: could not fetch AWS credentials", "err", err)
 		return nil, err
 	}
-	logger.Info("AWS credentials fetched. Running S3 Read/Increment/Write.")
+	logger.Info("AWS credentials fetched. Performing consensus read, then write.")
 
 	signer := v4.NewSigner()
 
-	resultPromise := cre.RunInNodeMode(config, runtime,
-		func(config *Config, nodeRuntime cre.NodeRuntime) (*MyResult, error) {
-			return s3ReadIncrementWrite(config, nodeRuntime, creds, signer)
+	// ---- Phase 1: Read old value on nodes, then aggregate (median) via struct tags.
+	readPromise := cre.RunInNodeMode(
+		config,
+		runtime,
+		func(cfg *Config, nodeRuntime cre.NodeRuntime) (*MyResult, error) {
+			return s3ReadOnly(cfg, nodeRuntime, creds, signer)
+		},
+		cre.ConsensusAggregationFromTags[*MyResult](),
+	)
+	readRes, err := readPromise.Await()
+	if err != nil {
+		logger.Error("Consensus read failed", "err", err)
+		return nil, err
+	}
+
+	oldDec := readRes.OldValue
+	newDec := oldDec.Add(decimal.NewFromInt(1))
+	newStr := newDec.String()
+
+	logger.Info("Consensus old value computed. Incrementing.", "old", oldDec, "new", newStr)
+
+	// ---- Phase 2: Write the new value on nodes (idempotent PUT), ensure identical aggregation.
+	writePromise := cre.RunInNodeMode(
+		config,
+		runtime,
+		func(cfg *Config, nodeRuntime cre.NodeRuntime) (*MyResult, error) {
+			return s3WriteOnly(cfg, nodeRuntime, creds, signer, oldDec, newStr)
 		},
 		cre.ConsensusIdenticalAggregation[*MyResult](),
 	)
-
-	result, err := resultPromise.Await()
+	result, err := writePromise.Await()
 	if err != nil {
-		logger.Error("Workflow failed", "err", err)
+		logger.Error("Write phase failed", "err", err)
 		return nil, err
 	}
 
@@ -236,57 +271,55 @@ func onCronTrigger(config *Config, runtime cre.Runtime, trigger *cron.Payload) (
 	return result, nil
 }
 
-func s3ReadIncrementWrite(config *Config, nodeRuntime cre.NodeRuntime, creds aws.Credentials, signer *v4.Signer) (*MyResult, error) {
+// s3ReadOnly reads the current value and returns it (no writes).
+func s3ReadOnly(config *Config, nodeRuntime cre.NodeRuntime, creds aws.Credentials, signer *v4.Signer) (*MyResult, error) {
 	logger := nodeRuntime.Logger()
+	ctx := context.Background()
 
 	s3Client := NewS3Client(config, nodeRuntime, creds, signer)
 
-	oldVal, err := s3Client.ReadValue()
+	valStr, err := s3Client.ReadValue(ctx)
 	if err != nil {
 		if isNotFound(err) {
 			logger.Info("S3 object not found, starting count at 0.")
-			oldVal = "0"
+			valStr = "0"
 		} else {
 			return nil, fmt.Errorf("s3ReadValue failed: %w", err)
 		}
 	}
-	oldVal = strings.TrimSpace(oldVal)
 
-	// Business logic - increment value
-	newVal := incStringInt(oldVal)
-	logger.Info("Value incremented", "old", oldVal, "new", newVal)
-
-	if err := s3Client.WriteValue(newVal); err != nil {
-		return nil, fmt.Errorf("s3WriteValue failed: %w", err)
+	valStr = strings.TrimSpace(valStr)
+	valDec, err := decimal.NewFromString(valStr)
+	if err != nil {
+		// If content isn't a valid number, treat as zero for robustness.
+		valDec = decimal.Zero
 	}
 
-	return &MyResult{OldValue: oldVal, NewValue: newVal}, nil
+	// NewValue is left empty here; consensus will ignore it but still requires a tag.
+	return &MyResult{OldValue: valDec}, nil
 }
+
+// s3WriteOnly writes the provided new value and returns both old & new (no reads).
+func s3WriteOnly(config *Config, nodeRuntime cre.NodeRuntime, creds aws.Credentials, signer *v4.Signer, oldDec decimal.Decimal, newVal string) (*MyResult, error) {
+	ctx := context.Background()
+	s3Client := NewS3Client(config, nodeRuntime, creds, signer)
+
+	if err := s3Client.WriteValue(ctx, newVal); err != nil {
+		return nil, fmt.Errorf("s3WriteValue failed: %w", err)
+	}
+	return &MyResult{OldValue: oldDec, NewValue: newVal}, nil
+}
+
+// ---------------------------
+// Helpers
+// ---------------------------
 
 func isNotFound(err error) bool {
 	errStr := strings.ToLower(err.Error())
 	return strings.Contains(errStr, "404") || strings.Contains(errStr, "not found")
 }
 
-func incStringInt(s string) string {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return "1"
-	}
-	var n int64
-	_, err := fmt.Sscan(s, &n)
-	if err != nil {
-		return "1"
-	}
-	n++
-	return fmt.Sprintf("%d", n)
-}
-
 func sha256Hex(b []byte) string {
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
-}
-
-func main() {
-	wasm.NewRunner(cre.ParseJSON[Config]).Run(InitWorkflow)
 }

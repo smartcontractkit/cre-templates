@@ -1,5 +1,5 @@
 {
-  "schedule": "* */3 * * * *",
+  "schedule": "* * */1 * * *",
   "aws_region": "my-aws-region",
   "s3_bucket": "my-s3-bucket-name",
   "s3_key": "my-s3-bucket-key"
