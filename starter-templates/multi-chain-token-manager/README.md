@@ -61,6 +61,7 @@ Start [here](./workflow/README.md).
 1. **This is a demo project** - Not production-ready
 2. **Contracts are examples** - Write your own audited contracts for your use case
 3. **Use your own RPC for stability** - For stable deployment and chainwrite operations it is advised to use your own private RPCs
+4. **Secrets hygiene** – Keep real secrets out of version control; use secure secret managers for `.env` values.
 
 ---
 

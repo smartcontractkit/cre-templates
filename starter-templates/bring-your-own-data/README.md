@@ -39,9 +39,13 @@ The template consists of two components:
   - [DataFeedsCache](./contracts/lib/chainlink-evm/contracts/src/v0.8/data-feeds/DataFeedsCache.sol) contract that receives data on-chain
   - [DecimalAggregatorProxy](./contracts/src/nav/DecimalAggregatorProxy.sol) proxy contract for PoR data stored in the DataFeedsCache contract
   - [BundleAggregatorProxy](./contracts/lib/chainlink-evm/contracts/src/v0.8/data-feeds/BundleAggregatorProxy.sol) proxy contract for NAV data stored in the DataFeedsCache contract
-- [CRE Workflows](./workflow/README.md)
-  - [PoR Workflow](./workflow/por/workflow.go) CRE workflow for Proof-of-Reserve (PoR)
-  - [NAV Workflow](./workflow/nav/workflow.go) CRE workflow for Net-Asset-Value (NAV)
+- CRE Workflows
+  - [Golang](./workflow-go/README.md) workflows targeting the **Golang CRE SDK**
+    - [PoR Workflow](./workflow-go/por/workflow.go) Proof-of-Reserve (PoR)
+    - [NAV Workflow](./workflow-go/nav/workflow.go) Net-Asset-Value (NAV)
+  - [Typescript](./workflow-ts/README.md) workflows targeting the **Typescript CRE SDK**
+    - [PoR Workflow](./workflow-ts/por/main.ts) Proof-of-Reserve (PoR)
+    - [NAV Workflow](./workflow-ts/nav/main.ts) Net-Asset-Value (NAV)
 
 **Key Technologies:**
 - **CRE (Chainlink Runtime Environment)** - Orchestrates workflows with DON consensus
@@ -52,7 +56,15 @@ The template consists of two components:
 
 ## Getting Started
 
-Start [here](./workflow/README.md).
+You can build with the **CRE SDK** in either **Golang** or **TypeScript**.
+
+### Golang SDK
+
+Start [here](./workflow-go/README.md)
+
+### TypeScript SDK
+
+Start [here](./workflow-ts/README.md)
 
 ---
 
@@ -63,6 +75,7 @@ Start [here](./workflow/README.md).
 1. **This is a demo project** - Not production-ready
 2. **DecimalAggregatorProxy contract is demo contract** - Not audited and not production-ready
 3. **Use your own RPC for stability** - For stable deployment and chainwrite operations it is advised to use your own private RPCs
+4. **Secrets hygiene** – Keep real secrets out of version control; use secure secret managers for `.env` values.
 
 ---
 
