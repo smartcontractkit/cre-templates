@@ -14,6 +14,7 @@
 A minimal TypeScript example that, on a cron schedule (every 10 minutes), reads decimals() and latestAnswer() from Chainlink Data Feeds on Arbitrum One (mainnet) using the CRE chain reader. It logs the scaled values and returns a JSON array of results.
 
 Production contract (BTC/USD on Arbitrum One): [0x6ce185860a4963106506C203335A2910413708e9](https://arbiscan.io/address/0x6ce185860a4963106506C203335A2910413708e9#code)
+
 Production contract (ETH/USD on Arbitrum One): [0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612](https://arbiscan.io/address/0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612#code)
 
 ---
