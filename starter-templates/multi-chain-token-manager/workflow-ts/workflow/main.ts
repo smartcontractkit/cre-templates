@@ -11,7 +11,7 @@ import {
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { type Address, decodeFunctionResult, encodeFunctionData, Hex, zeroAddress } from 'viem'
+import { type Address, decodeFunctionResult, encodeAbiParameters, encodeFunctionData, Hex, parseAbiParameters, zeroAddress } from 'viem'
 import { z } from 'zod'
 import { MockPool, ProtocolSmartWallet } from '../contracts/abi'
 
@@ -205,22 +205,14 @@ const performRebalance = (
 ): void => {
 	const evmClient = getEvmClientForChain(evmCfg)
 
-	const callData = encodeFunctionData({
-		abi: ProtocolSmartWallet,
-		functionName: 'withdrawFromPoolAndDepositCrossChain',
-		args: [
-			{
-				asset: evmCfg.assetAddress as Hex,
-				amount,
-				destinationChainSelector: bestChainSelector,
-				destinationProtocolSmartWallet: bestProtocolSmartWallet as Hex,
-			},
-		],
-	})
+	const reportData = encodeAbiParameters(
+		parseAbiParameters("address asset, uint256 amount, uint64 destinationChainSelector, address destinationProtocolSmartWallet"),
+		[evmCfg.assetAddress as Hex, amount, bestChainSelector, bestProtocolSmartWallet as Hex]
+	)
 
 	const reportResponse = runtime
 		.report({
-			encodedPayload: hexToBase64(callData),
+			encodedPayload: hexToBase64(reportData),
 			encoderName: 'evm',
 			signingAlgo: 'ecdsa',
 			hashingAlgo: 'keccak256',
