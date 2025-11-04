@@ -54,7 +54,7 @@ const safeJsonStringify = (obj: any): string =>
 	JSON.stringify(obj, (_, value) => (typeof value === 'bigint' ? value.toString() : value), 2)
 
 const fetchReserveInfo = (sendRequester: HTTPSendRequester, config: Config): ReserveInfo => {
-	const response = sendRequester.sendRequest({ url: config.url }).result()
+	const response = sendRequester.sendRequest({ method: 'GET', url: config.url }).result()
 
 	if (response.statusCode !== 200) {
 		throw new Error(`HTTP request failed with status: ${response.statusCode}`)
