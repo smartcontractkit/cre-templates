@@ -9,17 +9,7 @@
 
 </div>
 
-# Read Data Feeds - CRE Building Blocks
-
-A minimal example that, on a cron schedule (every 10 minutes), reads `decimals()` and `latestAnswer()` from **Chainlink BTC/USD** Data Feed and **Chainlink ETH/USD** Data Feed on **Arbitrum One (mainnet)** and logs the scaled value.
-
-**Production contract (Arbitrum One):**
-`0x6ce185860a4963106506C203335A2910413708e9`
-Source: [https://arbiscan.io/address/0x6ce185860a4963106506C203335A2910413708e9#code](https://arbiscan.io/address/0x6ce185860a4963106506C203335A2910413708e9#code)
-
----
-
-## To read from another feed / chain
+## Quick start
 
 ### 1) Add the ABI
 
