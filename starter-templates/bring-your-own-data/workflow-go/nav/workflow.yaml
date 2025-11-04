@@ -15,15 +15,6 @@
 #     secrets-path: "../secrets.yaml"       # Path to secrets file (project root by default)
 
 # ==========================================================================
-local-simulation:
-  user-workflow:
-    workflow-name: "cre-nav"
-  workflow-artifacts:
-    workflow-path: "."
-    config-path: "./config.json"
-    secrets-path: ""
-
-# ==========================================================================
 staging-settings:
   user-workflow:
     workflow-name: "cre-nav"

@@ -17,7 +17,7 @@
 # ==========================================================================
 staging-settings:
   user-workflow:
-    workflow-name: "workflow-staging"
+    workflow-name: "cre-multi-chain-token-manager"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.json"
@@ -27,7 +27,7 @@ staging-settings:
 # ==========================================================================
 production-settings:
   user-workflow:
-    workflow-name: "workflow-production"
+    workflow-name: "cre-multi-chain-token-manager"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.json"
