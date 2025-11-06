@@ -36,9 +36,9 @@ This template provides an end-to-end staring point for bringing your own off-cha
 
 The template consists of two components:
 - [Contracts](./contracts/README.md) (deployed on multiple chains)
-  - [DataFeedsCache](./contracts/lib/chainlink-evm/contracts/src/v0.8/data-feeds/DataFeedsCache.sol) contract that receives data on-chain
+  - [DataFeedsCache](https://github.com/smartcontractkit/chainlink-evm/blob/88d90433a15f1c34bb5fabc29be192400fad396c/contracts/src/v0.8/data-feeds/DataFeedsCache.sol) contract that receives data on-chain
   - [DecimalAggregatorProxy](./contracts/src/nav/DecimalAggregatorProxy.sol) proxy contract for PoR data stored in the DataFeedsCache contract
-  - [BundleAggregatorProxy](./contracts/lib/chainlink-evm/contracts/src/v0.8/data-feeds/BundleAggregatorProxy.sol) proxy contract for NAV data stored in the DataFeedsCache contract
+  - [BundleAggregatorProxy](https://github.com/smartcontractkit/chainlink-evm/blob/88d90433a15f1c34bb5fabc29be192400fad396c/contracts/src/v0.8/data-feeds/BundleAggregatorProxy.sol) proxy contract for NAV data stored in the DataFeedsCache contract
 - CRE Workflows
   - [Golang](./workflow-go/README.md) workflows targeting the **Golang CRE SDK**
     - [PoR Workflow](./workflow-go/por/workflow.go) Proof-of-Reserve (PoR)
