@@ -1,47 +1,82 @@
-# CRE Indexer Workflows
+# CRE Indexer Data Feed Workflows
 
-Workflows for pulling data from The Graph indexer with scheduled cron triggers, created using `cre init`.
+Workflows for pulling data from The Graph indexer with scheduled cron triggers. These workflows demonstrate the **pull pattern** where the workflow initiates and fetches data on a schedule.
 
 ## Directory Structure
 
 ```
-building-blocks/cre-indexer-workflows/
+building-blocks/indexer-fetch/
 ├── README.md (this file)
-├── indexer-workflow-ts/  (Go-based workflow for indexer queries)
+├── indexer-fetch-go/     (Go-based workflow)
 │   └── my-workflow/
 │       ├── workflow.go
 │       ├── main.go
 │       ├── config.staging.json
 │       ├── config.production.json
 │       └── workflow.yaml
-└── indexer-workflow-go/  (Go hello world template)
-    └── my-workflow/
-        └── [template files]
+└── indexer-fetch-ts/     (TypeScript-based workflow)
+    └── workflow/
+        ├── main.ts
+        ├── config.staging.json
+        ├── config.production.json
+        ├── package.json
+        └── workflow.yaml
 ```
 
 ## Overview
 
 These workflows demonstrate how to:
 - Query The Graph indexer using GraphQL
-- Use cron triggers to schedule periodic data fetching (every minute by default)
+- Use cron triggers to schedule periodic data fetching
 - Process and return JSON-formatted indexer data
+- Implement the same functionality in both Go and TypeScript
 
-## Main Workflow: indexer-workflow-ts
+Both workflows query the Uniswap V4 subgraph on The Graph and fetch:
+- Pool manager statistics (pool count, transaction count, total volume)
+- ETH price data from bundles
 
-**Note:** Despite the name, this uses Go (created from CRE template 1).
+## Workflows
 
-### Configuration
+### 1. indexer-fetch-go (Go Implementation)
 
-The workflow is configured in `my-workflow/config.staging.json`:
+**Language:** Go
+
+**Features:**
+- Uses `http.SendRequest` pattern from CRE Go SDK
+- Implements `ConsensusIdenticalAggregation` for deterministic data
+- Returns formatted JSON with timestamp and endpoint info
+
+**Running the workflow:**
+```bash
+cd building-blocks/indexer-fetch/indexer-fetch-go
+cre workflow simulate my-workflow --target staging-settings
+```
+
+### 2. indexer-fetch-ts (TypeScript Implementation)
+
+**Language:** TypeScript
+
+**Features:**
+- Uses `runInNodeMode` pattern from CRE TypeScript SDK
+- Implements custom first-result aggregation for deterministic data
+- Returns formatted JSON with timestamp and endpoint info
+
+**Running the workflow:**
+```bash
+cd building-blocks/indexer-fetch/indexer-fetch-ts
+cre workflow simulate workflow --target staging-settings
+```
+
+## Configuration
+
+Both workflows use the same configuration structure in their respective `config.staging.json` files:
 
 ```json
 {
   "schedule": "0 * * * * *",
-  "graphqlEndpoint": "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2",
-  "query": "query GetPairs($first: Int!) { pairs(first: $first, orderBy: reserveUSD, orderDirection: desc) { id token0 { id symbol name } token1 { id symbol name } reserveUSD } }",
-  "variables": {
-    "first": 3
-  }
+  "graphqlEndpoint": "https://gateway.thegraph.com/api/bca58895bc60dcb319e3cbdfd989b964/subgraphs/id/Gqm2b5J85n1bhCyDMpGbtbVn4935EvvdyHdHrx3dibyj",
+  "query": "{ poolManagers(first: 5) { id poolCount txCount totalVolumeUSD } bundles(first: 5) { id ethPriceUSD } }",
+  "variables": {}
 }
 ```
 
@@ -49,31 +84,33 @@ The workflow is configured in `my-workflow/config.staging.json`:
 
 - **schedule**: Cron expression in 6-field format (second minute hour day month weekday)
   - `"0 * * * * *"` - Every minute at second 0
+  - `"*/30 * * * * *"` - Every 30 seconds
   - `"0 */5 * * * *"` - Every 5 minutes at second 0
 
 - **graphqlEndpoint**: The Graph API endpoint URL
-  - Public endpoint: `https://api.thegraph.com/subgraphs/name/{owner}/{subgraph}`
+  - Gateway endpoint: `https://gateway.thegraph.com/api/{api-key}/subgraphs/id/{subgraph-id}`
   - Studio endpoint: `https://api.studio.thegraph.com/query/{id}/{name}/version/latest`
 
-- **query**: GraphQL query string with optional variables
+- **query**: GraphQL query string
+  - Simple queries without variables work best
+  - See The Graph documentation for query syntax
 
-- **variables**: Object with variables for the GraphQL query
+- **variables**: Object with variables for the GraphQL query (optional)
 
-### Workflow Code Structure
+## Key Implementation Details
 
-The workflow (`workflow.go`) includes:
-
-1. **Config struct**: Holds GraphQL endpoint, query, schedule, and variables
-2. **InitWorkflow**: Sets up the cron trigger
-3. **onIndexerCronTrigger**: Main handler that fetches data when cron fires
-4. **fetchGraphData**: Makes HTTP POST request to The Graph endpoint
-
-### Key Implementation Details
+### Go Implementation
 
 ```go
-// Uses HTTP SendRequest pattern from CRE SDK
+// Uses HTTP SendRequest pattern with consensus aggregation
 client := &http.Client{}
-result, err := http.SendRequest(config, runtime, client, fetchGraphData, nil).Await()
+result, err := http.SendRequest(
+    config,
+    runtime,
+    client,
+    fetchGraphData,
+    cre.ConsensusIdenticalAggregation[string](),
+).Await()
 
 // GraphQL request structure
 gqlRequest := GraphQLRequest{
@@ -81,7 +118,7 @@ gqlRequest := GraphQLRequest{
     Variables: config.Variables,
 }
 
-// Makes POST request with proper headers
+// Makes POST request
 httpResp, err := sendRequester.SendRequest(&http.Request{
     Method: "POST",
     Url:    config.GraphqlEndpoint,
@@ -92,129 +129,161 @@ httpResp, err := sendRequester.SendRequest(&http.Request{
 }).Await()
 ```
 
+### TypeScript Implementation
+
+```typescript
+// Uses runInNodeMode pattern with custom aggregation
+const firstResultAggregation = (results: string[]) => results[0]
+const result = runtime.runInNodeMode(
+    fetchGraphData,
+    firstResultAggregation
+)().result()
+
+// GraphQL request structure
+const gqlRequest: GraphQLRequest = {
+  query: nodeRuntime.config.query,
+  variables: nodeRuntime.config.variables,
+}
+
+// Makes POST request
+const resp = httpClient.sendRequest(nodeRuntime, {
+  url: nodeRuntime.config.graphqlEndpoint,
+  method: "POST" as const,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: new TextEncoder().encode(requestBody),
+}).result()
+```
+
 ## Setup and Testing
 
 ### Prerequisites
 
+**For Go workflow:**
 1. Install CRE CLI
 2. Login: `cre login`
 3. Go 1.23+ installed
 
-### Running the Workflow
+**For TypeScript workflow:**
+1. Install CRE CLI
+2. Login: `cre login`
+3. Bun installed (or Node.js)
+4. Run `bun install` in the workflow directory
 
-1. Navigate to the workflow directory:
-```bash
-cd building-blocks/indexer-workflows/indexer-workflow-ts
-```
+### Running the Workflows
 
-2. Test with simulation:
+**Go Workflow:**
 ```bash
+cd building-blocks/indexer-fetch/indexer-fetch-go
 cre workflow simulate my-workflow --target staging-settings
 ```
 
-3. When prompted, select trigger `1` (cron-trigger)
-
-### Expected Behavior
-
-**Boilerplate (PoR) workflow**: ✅ Compiles and runs successfully
-**Enhanced indexer workflow**: ⚠️ Compiles successfully but encounters runtime issues with HTTP capability in simulation
-
-## Current Status
-
-### ✅ Working
-
-- Workflow structure and configuration
-- Compilation and WASM generation
-- Cron trigger setup
-- GraphQL request formatting
-- Error handling
-
-### ⚠️ Known Issues
-
-The enhanced indexer workflow compiles but fails at runtime with:
-```
-Workflow execution failed:
- error while executing at wasm backtrace
-Caused by:
-    Exited with i32 exit status 2
+**TypeScript Workflow:**
+```bash
+cd building-blocks/indexer-fetch/indexer-fetch-ts
+cre workflow simulate workflow --target staging-settings
 ```
 
-This appears to be a runtime issue with the HTTP capability in the CRE SDK during simulation. The code structure follows the correct patterns from working examples.
+### Expected Output
 
-##  Example Use Cases
+Both workflows return JSON output like:
 
-### 1. Monitoring Uniswap Pairs
-Query top liquidity pools every minute:
 ```json
 {
-  "schedule": "0 * * * * *",
-  "graphqlEndpoint": "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2",
-  "query": "query GetPairs($first: Int!) { pairs(first: $first, orderBy: reserveUSD, orderDirection: desc) { id reserveUSD } }",
-  "variables": { "first": 10 }
+  "timestamp": "2025-11-18T18:43:08.452Z",
+  "endpoint": "https://gateway.thegraph.com/api/.../subgraphs/id/...",
+  "data": {
+    "bundles": [
+      {
+        "ethPriceUSD": "3157.000458184067393927942592490315",
+        "id": "1"
+      }
+    ],
+    "poolManagers": [
+      {
+        "id": "0x498581ff718922c3f8e6a244956af099b2652b2b",
+        "poolCount": "5123368",
+        "totalVolumeUSD": "5611562100.854190095192400782985064",
+        "txCount": "480580367"
+      }
+    ]
+  }
 }
 ```
 
-### 2. Tracking Token Transfers
-Monitor recent transfers every 5 minutes:
-```json
-{
-  "schedule": "0 */5 * * * *",
-  "graphqlEndpoint": "https://api.thegraph.com/subgraphs/name/{owner}/{token-subgraph}",
-  "query": "query GetTransfers($first: Int!) { transfers(first: $first, orderBy: timestamp, orderDirection: desc) { id from to value } }",
-  "variables": { "first": 20 }
-}
-```
+## Status
 
-### 3. Price Feed Updates
-Check prices from a DEX every minute:
+### ✅ Both Workflows Working
+
+- ✅ Workflow structure and configuration
+- ✅ Compilation and WASM generation
+- ✅ Cron trigger setup
+- ✅ GraphQL request formatting
+- ✅ HTTP requests to The Graph
+- ✅ Error handling
+- ✅ Successful simulation and execution
+
+## Example Use Cases
+
+### 1. Monitoring Uniswap V4 Pools
+Query pool statistics every minute:
 ```json
 {
   "schedule": "0 * * * * *",
-  "graphqlEndpoint": "https://api.thegraph.com/subgraphs/name/{owner}/{dex-subgraph}",
-  "query": "query GetPrices { tokens(first: 5, orderBy: derivedETH, orderDirection: desc) { id symbol derivedETH } }",
+  "graphqlEndpoint": "https://gateway.thegraph.com/api/{key}/subgraphs/id/{id}",
+  "query": "{ poolManagers(first: 5) { id poolCount totalVolumeUSD } }",
   "variables": {}
 }
 ```
 
-## Workflow Creation Process
-
-These workflows were created using:
-
-```bash
-# Initialize Go workflow from template 1 (PoR example)
-cre init --project-name indexer-workflow-ts -t 1 --rpc-url https://ethereum-sepolia-rpc.publicnode.com
-
-# Initialize Go workflow from template 2 (Hello World)
-cre init --project-name indexer-workflow-go -t 2 --rpc-url https://ethereum-sepolia-rpc.publicnode.com
+### 2. Tracking Token Prices
+Monitor token prices every 30 seconds:
+```json
+{
+  "schedule": "*/30 * * * * *",
+  "graphqlEndpoint": "https://gateway.thegraph.com/api/{key}/subgraphs/id/{id}",
+  "query": "{ tokens(first: 10, orderBy: volumeUSD, orderDirection: desc) { id symbol volumeUSD } }",
+  "variables": {}
+}
 ```
 
-The first workflow was then enhanced to support The Graph indexer queries.
+### 3. DeFi Protocol Metrics
+Check protocol statistics every 5 minutes:
+```json
+{
+  "schedule": "0 */5 * * * *",
+  "graphqlEndpoint": "https://gateway.thegraph.com/api/{key}/subgraphs/id/{id}",
+  "query": "{ protocols(first: 1) { totalValueLockedUSD totalVolumeUSD txCount } }",
+  "variables": {}
+}
+```
 
-## Files Modified
+## Comparison: Go vs TypeScript
 
-From the boilerplate template, the following files were modified:
-
-1. **workflow.go**: Completely rewritten to query The Graph indexer
-2. **config.staging.json**: Updated with Graph endpoint and query
-3. **config.production.json**: Updated with Graph endpoint and query
-4. **main.go**: Updated to use new Config struct
+| Feature | Go | TypeScript |
+|---------|-----|------------|
+| **HTTP Pattern** | `http.SendRequest` | `runInNodeMode` with `HTTPClient` |
+| **Consensus** | `ConsensusIdenticalAggregation[string]()` | Custom `firstResultAggregation` |
+| **Type Safety** | Compile-time with structs | Compile-time with TypeScript types |
+| **Error Handling** | Go error returns | JavaScript try/catch |
+| **Entry Point** | `main.go` | `main.ts` |
+| **Workflow Directory** | `my-workflow/` | `workflow/` |
 
 ## Reference Documentation
 
 - [CRE Documentation](https://docs.chain.link/cre)
 - [The Graph Documentation](https://thegraph.com/docs/)
 - [Cron Expression Reference](https://en.wikipedia.org/wiki/Cron)
+- [CRE TypeScript SDK](https://www.npmjs.com/package/@chainlink/cre-sdk)
 
-## Next Steps
+## Related Patterns
 
-To resolve the runtime issues:
-1. Test in actual deployment environment (not just simulation)
-2. Check CRE SDK documentation for HTTP capability usage updates
-3. Verify network connectivity and endpoint accessibility
-4. Consider alternative HTTP request patterns supported by the SDK
+This is a **pull pattern** workflow where the workflow initiates data fetching on a schedule. For the complementary **push pattern** (event-driven workflows triggered by indexer events), see the `indexer-events` building block.
 
 ## Learn More
 
-For working examples:
-- See `building-blocks/read-data-feeds/read-data-feeds-go` for a production-ready workflow
+For other workflow examples:
+- See `building-blocks/read-data-feeds` for reading on-chain data feeds
+- See `building-blocks/kv-store` for key-value storage patterns
 - Check CRE CLI help: `cre workflow simulate --help`
