@@ -97,65 +97,6 @@ Both workflows use the same configuration structure in their respective `config.
 
 - **variables**: Object with variables for the GraphQL query (optional)
 
-## Key Implementation Details
-
-### Go Implementation
-
-```go
-// Uses HTTP SendRequest pattern with consensus aggregation
-client := &http.Client{}
-result, err := http.SendRequest(
-    config,
-    runtime,
-    client,
-    fetchGraphData,
-    cre.ConsensusIdenticalAggregation[string](),
-).Await()
-
-// GraphQL request structure
-gqlRequest := GraphQLRequest{
-    Query:     config.Query,
-    Variables: config.Variables,
-}
-
-// Makes POST request
-httpResp, err := sendRequester.SendRequest(&http.Request{
-    Method: "POST",
-    Url:    config.GraphqlEndpoint,
-    Headers: map[string]string{
-        "Content-Type": "application/json",
-    },
-    Body: requestBody,
-}).Await()
-```
-
-### TypeScript Implementation
-
-```typescript
-// Uses runInNodeMode pattern with custom aggregation
-const firstResultAggregation = (results: string[]) => results[0]
-const result = runtime.runInNodeMode(
-    fetchGraphData,
-    firstResultAggregation
-)().result()
-
-// GraphQL request structure
-const gqlRequest: GraphQLRequest = {
-  query: nodeRuntime.config.query,
-  variables: nodeRuntime.config.variables,
-}
-
-// Makes POST request
-const resp = httpClient.sendRequest(nodeRuntime, {
-  url: nodeRuntime.config.graphqlEndpoint,
-  method: "POST" as const,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: new TextEncoder().encode(requestBody),
-}).result()
-```
-
 ## Setup and Testing
 
 ### Prerequisites
@@ -163,12 +104,12 @@ const resp = httpClient.sendRequest(nodeRuntime, {
 **For Go workflow:**
 1. Install CRE CLI
 2. Login: `cre login`
-3. Go 1.23+ installed
+3. Install Go
 
 **For TypeScript workflow:**
 1. Install CRE CLI
 2. Login: `cre login`
-3. Bun installed (or Node.js)
+3. Install Bun (or Node.js)
 4. Run `bun install` in the workflow directory
 
 ### Running the Workflows
@@ -176,7 +117,7 @@ const resp = httpClient.sendRequest(nodeRuntime, {
 **Go Workflow:**
 ```bash
 cd building-blocks/indexer-fetch/indexer-fetch-go
-cre workflow simulate my-workflow --target staging-settings
+cre workflow simulate workflow --target staging-settings
 ```
 
 **TypeScript Workflow:**
@@ -185,7 +126,7 @@ cd building-blocks/indexer-fetch/indexer-fetch-ts
 cre workflow simulate workflow --target staging-settings
 ```
 
-### Expected Output
+### Example Output 
 
 Both workflows return JSON output like:
 
@@ -212,17 +153,6 @@ Both workflows return JSON output like:
 }
 ```
 
-## Status
-
-### ✅ Both Workflows Working
-
-- ✅ Workflow structure and configuration
-- ✅ Compilation and WASM generation
-- ✅ Cron trigger setup
-- ✅ GraphQL request formatting
-- ✅ HTTP requests to The Graph
-- ✅ Error handling
-- ✅ Successful simulation and execution
 
 ## Example Use Cases
 
@@ -259,31 +189,7 @@ Check protocol statistics every 5 minutes:
 }
 ```
 
-## Comparison: Go vs TypeScript
-
-| Feature | Go | TypeScript |
-|---------|-----|------------|
-| **HTTP Pattern** | `http.SendRequest` | `runInNodeMode` with `HTTPClient` |
-| **Consensus** | `ConsensusIdenticalAggregation[string]()` | Custom `firstResultAggregation` |
-| **Type Safety** | Compile-time with structs | Compile-time with TypeScript types |
-| **Error Handling** | Go error returns | JavaScript try/catch |
-| **Entry Point** | `main.go` | `main.ts` |
-| **Workflow Directory** | `my-workflow/` | `workflow/` |
-
 ## Reference Documentation
 
 - [CRE Documentation](https://docs.chain.link/cre)
 - [The Graph Documentation](https://thegraph.com/docs/)
-- [Cron Expression Reference](https://en.wikipedia.org/wiki/Cron)
-- [CRE TypeScript SDK](https://www.npmjs.com/package/@chainlink/cre-sdk)
-
-## Related Patterns
-
-This is a **pull pattern** workflow where the workflow initiates data fetching on a schedule. For the complementary **push pattern** (event-driven workflows triggered by indexer events), see the `indexer-events` building block.
-
-## Learn More
-
-For other workflow examples:
-- See `building-blocks/read-data-feeds` for reading on-chain data feeds
-- See `building-blocks/kv-store` for key-value storage patterns
-- Check CRE CLI help: `cre workflow simulate --help`

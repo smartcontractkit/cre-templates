@@ -46,7 +46,8 @@ const fetchGraphData = (nodeRuntime: NodeRuntime<Config>): string => {
   }
 
   // Send the request using the HTTP client
-  const resp = httpClient.sendRequest(nodeRuntime, req).result()
+  // @ts-ignore
+    const resp = httpClient.sendRequest(nodeRuntime, req).result()
 
   // Parse the GraphQL response
   const bodyText = new TextDecoder().decode(resp.body)
@@ -79,7 +80,8 @@ const onIndexerCronTrigger = (runtime: Runtime<Config>): string => {
   // We define a simple aggregation that takes the first result since all nodes
   // should return identical data from The Graph.
   const firstResultAggregation = (results: string[]) => results[0]
-  const result = runtime.runInNodeMode(fetchGraphData, firstResultAggregation)().result()
+  // @ts-ignore
+    const result = runtime.runInNodeMode(fetchGraphData, firstResultAggregation)().result()
 
   runtime.log(`Indexer data fetched successfully | timestamp=${timestamp}`)
 
