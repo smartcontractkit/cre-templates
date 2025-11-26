@@ -1,0 +1,46 @@
+{
+  "webhookId": "wh_test",
+  "id": "whevt_test",
+  "createdAt": "2025-11-25T16:07:15.266Z",
+  "type": "GRAPHQL",
+  "event": {
+    "data": {
+      "block": {
+        "hash": "0xf49c1958f057aae44d4636511744fd5f66e0a1572c68c3b6f89c6460b87b3d08",
+        "number": 9704813,
+        "timestamp": 1764086832,
+        "logs": [
+          {
+            "data": "0x",
+            "topics": ["0xtest"],
+            "index": 0,
+            "account": {
+              "address": "0x4c4df78f0af62846259c6a5678498f6f2a9012b9"
+            },
+            "transaction": {
+              "hash": "0xb3d49123ead828e1c7d4830c7c08b09e671a2ada491a57613dc95a6d9db377bc",
+              "nonce": 8617,
+              "index": 3,
+              "from": {
+                "address": "0xc5d959a56de33f79f318c806ca069652769d7e75"
+              },
+              "to": {
+                "address": "0x73b668d8374ddb42c9e2f46fd5b754ac215495bc"
+              },
+              "value": "0x0",
+              "gasPrice": "0x7735940c",
+              "maxFeePerGas": "0x2540be400",
+              "maxPriorityFeePerGas": "0x77359400",
+              "gas": 15000000,
+              "status": 1,
+              "gasUsed": 116097,
+              "cumulativeGasUsed": 589096,
+              "effectiveGasPrice": "0x7735940c",
+              "createdContract": null
+            }
+          }
+        ]
+      }
+    }
+  }
+}
