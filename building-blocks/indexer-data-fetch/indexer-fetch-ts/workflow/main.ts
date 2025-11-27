@@ -80,8 +80,7 @@ const onIndexerCronTrigger = (runtime: Runtime<Config>): string => {
   // We define a simple aggregation that takes the first result since all nodes
   // should return identical data from The Graph.
   const firstResultAggregation = (results: string[]) => results[0]
-  // @ts-ignore
-    const result = runtime.runInNodeMode(fetchGraphData, firstResultAggregation)().result()
+  const result = runtime.runInNodeMode(fetchGraphData, firstResultAggregation)().result()
 
   runtime.log(`Indexer data fetched successfully | timestamp=${timestamp}`)
 
