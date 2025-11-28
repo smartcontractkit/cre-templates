@@ -1,0 +1,6 @@
+{
+  "schedule": "0 * * * * *",
+  "graphqlEndpoint": "https://gateway.thegraph.com/api/bca58895bc60dcb319e3cbdfd989b964/subgraphs/id/Gqm2b5J85n1bhCyDMpGbtbVn4935EvvdyHdHrx3dibyj",
+  "query": "{ poolManagers(first: 5) { id poolCount txCount totalVolumeUSD } bundles(first: 5) { id ethPriceUSD } }",
+  "variables": {}
+}
