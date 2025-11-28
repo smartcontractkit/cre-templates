@@ -22,7 +22,7 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
 
   if (!blockData.event?.data?.block) {
     runtime.log("Invalid webhook payload: missing block data");
-    return "Error: Invalid webhook payload structure";
+    throw new Error("Error: Invalid webhook payload structure");
   }
 
   const block = blockData.event.data.block;
