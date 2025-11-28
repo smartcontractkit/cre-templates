@@ -125,6 +125,28 @@ Both workflows return JSON output like:
 }
 ```
 
+## Setting Up Alchemy Webhooks
+
+To use Alchemy for block-triggered workflows, follow these steps:
+
+1. Sign up on Alchemy and navigate to their dashboard.
+2. Create a new app on the dashboard with your preferred network.
+3. Click on your app to open the app dashboard and scroll down to the `services` section.
+4. Click on the Webhooks service and in the pane that opens, click on `Real-time Notifications`, then click on `Get Started`.
+5. Choose webhook type `Custom` to listen for new blocks or events on every new block.
+6. In the custom webhook pane, add other details including webhook name, chain, network, query template, and webhook URL.
+7. Click on `Create Webhook` to save the webhook and test the webhook URL.
+
+**Tips:**
+- Make sure your webhook URL is accessible and correctly configured to receive POST requests.
+- You may want to use a tool like [Webhook.site](https://webhook.site/) for initial testing.
+- Double-check the network and chain settings to match your workflow requirements.
+- The query template should match the data you want to extract from each block/event.
+
+**Example Alchemy Webhook Config:**
+
+![Example Alchemy Webhook Config](https://github.com/user-attachments/assets/80a73519-08b9-4f16-8345-e491c38bf6af)
+
 ## Example Use Cases
 
 ### 1. Monitoring High-Value Addresses
@@ -150,4 +172,3 @@ Summarize block activity and matched transactions for analytics dashboards.
 
 - [CRE Documentation](https://docs.chain.link/cre)
 - [Alchemy Webhooks](https://www.alchemy.com/docs/reference/custom-webhook)
-
