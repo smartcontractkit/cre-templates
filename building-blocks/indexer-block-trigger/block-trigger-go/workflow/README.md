@@ -1,22 +1,48 @@
-# Blank Workflow Example
+# CRE Indexer Block Trigger Workflow (Go)
 
-This template provides a blank workflow example. It aims to give a starting point for writing a workflow from scratch and to get started with local simulation.
+This workflow processes new blocks and transactions using block-triggered webhooks (e.g., Alchemy Notify) and matches against watched addresses. It demonstrates the **block trigger pattern** in Go.
 
-Steps to run the example
+## Features
+- Uses `http.Trigger` from CRE Go SDK
+- Matches transactions to watched addresses from config
+- Returns formatted JSON summary of block and matched transactions
 
-## 1. Update .env file
+## Setup and Prerequisites
+1. Install CRE CLI
+2. Login: `cre login`
+3. Install Go
 
-You need to add a private key to env file. This is specifically required if you want to simulate chain writes. For that to work the key should be valid and funded.
-If your workflow does not do any chain write then you can just put any dummy key as a private key. e.g.
-```
-CRE_ETH_PRIVATE_KEY=0000000000000000000000000000000000000000000000000000000000000001
-```
-
-## 2. Simulate the workflow
-Run the command from <b>project root directory</b>
-
+## Running the Workflow
 ```bash
-cre workflow simulate <path-to-workflow> --target=staging-settings
+cd building-blocks/indexer-block-trigger/block-trigger-go
+cre workflow simulate workflow --non-interactive --trigger-index 0 --http-payload test-block.json --target staging-settings
 ```
 
-It is recommended to look into other existing examples to see how to write a workflow. You can generate then by running the `cre init` command.
+## Example Output
+```json
+{
+  "blockNumber": 12345678,
+  "blockHash": "0xabc...",
+  "timestamp": 1700000000,
+  "totalLogs": 42,
+  "uniqueTransactions": 10,
+  "matchedTransactions": 2,
+  "transactions": [
+    {
+      "hash": "0xdef...",
+      "from": "0x...",
+      "to": "0x73b668d8374ddb42c9e2f46fd5b754ac215495bc",
+      "value": "1000000000000000000"
+    }
+  ]
+}
+```
+
+## Example Use Cases
+- Monitoring high-value addresses
+- Contract interaction tracking
+- Block-level analytics
+
+## Reference Documentation
+- [CRE Documentation](https://docs.chain.link/cre)
+- [Alchemy Webhooks](https://www.alchemy.com/docs/reference/custom-webhook)

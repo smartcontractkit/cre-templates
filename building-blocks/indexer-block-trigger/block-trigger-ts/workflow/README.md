@@ -1,53 +1,50 @@
-# Typescript Simple Workflow Example
+# CRE Indexer Block Trigger Workflow (TypeScript)
 
-This template provides a simple Typescript workflow example. It shows how to create a simple "Hello World" workflow using Typescript.
+This workflow processes new blocks and transactions using block-triggered webhooks (e.g., Alchemy Notify) and matches against watched addresses. It demonstrates the **block trigger pattern** in TypeScript.
 
-Steps to run the example
+## Features
+- Uses HTTP trigger from CRE TypeScript SDK
+- Matches transactions to watched addresses from config
+- Returns formatted JSON summary of block and matched transactions
 
-## 1. Update .env file
+## Setup and Prerequisites
+1. Install CRE CLI
+2. Login: `cre login`
+3. Install Bun (or Node.js)
+4. Run `bun install` in the workflow directory
 
-You need to add a private key to env file. This is specifically required if you want to simulate chain writes. For that to work the key should be valid and funded.
-If your workflow does not do any chain write then you can just put any dummy key as a private key. e.g.
-
-```
-CRE_ETH_PRIVATE_KEY=0000000000000000000000000000000000000000000000000000000000000001
-```
-
-Note: Make sure your `workflow.yaml` file is pointing to the config.json, example:
-
-```yaml
-staging-settings:
-  user-workflow:
-    workflow-name: "hello-world"
-  workflow-artifacts:
-    workflow-path: "./main.ts"
-    config-path: "./config.json"
-```
-
-## 2. Install dependencies
-
-If `bun` is not already installed, see https://bun.com/docs/installation for installing in your environment.
-
+## Running the Workflow
 ```bash
-cd <workflow-name> && bun install
+cd building-blocks/indexer-block-trigger/block-trigger-ts/workflow
+bun install
+cre workflow simulate workflow --non-interactive --trigger-index 0 --http-payload test-block.json --target staging-settings
 ```
 
-Example: For a workflow directory named `hello-world` the command would be:
-
-```bash
-cd hello-world && bun install
+## Example Output
+```json
+{
+  "blockNumber": 12345678,
+  "blockHash": "0xabc...",
+  "timestamp": 1700000000,
+  "totalLogs": 42,
+  "uniqueTransactions": 10,
+  "matchedTransactions": 2,
+  "transactions": [
+    {
+      "hash": "0xdef...",
+      "from": "0x...",
+      "to": "0x73b668d8374ddb42c9e2f46fd5b754ac215495bc",
+      "value": "1000000000000000000"
+    }
+  ]
+}
 ```
 
-## 3. Simulate the workflow
+## Example Use Cases
+- Monitoring high-value addresses
+- Contract interaction tracking
+- Block-level analytics
 
-Run the command from <b>project root directory</b>
-
-```bash
-cre workflow simulate <path-to-workflow-directory> --target=staging-settings
-```
-
-Example: For workflow named `hello-world` the command would be:
-
-```bash
-cre workflow simulate ./hello-world --target=staging-settings
-```
+## Reference Documentation
+- [CRE Documentation](https://docs.chain.link/cre)
+- [Alchemy Webhooks](https://www.alchemy.com/docs/reference/custom-webhook)
