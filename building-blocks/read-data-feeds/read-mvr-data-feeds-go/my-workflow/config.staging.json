@@ -1,0 +1,10 @@
+{
+  "schedule": "0 */10 * * * *",
+  "chainName": "ethereum-mainnet-base-1",
+  "feeds": [
+    {
+      "name": "S&P Global SSA EURC",
+      "address": "0xcF99622B5440a338f45daEE134d531A4BE64251F"
+    }
+  ]
+}
