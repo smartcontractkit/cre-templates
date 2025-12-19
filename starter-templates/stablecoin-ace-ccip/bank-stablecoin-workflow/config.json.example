@@ -1,0 +1,11 @@
+{
+  "evms": [
+    {
+      "stablecoinAddress": "0x<YOUR_DEPLOYED_STABLECOIN_ADDRESS>",
+      "consumerAddress": "0x<YOUR_DEPLOYED_CONSUMER_ADDRESS>",
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "gasLimit": "500000"
+    }
+  ]
+}
+

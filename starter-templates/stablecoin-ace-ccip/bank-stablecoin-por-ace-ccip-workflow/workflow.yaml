@@ -1,0 +1,29 @@
+# ==========================================================================
+# CRE WORKFLOW SETTINGS FILE - Phase 3: PoR + ACE + CCIP
+# ==========================================================================
+# Advanced stablecoin workflow demonstrating:
+# - Proof of Reserve validation (offchain API check)
+# - ACE policy enforcement (address blacklist)
+# - Stablecoin minting with compliance
+# - Optional cross-chain CCIP transfers with compliance
+#
+# This workflow combines multiple Chainlink services in a single flow.
+# ==========================================================================
+
+local-simulation:
+  user-workflow:
+    workflow-name: "bank-stablecoin-por-ace-ccip-workflow"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"
+
+# ==========================================================================
+staging:
+  user-workflow:
+    workflow-name: "bank-stablecoin-por-ace-ccip-workflow"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.json"
+    secrets-path: "../secrets.yaml"
+

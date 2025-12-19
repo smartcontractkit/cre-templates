@@ -1,0 +1,97 @@
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+*.env
+secrets.yaml
+.env.local
+.env.production
+.env.staging
+
+# 1Password CLI
+.op/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# CRE Workflow Artifacts
+*.wasm
+*.js.map
+tmp.js
+tmp.wasm
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+*.js
+*.d.ts
+!hardhat.config.ts
+!scripts/**/*.ts
+!test/**/*.ts
+
+# Hardhat
+cache/
+artifacts/
+typechain-types/
+deployments/
+coverage/
+coverage.json
+
+# Smart Contract Build Artifacts
+*.abi
+*.bin
+out/
+broadcast/
+cache/
+lib/
+script/output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+.nyc_output
+test-results/
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment Receipts
+deployment-*.json
+!deployment-template.json
+
+# Private Keys (Extra Safety)
+private-key*.txt
+*.key
+*.pem
+
+# Hardhat Network State
+deployments/localhost/
+.openzeppelin/unknown-*.json
+

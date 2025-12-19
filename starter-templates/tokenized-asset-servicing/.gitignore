@@ -1,0 +1,16 @@
+# Environment files
+*.env
+
+# Configuration files with sensitive data
+config.json
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+tmp.js
+tmp.wasm
+
+# System files
+.DS_Store
+*.DS_Store

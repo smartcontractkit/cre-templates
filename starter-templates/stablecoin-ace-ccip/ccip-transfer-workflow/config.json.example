@@ -1,0 +1,33 @@
+{
+  "chains": {
+    "ethereum-testnet-sepolia": {
+      "chainSelector": "16015286601757825753",
+      "consumerAddress": "0x<YOUR_SEPOLIA_CCIP_CONSUMER_ADDRESS>",
+      "stablecoinAddress": "0x<YOUR_SEPOLIA_STABLECOIN_ADDRESS>"
+    },
+    "avalanche-testnet-fuji": {
+      "chainSelector": "14767482510784806043",
+      "consumerAddress": "0x<YOUR_FUJI_CCIP_CONSUMER_ADDRESS>",
+      "stablecoinAddress": "0x<YOUR_FUJI_STABLECOIN_ADDRESS>"
+    }
+  },
+  "gasLimit": "500000"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

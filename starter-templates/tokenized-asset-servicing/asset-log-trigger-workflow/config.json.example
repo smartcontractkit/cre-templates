@@ -1,0 +1,11 @@
+{
+  "schedule": "*/30 * * * * *",
+  "url": "<your lambda function url>",
+  "evms": [
+    {
+      "assetAddress": "0x<your deployed asset platform contract address>",
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "gasLimit": "1000000"
+    }
+  ]
+}

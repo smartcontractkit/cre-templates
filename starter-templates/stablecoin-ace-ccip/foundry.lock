@@ -1,0 +1,14 @@
+{
+  "lib/ccip": {
+    "branch": {
+      "name": "ccip-develop",
+      "rev": "171f9f0cf249765116e3131b61f5b4157566f25f"
+    }
+  },
+  "lib/chainlink-ace": {
+    "branch": {
+      "name": "main",
+      "rev": "e0babf820a1fcac13e446c99d650f3e3400c2df8"
+    }
+  }
+}
