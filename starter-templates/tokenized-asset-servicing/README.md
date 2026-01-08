@@ -2,6 +2,14 @@
 
 This repository demonstrates the integration of Chainlink Runtime Environment (CRE) with LogTrigger and HTTP abilities to enable seamless off-chain data orchestration for tokenized assets. The project tokenizes various real-world assets (RWAs) using Ethereum Solidity smart contracts and leverages Chainlink CRE, AWS DynamoDB, and Lambda functions to track the full lifecycle of these tokenized assets.
 
+## Canonical Repository
+
+This repository is the **canonical and fully DevRel-maintained source of truth** for these templates.
+
+The code originally lived in [`smartcontractkit/cre-demo-dapps`](https://github.com/smartcontractkit/cre-demo-dapps), and was later consolidated here to provide a single, long-term maintained codebase.
+
+All ongoing development and updates now happen exclusively in this repository, in order to avoid fragmentation and to preserve discoverability via search engines and AI tooling.
+
 ## Content
 - [Project Overview](#project-overview)
   - [Tokenization and Lifecycle Management](#tokenization-and-lifecycle-management)

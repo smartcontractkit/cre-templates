@@ -18,7 +18,7 @@
 local-simulation:
   rpcs:
     - chain-name: ethereum-testnet-sepolia
-      url: https://por.bcy-p.metalhosts.com/cre-alpha/MvqtrdftrbxcP3ZgGBJb3bK5/ethereum/sepolia
+      url: https://por.bcy-p.metalhosts.com/cre-alpha/YOUR_API_KEY/ethereum/sepolia
 
 # ==========================================================================
 staging:

@@ -4,7 +4,7 @@ import config from './config.json' with {type: 'json'}
 
 async function main() {
 
-  const RPC_URL = 'https://por.bcy-p.metalhosts.com/cre-alpha/MvqtrdftrbxcP3ZgGBJb3bK5/ethereum/sepolia'
+  const RPC_URL = 'https://por.bcy-p.metalhosts.com/cre-alpha/YOUR_API_KEY/ethereum/sepolia'
   const contractAddress = config.evms[0].assetAddress;
   const assetId = 1n
   
