@@ -1,0 +1,24 @@
+{
+  "messageType": "MT103",
+  "transactionId": "VOLTEST002",
+  "sender": {
+    "name": "Test User",
+    "account": "TEST001",
+    "bankCode": "CREBNK"
+  },
+  "beneficiary": {
+    "name": "Test Wallet",
+    "account": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0"
+  },
+  "amount": "500",
+  "currency": "USD",
+  "valueDate": "2025-10-31",
+  "bankReference": "0x564f4c544553543030320000000000000000000000000000000000000000000000",
+  "crossChain": {
+    "enabled": true,
+    "destinationChain": "fuji",
+    "beneficiary": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0"
+  },
+  "_comment": "Test VolumePolicy: 500 creUSD (WITHIN 100-10,000 range) - Should be ALLOWED"
+}
+

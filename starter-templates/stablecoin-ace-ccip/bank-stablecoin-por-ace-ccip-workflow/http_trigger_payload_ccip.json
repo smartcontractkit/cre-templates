@@ -1,0 +1,24 @@
+{
+  "messageType": "MT103",
+  "transactionId": "CREBNK20251029002",
+  "sender": {
+    "name": "Bob Enterprise",
+    "account": "BOB001",
+    "bankCode": "CREBNK"
+  },
+  "beneficiary": {
+    "name": "Bob Enterprise Wallet",
+    "account": "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"
+  },
+  "amount": "2000",
+  "currency": "USD",
+  "valueDate": "2025-10-29",
+  "bankReference": "0x434245424e4b32303235313032393030320000000000000000000000000000000",
+  "crossChain": {
+    "enabled": true,
+    "destinationChain": "fuji",
+    "beneficiary": "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"
+  },
+  "_comment": "Mint with CCIP transfer. Tokens minted on Sepolia then transferred to Fuji via CCIP. Note: We use 'beneficiary' for consistency (who receives tokens on destination chain)."
+}
+

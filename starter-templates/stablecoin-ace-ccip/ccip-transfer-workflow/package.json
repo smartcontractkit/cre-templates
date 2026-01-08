@@ -1,0 +1,16 @@
+{
+  "name": "@chainlink/ccip-transfer-workflow",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "private": true,
+  "scripts": {
+    "postinstall": "bunx cre-setup"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chainlink/cre-sdk": "0.0.8-alpha"
+  },
+  "devDependencies": {
+    "@types/bun": "1.2.21"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "messageType": "MT103",
+  "bankReference": "DEPLOY_FUND_001",
+  "valueDate": "2025-01-27",
+  "amount": "500.00",
+  "currency": "USD",
+  "beneficiary": {
+    "account": "YOUR_DEPLOYER_ADDRESS_HERE",
+    "name": "Deployer Wallet"
+  },
+  "instructionCode": "MINT"
+}

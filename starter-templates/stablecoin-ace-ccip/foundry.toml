@@ -1,0 +1,22 @@
+[profile.default]
+src = "contracts"
+out = "out"
+libs = ["node_modules", "lib"]
+remappings = [
+    "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/chainlink-ace/node_modules/@openzeppelin/contracts-upgradeable/",
+    "@chainlink/contracts-ccip/=lib/ccip/contracts/src/v0.8/",
+    "@chainlink/contracts/=lib/ccip/contracts/",
+    "@chainlink/policy-management/=lib/chainlink-ace/packages/policy-management/src/",
+    "@chainlink/cross-chain-identity/=lib/chainlink-ace/packages/cross-chain-identity/src/",
+    "forge-std/=lib/ccip/contracts/src/v0.8/vendor/forge-std/src/"
+]
+
+# Chain configuration
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+fuji = "https://avalanche-fuji-c-chain-rpc.publicnode.com"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.etherscan.io/api", chain = 11155111 }
+

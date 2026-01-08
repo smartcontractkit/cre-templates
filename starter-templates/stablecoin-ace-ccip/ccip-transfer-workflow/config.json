@@ -1,0 +1,15 @@
+{
+  "chains": {
+    "ethereum-testnet-sepolia": {
+      "chainSelector": "16015286601757825753",
+      "consumerAddress": "0x903d001Ab273F32a32c32E617A0dDB04500Faeb0",
+      "stablecoinAddress": "0x572F33a5238F93B7A7779A805815c76f59841983"
+    },
+    "avalanche-testnet-fuji": {
+      "chainSelector": "14767482510784806043",
+      "consumerAddress": "0x9Ed73Afc4A8c85ABF4143f91F366D0eea915FAa3",
+      "stablecoinAddress": "0x931F822c75D56a739D48F8C699921aee78720aAA"
+    }
+  },
+  "gasLimit": "500000"
+}

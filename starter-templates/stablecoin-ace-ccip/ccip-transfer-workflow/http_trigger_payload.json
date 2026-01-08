@@ -1,0 +1,36 @@
+{
+  "messageType": "MT202",
+  "bankReference": "XFER20250127001",
+  "valueDate": "2025-01-27",
+  "amount": "100.00",
+  "currency": "USD",
+  "sourceChain": "ethereum-testnet-sepolia",
+  "destinationChain": "avalanche-testnet-fuji",
+  "sender": {
+    "account": "0x4fed0A5B65eac383D36E65733786386709B86be8",
+    "name": "Deployer Wallet"
+  },
+  "beneficiary": {
+    "account": "0x4fed0A5B65eac383D36E65733786386709B86be8",
+    "name": "Cross-Chain Test"
+  },
+  "instructionCode": "TRANSFER"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
