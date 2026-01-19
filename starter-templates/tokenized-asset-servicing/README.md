@@ -87,8 +87,10 @@ sequenceDiagram
 ## Getting Started
 ### Prerequisites
 Before proceeding, ensure the following are set up:
+- Install CRE CLI: Follow the [steps](https://docs.chain.link/cre/getting-started/cli-installation/macos-linux) to install CRE CLI. 
+- Create a CRE acount: follow the [doc](https://docs.chain.link/cre/account/creating-account) to create CRE account. 
+- CRE account authentication: Follow [doc](https://docs.chain.link/cre/account/cli-login) to log in CRE account with CLI.
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- Chainlink Runtime Environment (CRE) [installed and configured.](https://github.com/smartcontractkit/cre-cli) 
 - [Node.js](https://nodejs.org/en) (v18+ recommended) for script execution.
 - [Bun JS package manager](https://bun.com/)
 - Ethereum Sepolia testnet access (e.g., via Alchemy or Infura RPC endpoint).
@@ -110,21 +112,35 @@ Follow these steps to deploy and interact with the project:
     local-simulation:
     rpcs:
         - chain-name: ethereum-testnet-sepolia
-        url: https://por.bcy-p.metalhosts.com/cre-alpha/MvqtrdftrbxcP3ZgGBJb3bK5/ethereum/sepolia
+        url: https://por.bcy-p.metalhosts.com/cre-alpha/xxxxxx/ethereum/sepolia
     ```
 
 3. Deploy Smart Contracts and add addr to config
-
-    The contract source code can be found in [TokenizedAssetPlatform.sol](contracts/TokenizedAssetPlatform.sol). Use Remix to deploy the smart contract to the **Ethereum Sepolia testnet**. Ensure that you are deploying the `TokenizedAssetPlatform` contract.
+    
+    Change to directory contract and run the command to install dependencies
+    ```
+    npm install
+    ```
+    The contract source code can be found in [TokenizedAssetPlatform.sol](contracts/TokenizedAssetPlatform.sol). To deploy the contract to **Ethereum Sepolia testnet**, run the command
+    ```
+    npx tsx ./1_deploy.ts 
+    ``` 
+    The expected output is like below:
+    ```
+    deploy tx Hash: 0xc6cd10dfbc9619eb4a2d4d4524dc2e346895286145b5787318ad714211b93f1a
+    Contract TokenizedAssetPlatform deployed successfully...
+    Contact deployed at: 0x9bfe80ef1d5673f7b1f8ecafa67abc38e2164756
+    Block number: 10077029n
+    ```
     
     Execute the following commands to create a `config.json` file from the provided example.
 
     ```
-    cd asset-log-trigger-workflow
+    cd ../asset-log-trigger-workflow
     cp config.json.example config.json
     ```
 
-    Update `assetAddress` in the [config.json](asset-log-trigger-workflow/config.json) file with the new contract address. The updated config file should have the evms config as below:
+    Update `assetAddress` in the [config.json](asset-log-trigger-workflow/config.json) file with the deployed contract address. The updated config file should have the evms config as below:
 
     ```
     "evms": [
@@ -234,18 +250,22 @@ Follow these steps to deploy and interact with the project:
 
 8. Register an Asset
 
-    On remix, call the function `registerAsset` of deployed TokenizedAssetPlatform contract with params: 
-    - name: "Invoice-01"
-    - symbol: "IVC1"
-    - assetType: "invoice"
-    - initialSupply: 1000000
-    - assetUid: ""
-    - issuer: 0x"YOUR WALLET ADDRESS"
-
-    When the deployment transaction is sent, you can find the tx hash in metamask. 
+    Call the function `registerAsset` of deployed TokenizedAssetPlatform contract with command (make sure you are in directory contracts)
+    ```
+    npx tsx ./2_registerNewAsset.ts
+    ```
+    The expected result is
+    ```
+    ...
+    Asset Registration Transaction sent! Hash: 0x9e4dd921384351c303d345e26c475552e39e5e7300296cd7cb958b517ab81ebb
+    Transaction successful!
+    ...
+    ```
+    Note the hash and it needs to be used in next step.
 
     cd to root directory and run command below to trigger the CRE with a specific event log.
     ```shell
+    cd ../asset-log-trigger-workflow
     cre workflow simulate asset-log-trigger-workflow --broadcast --target local-simulation
     ```
 
@@ -260,7 +280,7 @@ Follow these steps to deploy and interact with the project:
     Enter your choice (1-2): 1
     ```
     
-    Enter the deployment transaction hash and 1 for index in the terminal. You can find the tx hash in latest transaction on your wallet extension or under the transactions in [sepolia ether scan](https://sepolia.etherscan.io/). There are 2 events in the transaction(`RoleGranted` and `AssetRegistered`) and index number 1 means we use the second event(`AssetRegistered`) in the transaction to trigger CRE. Example is like below:
+    Enter the deployment transaction hash and 1 for index in the terminal. There are 2 events in the transaction(`RoleGranted` and `AssetRegistered`) and index number 1 means we use the second event(`AssetRegistered`) in the transaction to trigger CRE. Example is like below:
     ```shell
     Enter transaction hash (0x...): 0x495df84e1d1d2dc382671dd96c4ce5f407f726f5a63bff3cd81c47969508f042
     Enter event index (0-based): 1
@@ -273,13 +293,22 @@ Follow these steps to deploy and interact with the project:
 
 9. Verify an Asset
 
-    On remix, call the function `verifyAsset` of deployed TokenizedAssetPlatform contract with params: 
-    - assetId: 1
-    - isValid: 1
-    - verificationDetails: ""
+    Call the function `verifyAsset` of deployed TokenizedAssetPlatform contract with command (make sure you are in directory contracts)
+    ```
+    npx tsx ./3_verifyAsset.ts
+    ```
+    The expected result is:
+    ```
+    ...
+    Asset Verification Transaction sent! Hash: 0xd94f290428c51b8e4046e14f1ccbda83249d96422dd88d8b5d61e3f8f87a2fda
+    Transaction successful!
+    ...
+    ```
+    Note the hash and it needs to be used in next step. 
 
     run command below to trigger the CRE with event log.
     ```shell
+    cd ../asset-log-trigger-workflow/
     cre workflow simulate asset-log-trigger-workflow --broadcast --target local-simulation
     ```
 
@@ -292,7 +321,7 @@ Follow these steps to deploy and interact with the project:
     Enter your choice (1-2): 1
     ```
     
-    Enter hash of the transaction you just sent on remix and index 0 in the terminal. A new column "Verified" is created and added on the same record. Example is like below:
+    Enter hash of the verification transaction and index 0 in the terminal. A new column "Verified" is created and added on the same record. Example is like below:
     ```shell
     Enter transaction hash (0x...): 0xc11ca0c706f4897b16ca94c5225fbd0982ebcf4a2972b7536378f3c209abbe10
     Enter event index (0-based): 0
@@ -340,46 +369,34 @@ Follow these steps to deploy and interact with the project:
     ```
     For example, `0xeb588b676abd6677b8b12aba47e065b749da9d585ffe7aa21e59641f06cbd04a` in the log is the hash to forward the request to tokenization contract. You can check the hash on Sepolia Etherscan to see more details. 
 
-    To verify if the value updated, run command below:
+    Run command below to check the updated uid value (make sure run the command in folder contracts)
     ```
-    node asset-log-trigger-workflow/readUid.js
+    npx tsx ./4_readUid.ts
     ```
-
     You will see the result as below. The value is the same as the uid in the JSON payload. This was updated on tokenization contract.
     ```
-    value of the assetId 1 uid: bca71bc9-d08e-48ef-8ad1-acefe95505a9
+    Extracted UID: bca71bc9-d08e-48ef-8ad1-acefe95505a9
     ```
 
-    Besides directly using the script, if you want to see the value more intuitively, you can also verify the contract and then read the variable values through Etherscan. Here are the operation steps. **NOTE: This is an alternative method to running the script. If you're not interested in this, you can skip this section and proceed directly to the next step**
-
-    In order to verify contract on Etherscan, please acquire an API key from EtherScan by following the [official docs](https://docs.etherscan.io/getting-an-api-key).
-
-    Head to the Remix page and click the button extension management on the down left to add the contract verification extension on the remix. 
-    <img src="images/extension-management-tool.png" width="300"/>
-
-    Once the extension added, go to "contract verification"->"settings", and add the etherscan API key to Remix. 
-    </br><img src="images/verification-settings.png" width="300"/>
-
-    Go to the tab "verify" and input network name, contract address and contract name as below.
-    </br><img src="images/etherscan-verify.png" alt="drawing" width="250"/>
-
-    Now the contract at the address can be verified and if you check the contract on etherscan. The link is `https://sepolia.etherscan.io/address/"YOUR CONTRACT ADDRESS"#code`. For example: `https://sepolia.etherscan.io/address/0xb61b94d957b1f2ffb136135e1a4f0cec130d6385#code` is a verified contract. 
-
-    Under the tab "contract", click "Read Contract" and find the function with name "uid", then input 1 as the index number and click button "Query" to fetch the uid value of asset with ID 1. 
-    ![alt text](<images/etherscan-read.png>)
-
-    The fetched value will be uid value in our JSON payload. This means the value in the payload that sent to the CRE is extracted correctly and written into the smart contract. 
+    The extracted UID will be uid value in our JSON payload. This means the value in the payload that sent to the CRE is extracted correctly and written into the smart contract. 
 
 11. Mint Tokens
 
-    On remix, call the function `mint` of deployed TokenizedAssetPlatform contract with params: 
-    - to: 0x"YOUR WALLET ADDR"
-    - assetId: 1
-    - amount: 100
-    - reason: ""
+    Call the function `mint` of deployed TokenizedAssetPlatform contract with command (make sure you are in directory contracts)
+    ```
+    npx tsx ./5_mint.ts
+    ```
+    the expected result is:
+    ```
+    ...
+    Mint Transaction sent! Hash: 0x963102841c7f13cc398564ce8d800226760599de1873f737678c98487a90ed02
+    Transaction successful!
+    ...
+    ```
 
     run command below to trigger the CRE with event log.
     ```shell
+    cd ../asset-log-trigger-workflow/
     cre workflow simulate asset-log-trigger-workflow --broadcast --target local-simulation
     ```
     
@@ -392,7 +409,7 @@ Follow these steps to deploy and interact with the project:
     Enter your choice (1-2): 1
     ```
 
-    Enter hash of the mint transaction you just sent on remix and 1 as index in the terminal. Column TokenMinted is created and added on the record. Example is like below:
+    Enter hash of the mint transaction and 1 as index in the terminal. Column TokenMinted is created and added on the record. Example is like below:
     ```shell
     Enter transaction hash (0x...): 0x578032166b30ea921b0fb38e415bd1dd153edec899e05e07568953750f8dbff0
     Enter event index (0-based): 1
@@ -403,13 +420,21 @@ Follow these steps to deploy and interact with the project:
 
 12. Redeem Tokens
 
-    On remix, call the function `redeem` of deployed TokenizedAssetPlatform contract with params: 
-    - assetId: 1
-    - amount: 10
-    - settlementDetail: ""
+    Call the function `mint` of deployed TokenizedAssetPlatform contract with command (make sure you are in directory contracts)
+    ```
+    npx tsx ./6_redeem.ts
+    ```
+    the expected result is:
+    ```
+    ...
+    Redeem Transaction sent! Hash: 0x11853cf396f366e9e1d6787d9234fa0af8e53851964356d0997727e8e9b36d66
+    Transaction successful!
+    ...
+    ```
 
     run command below to trigger the CRE with event log.
     ```shell
+    cd ../asset-log-trigger-workflow/
     cre workflow simulate asset-log-trigger-workflow --broadcast --target local-simulation
     ```
     
@@ -422,7 +447,7 @@ Follow these steps to deploy and interact with the project:
     Enter your choice (1-2): 1
     ```
 
-    Enter hash of the redeem transaction you just sent and 1 for index in the terminal. Example is like below:
+    Enter hash of the redeem transaction and 1 for index in the terminal. Example is like below:
     ```shell
     Enter transaction hash (0x...): 0xc6764610b2886dc91b73c388407a6bd9920a3c0f176fae23070b3cb992fdc8c1
     Enter event index (0-based): 1
