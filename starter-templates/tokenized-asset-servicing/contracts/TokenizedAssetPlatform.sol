@@ -2,43 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-
-
-abstract contract IReceiverTemplate {
-    address public immutable EXPECTED_AUTHOR;
-    bytes10 public immutable EXPECTED_WORKFLOW_NAME;
-
-    error InvalidAuthor(address received, address expected);
-    error InvalidWorkflowName(bytes10 received, bytes10 expected);
-
-    constructor(address expectedAuthor, bytes10 expectedWorkflowName) {
-        EXPECTED_AUTHOR = expectedAuthor;
-        EXPECTED_WORKFLOW_NAME = expectedWorkflowName;
-    }
-
-    /**
-     * @notice Receive and process a signed report from the Forwarder
-     * @param metadata Encoded metadata containing workflow info
-     * @param report Encoded report data from the workflow
-     */
-    function onReport(bytes calldata metadata, bytes calldata report) external virtual;
-
-    /**
-     * @notice Internal function to be implemented by consumers
-     * @param report The decoded report data to process
-     */
-    function _processReport(bytes calldata report) internal virtual;
-
-    /**
-     * @dev ERC165 interface support (required by some implementations)
-     */
-    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
-        return interfaceId == this.onReport.selector;
-    }
-}
+import {ReceiverTemplate} from "./interfaces/ReceiverTemplate.sol";
 
 /**
  * @title TokenizedAssetPlatform
@@ -51,7 +17,6 @@ abstract contract IReceiverTemplate {
  *      - Mint: issuer mints the asset for investors
  *      - Redeem/Burn: burn the tokens to redeem or settle
  *      - Transfer(optional): token holder transfer the token to recipients.
- *      - Pause/Unpause(optional): pause the asset
  *      - UpdateMetadata(optional): update the metadata of the asset
  *     
  *      Events will be emitted when key transactions happen for external retrieve and records
@@ -59,7 +24,7 @@ abstract contract IReceiverTemplate {
  *      Asset issuers manage the asset with role ISSURE_ROLE
  *      The admin(there is only one admin for the platform) manage all assets with role DEFAULT_ADMIN_ROLE
  */
-contract TokenizedAssetPlatform is ERC1155, AccessControl, Pausable, ERC1155Burnable, IReceiverTemplate {
+contract TokenizedAssetPlatform is ERC1155, AccessControl, ERC1155Burnable, ReceiverTemplate {
     using Strings for uint256;
 
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
@@ -127,21 +92,10 @@ contract TokenizedAssetPlatform is ERC1155, AccessControl, Pausable, ERC1155Burn
     /**
      * @dev constructor, platform admin is set.
      */
-    constructor() ERC1155("") IReceiverTemplate(address(0), bytes10("dummy")){
+    constructor(address forwardAddr) ERC1155("") ReceiverTemplate(forwardAddr){
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
     }
-
-      /**
-   * @inheritdoc IReceiverTemplate
-   * @dev PERMISSIONLESS `onReport` for testing purposes.
-   * This implementation bypasses the author and workflow name checks to work with a mock Forwarder.
-   * The `metadata` parameter is unused here but is required by the IReceiver interface.
-   */
-
-  function onReport(bytes calldata /*metadata*/, bytes calldata report) external override {
-    _processReport(report);
-  }
 
     /**
    * @notice This internal function contains the core business logic.
@@ -217,7 +171,6 @@ contract TokenizedAssetPlatform is ERC1155, AccessControl, Pausable, ERC1155Burn
      */
     function mint(address to, uint256 assetId, uint256 amount, string memory reason)
         public
-        whenNotPaused
     {
         require(_isIssuerOrAdmin(assetId, msg.sender), "Not authorized to mint");
         require(assets[assetId].active, "Asset is not active");
@@ -237,7 +190,6 @@ contract TokenizedAssetPlatform is ERC1155, AccessControl, Pausable, ERC1155Burn
      */
     function redeem(uint256 assetId, uint256 amount, string memory settlementDetails)
         public
-        whenNotPaused
     {
         require(assets[assetId].active, "Asset is not active");
         // holders can redeem tokens.
@@ -265,28 +217,6 @@ contract TokenizedAssetPlatform is ERC1155, AccessControl, Pausable, ERC1155Burn
         revert("Use redeem function for settlement and totalSupply tracking");
     }
 
-
-    /**
-     * @dev pause all actions for a specific asset. The func can only be called by issuers and admin
-     * @param assetId asset Id
-     */
-    function pauseAsset(uint256 assetId) public {
-        require(_isIssuerOrAdmin(assetId, msg.sender), "Not authorized");
-        // all actions on the token under the assetId is paused.
-        _pause();
-        emit AssetPaused(assetId, msg.sender);
-    }
-
-    /**
-     * @dev unpause all actions for a specific asset. The func can only be called by issuers and admin
-     * @param assetId asset Id
-     */
-    function unpauseAsset(uint256 assetId) public {
-        require(_isIssuerOrAdmin(assetId, msg.sender), "Not authorized");
-        _unpause();
-        emit AssetUnpaused(assetId, msg.sender);
-    }
-
     /**
      * @dev update the asset metadata. the func can only be called the asset issuer
      * @param assetId asset Id
@@ -304,7 +234,6 @@ contract TokenizedAssetPlatform is ERC1155, AccessControl, Pausable, ERC1155Burn
         uint256[] memory assetIds,
         uint256[] memory amounts
     ) internal virtual override(ERC1155) {
-        require(!paused(), "Pausable: paused");
         // Check if the asset is verified
         for (uint256 i = 0; i < assetIds.length; i++) {
             require(assets[assetIds[i]].active, "Asset is not active");
@@ -340,11 +269,9 @@ contract TokenizedAssetPlatform is ERC1155, AccessControl, Pausable, ERC1155Burn
         return assets[id].totalSupply;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl, IReceiverTemplate)
+    function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl, ReceiverTemplate)
         returns (bool)
     {
-        return ERC1155.supportsInterface(interfaceId) ||
-            AccessControl.supportsInterface(interfaceId) ||
-            IReceiverTemplate.supportsInterface(interfaceId);
+        return super.supportsInterface(interfaceId);
     }
 }
