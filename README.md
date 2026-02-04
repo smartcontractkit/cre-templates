@@ -24,6 +24,7 @@ Use these as references or starting points to compose your own production workfl
 
 - [Repository Structure](#repository-structure)
 - [When to Use Which](#when-to-use-which)
+- [Contributing](#contributing)
 - [License](#license)
 
 ---
@@ -55,6 +56,24 @@ More complex, end-to-end workflows. Each directory includes its own README (some
 
 ---
 
+## Contributing
+
+We welcome contributions of new CRE workflow templates! If you have a useful workflow that others could benefit from, here's how to contribute:
+
+1. **Fork the repository** and create a new branch for your template.
+2. **Add your workflow template** in the appropriate directory:
+   - `building-blocks/` – for small, focused examples that teach a single concept
+   - `starter-template/` – for more complete, end-to-end workflows
+3. **Include a README** in your template directory explaining:
+   - What the workflow does
+   - Prerequisites and setup instructions
+   - How to run and test it
+4. **Submit a Pull Request** with a clear description of your template and its use case.
+
+Our team will review your PR and provide feedback. Once approved, we'll merge it into the main branch.
+
+---
+
 ## License
 
-MIT — see the repository’s [LICENSE](https://github.com/smartcontractkit/cre-templates/blob/main/LICENSE).
+MIT — see the repository's [LICENSE](https://github.com/smartcontractkit/cre-templates/blob/main/LICENSE).
