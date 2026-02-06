@@ -185,6 +185,7 @@ const s3Read = (
 			url: fullURL,
 			method: 'GET',
 			headers,
+			cacheSettings: { store: true, maxAge: '60s' },
 		})
 		.result()
 
