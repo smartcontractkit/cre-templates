@@ -55,7 +55,18 @@ Path: [`./read-data-feeds`](./read-data-feeds)
 - On a cron schedule, reads `decimals()` and `latestAnswer()` from **Chainlink Data Feeds** (example targets BTC/USD and ETH/USD on Arbitrum One).
 - Shows how to add an ABI, generate Go bindings, configure chain RPC, and log scaled answers.
 
-👉 See the block’s README for setup, config, and sample logs.
+👉 See the block's README for setup, config, and sample logs.
+
+---
+
+### 3) **Crypto Utils**
+Path: [`./crypto-utils`](./crypto-utils)
+
+- Demonstrates how to use **cryptographic operations** in CRE TypeScript workflows using the **Noble crypto libraries**.
+- Shows alternatives to Node.js `crypto` module for: hashing (SHA-256, SHA3, Keccak, BLAKE), HMAC, key derivation (PBKDF2, Scrypt, HKDF), symmetric encryption (AES-GCM, ChaCha20-Poly1305), digital signatures (ECDSA, Ed25519), and ECDH key exchange.
+- Includes practical examples for Bitcoin and Ethereum address derivation.
+
+👉 See the block's README for setup, Node.js-to-Noble mapping table, and code examples.
 
 ---
 
@@ -63,6 +74,7 @@ Path: [`./read-data-feeds`](./read-data-feeds)
 
 * **kv-store**: You want to see an **off-chain write** pattern (AWS S3), secrets usage, SigV4 signing, and a **consensus read → single write** flow.
 * **read-data-feeds**: You want to **read on-chain data** via contract calls, manage ABIs/bindings, and configure **RPC** access.
+* **crypto-utils**: You need to perform **cryptographic operations** (hashing, signing, encryption, key derivation) in a TypeScript workflow.
 
 ---
 
