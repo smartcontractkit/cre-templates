@@ -1,0 +1,9 @@
+name: multi-chain-token-manager-go
+description: "Maximize lending yields via automated cross-chain rebalancing using CRE with CCIP."
+language: go
+category: defi
+tags:
+  - ccip
+  - cross-chain
+  - rebalancing
+  - token-management

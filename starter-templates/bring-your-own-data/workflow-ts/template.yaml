@@ -1,0 +1,10 @@
+name: bring-your-own-data-ts
+description: "Bring your own off-chain data on-chain with Proof of Reserve (PoR) and NAV publishing."
+language: typescript
+category: data-feeds
+tags:
+  - custom-data
+  - proof-of-reserve
+  - nav
+  - http
+  - on-chain-write

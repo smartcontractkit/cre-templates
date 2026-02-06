@@ -1,0 +1,10 @@
+name: kv-store-go
+description: "Read, increment, and write a counter in AWS S3 using SigV4-signed HTTP requests."
+language: go
+category: off-chain-storage
+tags:
+  - aws
+  - s3
+  - sigv4
+  - cron
+  - secrets

@@ -1,0 +1,9 @@
+name: read-data-feeds-ts
+description: "Read Chainlink Data Feeds on-chain, decode price values, and return results on a cron schedule."
+language: typescript
+category: data-feeds
+tags:
+  - data-feeds
+  - price-feeds
+  - chain-reader
+  - cron

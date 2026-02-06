@@ -1,0 +1,9 @@
+name: block-trigger-ts
+description: "Process new blocks and transactions using block-triggered webhooks with watched address matching."
+language: typescript
+category: indexer
+tags:
+  - indexer
+  - block-trigger
+  - webhook
+  - alchemy

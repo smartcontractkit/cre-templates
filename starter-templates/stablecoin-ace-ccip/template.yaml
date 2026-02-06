@@ -1,0 +1,11 @@
+name: stablecoin-ace-ccip-ts
+description: "Demo stablecoin issuance integrating Proof of Reserve, Automated Compliance Engine (ACE), and CCIP."
+language: typescript
+category: capital-markets
+tags:
+  - stablecoin
+  - ace
+  - ccip
+  - proof-of-reserve
+  - compliance
+  - cross-chain

@@ -1,0 +1,10 @@
+name: read-mvr-data-feeds-go
+description: "Read Multiple Variable Response (MVR) data feeds via BundleAggregatorProxy on a cron schedule."
+language: go
+category: data-feeds
+tags:
+  - data-feeds
+  - mvr
+  - bundle-aggregator
+  - chain-reader
+  - cron

@@ -1,0 +1,11 @@
+name: tokenized-asset-servicing-ts
+description: "Off-chain data orchestration for tokenized real-world assets using LogTrigger and HTTP capabilities."
+language: typescript
+category: capital-markets
+tags:
+  - rwa
+  - tokenization
+  - log-trigger
+  - http
+  - aws-lambda
+  - dynamodb

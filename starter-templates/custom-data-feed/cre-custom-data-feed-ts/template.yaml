@@ -1,0 +1,10 @@
+name: cre-custom-data-feed-ts
+description: "Fetch custom off-chain data and push it on-chain using cron and log triggers."
+language: typescript
+category: data-feeds
+tags:
+  - custom-data
+  - proof-of-reserve
+  - http
+  - log-trigger
+  - on-chain-write
