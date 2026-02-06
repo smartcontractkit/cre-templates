@@ -66,23 +66,23 @@ Use this table to migrate from Node.js `crypto` module to Noble libraries:
 
 | Node.js crypto | Noble Library | Import | Code Reference |
 |----------------|---------------|--------|----------------|
-| `crypto.createHash('sha256')` | `@noble/hashes/sha2` | `import { sha256 } from "@noble/hashes/sha2"` | [main.ts:89](./main.ts#L89) |
-| `crypto.createHash('sha512')` | `@noble/hashes/sha2` | `import { sha512 } from "@noble/hashes/sha2"` | [main.ts:95](./main.ts#L95) |
-| `crypto.createHash('sha3-256')` | `@noble/hashes/sha3` | `import { sha3_256 } from "@noble/hashes/sha3"` | [main.ts:99](./main.ts#L99) |
-| `crypto.createHash('ripemd160')` | `@noble/hashes/ripemd160` | `import { ripemd160 } from "@noble/hashes/ripemd160"` | [main.ts:117](./main.ts#L117) |
-| `crypto.createHmac('sha256', key)` | `@noble/hashes/hmac` | `import { hmac } from "@noble/hashes/hmac"` | [main.ts:135](./main.ts#L135) |
-| `crypto.pbkdf2()` | `@noble/hashes/pbkdf2` | `import { pbkdf2 } from "@noble/hashes/pbkdf2"` | [main.ts:155](./main.ts#L155) |
-| `crypto.scrypt()` | `@noble/hashes/scrypt` | `import { scrypt } from "@noble/hashes/scrypt"` | [main.ts:160](./main.ts#L160) |
-| `crypto.hkdf()` | `@noble/hashes/hkdf` | `import { hkdf } from "@noble/hashes/hkdf"` | [main.ts:167](./main.ts#L167) |
-| `crypto.createCipheriv('aes-256-gcm')` | `@noble/ciphers/aes` | `import { gcm } from "@noble/ciphers/aes"` | [main.ts:180](./main.ts#L180) |
-| `crypto.createCipheriv('chacha20-poly1305')` | `@noble/ciphers/chacha` | `import { chacha20poly1305 } from "@noble/ciphers/chacha"` | [main.ts:192](./main.ts#L192) |
-| `crypto.sign()` with ECDSA | `@noble/curves/secp256k1` | `secp256k1.sign(msgHash, privateKey)` | [main.ts:227](./main.ts#L227) |
-| `crypto.verify()` with ECDSA | `@noble/curves/secp256k1` | `secp256k1.verify(signature, msgHash, publicKey)` | [main.ts:238](./main.ts#L238) |
-| `crypto.sign()` with Ed25519 | `@noble/curves/ed25519` | `ed25519.sign(message, privateKey)` | [main.ts:261](./main.ts#L261) |
-| `crypto.diffieHellman()` | `@noble/curves` | `secp256k1.getSharedSecret()` or `x25519.getSharedSecret()` | [main.ts:282](./main.ts#L282) |
-| `crypto.randomBytes()` | Custom using `Math.random()` | See [Random Bytes in CRE](#random-bytes-in-cre) | [main.ts:68](./main.ts#L68) |
-| `Buffer.from(hex, 'hex')` | `@noble/hashes/utils` | `import { hexToBytes } from "@noble/hashes/utils"` | [main.ts:320](./main.ts#L320) |
-| `buffer.toString('hex')` | `@noble/hashes/utils` | `import { bytesToHex } from "@noble/hashes/utils"` | [main.ts:321](./main.ts#L321) |
+| `crypto.createHash('sha256')` | `@noble/hashes/sha2` | `import { sha256 } from "@noble/hashes/sha2"` | [main.ts:89](./workflow/main.ts#L89) |
+| `crypto.createHash('sha512')` | `@noble/hashes/sha2` | `import { sha512 } from "@noble/hashes/sha2"` | [main.ts:95](./workflow/main.ts#L95) |
+| `crypto.createHash('sha3-256')` | `@noble/hashes/sha3` | `import { sha3_256 } from "@noble/hashes/sha3"` | [main.ts:99](./workflow/main.ts#L99) |
+| `crypto.createHash('ripemd160')` | `@noble/hashes/ripemd160` | `import { ripemd160 } from "@noble/hashes/ripemd160"` | [main.ts:117](./workflow/main.ts#L117) |
+| `crypto.createHmac('sha256', key)` | `@noble/hashes/hmac` | `import { hmac } from "@noble/hashes/hmac"` | [main.ts:135](./workflow/main.ts#L135) |
+| `crypto.pbkdf2()` | `@noble/hashes/pbkdf2` | `import { pbkdf2 } from "@noble/hashes/pbkdf2"` | [main.ts:155](./workflow/main.ts#L155) |
+| `crypto.scrypt()` | `@noble/hashes/scrypt` | `import { scrypt } from "@noble/hashes/scrypt"` | [main.ts:160](./workflow/main.ts#L160) |
+| `crypto.hkdf()` | `@noble/hashes/hkdf` | `import { hkdf } from "@noble/hashes/hkdf"` | [main.ts:167](./workflow/main.ts#L167) |
+| `crypto.createCipheriv('aes-256-gcm')` | `@noble/ciphers/aes` | `import { gcm } from "@noble/ciphers/aes"` | [main.ts:180](./workflow/main.ts#L180) |
+| `crypto.createCipheriv('chacha20-poly1305')` | `@noble/ciphers/chacha` | `import { chacha20poly1305 } from "@noble/ciphers/chacha"` | [main.ts:192](./workflow/main.ts#L192) |
+| `crypto.sign()` with ECDSA | `@noble/curves/secp256k1` | `secp256k1.sign(msgHash, privateKey)` | [main.ts:227](./workflow/main.ts#L227) |
+| `crypto.verify()` with ECDSA | `@noble/curves/secp256k1` | `secp256k1.verify(signature, msgHash, publicKey)` | [main.ts:238](./workflow/main.ts#L238) |
+| `crypto.sign()` with Ed25519 | `@noble/curves/ed25519` | `ed25519.sign(message, privateKey)` | [main.ts:261](./workflow/main.ts#L261) |
+| `crypto.diffieHellman()` | `@noble/curves` | `secp256k1.getSharedSecret()` or `x25519.getSharedSecret()` | [main.ts:282](./workflow/main.ts#L282) |
+| `crypto.randomBytes()` | Custom using `Math.random()` | See [Random Bytes in CRE](#random-bytes-in-cre) | [main.ts:68](./workflow/main.ts#L68) |
+| `Buffer.from(hex, 'hex')` | `@noble/hashes/utils` | `import { hexToBytes } from "@noble/hashes/utils"` | [main.ts:320](./workflow/main.ts#L320) |
+| `buffer.toString('hex')` | `@noble/hashes/utils` | `import { bytesToHex } from "@noble/hashes/utils"` | [main.ts:321](./workflow/main.ts#L321) |
 
 ---
 
