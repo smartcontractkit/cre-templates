@@ -372,7 +372,7 @@ const initWorkflow = (config: Config) => {
 		),
 		cre.handler(
 			evmClient.logTrigger({
-				addresses: [config.evms[0].messageEmitterAddress],
+				addresses: [hexToBase64(config.evms[0].messageEmitterAddress)],
 			}),
 			onLogTrigger,
 		),
