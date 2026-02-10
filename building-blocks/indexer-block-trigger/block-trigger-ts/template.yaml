@@ -1,4 +1,6 @@
+kind: building-block
 name: block-trigger-ts
+title: "Block Trigger (TypeScript)"
 description: "Process new blocks and transactions using block-triggered webhooks with watched address matching."
 language: typescript
 category: indexer
@@ -7,3 +9,5 @@ tags:
   - block-trigger
   - webhook
   - alchemy
+workflows:
+  - dir: workflow

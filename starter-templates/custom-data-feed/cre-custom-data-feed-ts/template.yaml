@@ -1,4 +1,6 @@
+kind: starter-template
 name: cre-custom-data-feed-ts
+title: "Custom Data Feed (TypeScript)"
 description: "Fetch custom off-chain data and push it on-chain using cron and log triggers."
 language: typescript
 category: data-feeds
@@ -8,3 +10,7 @@ tags:
   - http
   - log-trigger
   - on-chain-write
+workflows:
+  - dir: my-workflow
+postInit: |
+  Deploy contracts and update secrets.yaml before running. See README.md for details.

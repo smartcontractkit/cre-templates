@@ -1,4 +1,6 @@
+kind: building-block
 name: read-data-feeds-ts
+title: "Read Data Feeds (TypeScript)"
 description: "Read Chainlink Data Feeds on-chain, decode price values, and return results on a cron schedule."
 language: typescript
 category: data-feeds
@@ -7,3 +9,5 @@ tags:
   - price-feeds
   - chain-reader
   - cron
+workflows:
+  - dir: my-workflow

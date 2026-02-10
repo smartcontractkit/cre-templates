@@ -1,4 +1,6 @@
+kind: building-block
 name: indexer-fetch-go
+title: "Indexer Data Fetch (Go)"
 description: "Pull data from The Graph indexer on a cron schedule using GraphQL queries."
 language: go
 category: indexer
@@ -7,3 +9,5 @@ tags:
   - graphql
   - the-graph
   - cron
+workflows:
+  - dir: workflow

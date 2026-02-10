@@ -1,4 +1,6 @@
+kind: building-block
 name: kv-store-go
+title: "KV Store (Go)"
 description: "Read, increment, and write a counter in AWS S3 using SigV4-signed HTTP requests."
 language: go
 category: off-chain-storage
@@ -8,3 +10,7 @@ tags:
   - sigv4
   - cron
   - secrets
+workflows:
+  - dir: my-workflow
+postInit: |
+  Update secrets.yaml with your AWS credentials before running.
