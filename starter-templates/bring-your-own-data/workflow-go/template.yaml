@@ -8,3 +8,5 @@ tags:
   - nav
   - http
   - on-chain-write
+networks: 
+  - ethereum-testnet-sepolia
