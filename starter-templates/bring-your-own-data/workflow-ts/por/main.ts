@@ -11,7 +11,7 @@ import {
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { encodeAbiParameters, Hex} from 'viem'
+import { encodeAbiParameters, Hex, parseUnits } from 'viem'
 import { z } from 'zod'
 
 const configSchema = z.object({
@@ -227,7 +227,7 @@ const doPOR = (runtime: Runtime<Config>): string => {
 
 	runtime.log(`ReserveInfo ${safeJsonStringify(reserveInfo)}`)
 
-	const totalReserveScaled = BigInt(reserveInfo.totalReserve * 1e18)
+	const totalReserveScaled = parseUnits(reserveInfo.totalReserve.toString(), 18)
 	runtime.log(`TotalReserveScaled ${totalReserveScaled.toString()}`)
 
 	for (const evmConfig of runtime.config.evms) {

@@ -12,6 +12,7 @@ import {
 	encodeFunctionData,
 	decodeFunctionResult,
 	decodeAbiParameters,
+	formatUnits,
 	type Address,
 	zeroAddress,
 } from 'viem';
@@ -64,16 +65,6 @@ function getEvmClient(chainName: string) {
 	});
 	if (!net) throw new Error(`Network not found for chain name: ${chainName}`);
 	return new cre.capabilities.EVMClient(net.chainSelector.selector);
-}
-
-function formatScaled(raw: bigint, decimals: number): string {
-	if (decimals === 0) return raw.toString();
-	const s = raw.toString();
-	if (s.length <= decimals) {
-		return `0.${s.padStart(decimals, '0')}`;
-	}
-	const i = s.length - decimals;
-	return `${s.slice(0, i)}.${s.slice(i)}`;
 }
 
 // Safely stringify BigInt
@@ -168,7 +159,7 @@ function readMvrBundle(
 
 	const ssaRaw = ssa.toString();
 	const ssaDecimal = bundleDecimals[3] ?? 0;
-	const ssaScaled = formatScaled(ssa, ssaDecimal);
+	const ssaScaled = formatUnits(ssa, ssaDecimal);
 
 	runtime.log(
 		`MVR bundle read | ` +

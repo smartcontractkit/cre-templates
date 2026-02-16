@@ -14,7 +14,7 @@ import {
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { type Address, decodeFunctionResult, encodeFunctionData, zeroAddress } from 'viem'
+import { type Address, decodeFunctionResult, encodeFunctionData, parseUnits, zeroAddress } from 'viem'
 import { z } from 'zod'
 import { BalanceReader, IERC20, MessageEmitter, ReserveManager } from '../contracts/abi'
 
@@ -256,7 +256,7 @@ const doPOR = (runtime: Runtime<Config>): string => {
 	const totalSupply = getTotalSupply(runtime)
 	runtime.log(`TotalSupply ${totalSupply.toString()}`)
 
-	const totalReserveScaled = BigInt(reserveInfo.totalReserve * 1e18)
+	const totalReserveScaled = parseUnits(reserveInfo.totalReserve.toString(), 18)
 	runtime.log(`TotalReserveScaled ${totalReserveScaled.toString()}`)
 
 	const nativeTokenBalance = fetchNativeTokenBalance(

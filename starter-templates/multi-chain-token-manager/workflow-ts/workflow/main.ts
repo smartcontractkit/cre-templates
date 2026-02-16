@@ -11,7 +11,7 @@ import {
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { type Address, decodeFunctionResult, encodeAbiParameters, encodeFunctionData, Hex, parseAbiParameters, zeroAddress } from 'viem'
+import { type Address, decodeFunctionResult, encodeAbiParameters, encodeFunctionData, formatUnits, Hex, parseAbiParameters, zeroAddress } from 'viem'
 import { z } from 'zod'
 import { MockPool, ProtocolSmartWallet } from '../contracts/abi'
 
@@ -35,10 +35,10 @@ type EVMConfig = z.infer<typeof configSchema.shape.evms.element>
 /** ===== Math Helpers ===== **/
 
 // Converts APR (in RAY units) to floating APR
-const aprInRAYToAPR = (apr: bigint): number => Number(apr) / 1e27
+const aprInRAYToAPR = (apr: bigint): number => parseFloat(formatUnits(apr, 27))
 
 // Converts APR (in RAY units) to APY (compounded)
-const aprInRAYToAPY = (apr: bigint): number => Math.exp(Number(apr) / 1e27) - 1
+const aprInRAYToAPY = (apr: bigint): number => Math.exp(parseFloat(formatUnits(apr, 27))) - 1
 
 // Convert APR diff (RAY) to basis points (divide by 1e23)
 const RAY_TO_BPS_DIVISOR = 100000000000000000000000n // 1e23
