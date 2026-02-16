@@ -10,7 +10,7 @@ import {
 	TxStatus,
 	consensusMedianAggregation,
 } from '@chainlink/cre-sdk'
-import { encodeAbiParameters, parseAbiParameters, encodeFunctionData, decodeFunctionResult, getAddress } from 'viem'
+import { encodeAbiParameters, parseAbiParameters, encodeFunctionData, decodeFunctionResult, getAddress, parseUnits } from 'viem'
 import { z } from 'zod'
 
 // ========================================
@@ -131,7 +131,7 @@ const validateProofOfReserve = (
 	runtime.log(`Reserve Data: ${reserveData.totalReserve} USD (as of ${reserveData.lastUpdated})`)
 
 	// Scale reserves to wei (18 decimals)
-	const reservesWei = BigInt(Math.floor(reserveData.totalReserve * (10 ** config.decimals)))
+	const reservesWei = parseUnits(reserveData.totalReserve.toString(), config.decimals)
 	
 	runtime.log(`Reserves: ${reservesWei} wei (${reserveData.totalReserve} USD)`)
 	runtime.log(`Requested Mint: ${mintAmount} wei`)
@@ -378,7 +378,7 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): object =
 		const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
 
 		// Convert amount to wei
-		const amountWei = BigInt(parseFloat(parsedPayload.amount) * (10 ** runtime.config.decimals))
+		const amountWei = parseUnits(parsedPayload.amount, runtime.config.decimals)
 		const beneficiary = parsedPayload.beneficiary.account
 		const hasCrossChain = parsedPayload.crossChain?.enabled === true
 

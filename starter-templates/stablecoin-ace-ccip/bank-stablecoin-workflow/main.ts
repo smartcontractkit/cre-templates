@@ -8,7 +8,7 @@ import {
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { encodeAbiParameters, parseAbiParameters, getAddress } from 'viem'
+import { encodeAbiParameters, getAddress, parseAbiParameters, parseUnits } from 'viem'
 import { z } from 'zod'
 
 const configSchema = z.object({
@@ -116,7 +116,7 @@ const processBankInstruction = (runtime: Runtime<Config>, evmClient: cre.capabil
 	runtime.log(`Processing ${swiftData.instructionCode} instruction from bank: ${swiftData.bankReference}`)
 
 	// Convert amount from string to scaled bigint (e.g., "1000.00" -> 1000000000000000000000)
-	const amountScaled = BigInt(parseFloat(swiftData.amount) * 1e18)
+	const amountScaled = parseUnits(swiftData.amount, 18)
 	runtime.log(`Amount scaled: ${amountScaled.toString()}`)
 	runtime.log(`Account: ${swiftData.beneficiary.account}`)
 

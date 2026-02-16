@@ -8,7 +8,7 @@ import {
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { encodeAbiParameters, parseAbiParameters, getAddress } from 'viem'
+import { encodeAbiParameters, getAddress, parseAbiParameters, parseUnits } from 'viem'
 import { z } from 'zod'
 
 const configSchema = z.object({
@@ -130,7 +130,7 @@ const processCCIPTransfer = (runtime: Runtime<Config>, evmClient: cre.capabiliti
 	}
 
 	// Convert amount from string to scaled bigint
-	const amountScaled = BigInt(parseFloat(transferData.amount) * 1e18)
+	const amountScaled = parseUnits(transferData.amount, 18)
 	runtime.log(`Amount scaled: ${amountScaled.toString()}`)
 	runtime.log(`Source: ${transferData.sourceChain}`)
 	runtime.log(`Destination: ${transferData.destinationChain}`)

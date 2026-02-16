@@ -11,7 +11,7 @@ import {
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { encodeAbiParameters, Hex} from 'viem'
+import { encodeAbiParameters, Hex, parseUnits } from 'viem'
 import { z } from 'zod'
 
 const configSchema = z.object({
@@ -199,7 +199,7 @@ const doNAV = (runtime: Runtime<Config>): string => {
 
 	runtime.log(`NAVInfo ${safeJsonStringify(navInfo)}`)
 
-	const navScaled = BigInt(navInfo.nav * 1e18)
+	const navScaled = parseUnits(navInfo.nav.toString(), 18)
 	runtime.log(`NavScaled ${navScaled.toString()}`)
 
 	for (const evmConfig of runtime.config.evms) {
