@@ -1,0 +1,14 @@
+kind: building-block
+id: block-trigger-go
+projectDir: .
+title: "Block Trigger (Go)"
+description: "Process new blocks and transactions using block-triggered webhooks with watched address matching."
+language: go
+category: indexer
+tags:
+  - indexer
+  - block-trigger
+  - webhook
+  - alchemy
+workflows:
+  - dir: workflow

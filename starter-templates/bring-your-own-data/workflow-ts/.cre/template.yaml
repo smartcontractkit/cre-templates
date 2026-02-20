@@ -1,0 +1,23 @@
+kind: starter-template
+id: bring-your-own-data-ts
+projectDir: .
+title: "Bring Your Own Data (TypeScript)"
+description: "Bring your own off-chain data on-chain with Proof of Reserve (PoR) and NAV publishing."
+language: typescript
+category: data-feeds
+tags:
+  - custom-data
+  - proof-of-reserve
+  - nav
+  - http
+  - on-chain-write
+networks:
+  - ethereum-testnet-sepolia
+  - base-sepolia
+workflows:
+  - dir: por
+    description: "Proof of Reserve workflow"
+  - dir: nav
+    description: "NAV publishing workflow"
+postInit: |
+  Deploy contracts and update secrets.yaml before running. See README.md for details.

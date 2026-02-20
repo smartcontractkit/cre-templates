@@ -1,0 +1,14 @@
+kind: building-block
+id: read-data-feeds-go
+projectDir: .
+title: "Read Data Feeds (Go)"
+description: "Read Chainlink Data Feeds on-chain, decode price values, and return results on a cron schedule."
+language: go
+category: data-feeds
+tags:
+  - data-feeds
+  - price-feeds
+  - chain-reader
+  - cron
+workflows:
+  - dir: my-workflow

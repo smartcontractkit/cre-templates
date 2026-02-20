@@ -1,0 +1,14 @@
+kind: building-block
+id: indexer-fetch-ts
+projectDir: .
+title: "Indexer Data Fetch (TypeScript)"
+description: "Pull data from The Graph indexer on a cron schedule using GraphQL queries."
+language: typescript
+category: indexer
+tags:
+  - indexer
+  - graphql
+  - the-graph
+  - cron
+workflows:
+  - dir: workflow

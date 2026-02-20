@@ -1,0 +1,16 @@
+kind: starter-template
+id: multi-chain-token-manager-go
+projectDir: .
+title: "Multi-Chain Token Manager (Go)"
+description: "Maximize lending yields via automated cross-chain rebalancing using CRE with CCIP."
+language: go
+category: defi
+tags:
+  - ccip
+  - cross-chain
+  - rebalancing
+  - token-management
+workflows:
+  - dir: workflow
+postInit: |
+  Deploy contracts and update secrets.yaml before running. See README.md for details.

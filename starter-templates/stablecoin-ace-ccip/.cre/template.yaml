@@ -1,0 +1,23 @@
+kind: starter-template
+id: stablecoin-ace-ccip-ts
+projectDir: .
+title: "Stablecoin ACE + CCIP (TypeScript)"
+description: "Demo stablecoin issuance integrating Proof of Reserve, Automated Compliance Engine (ACE), and CCIP."
+language: typescript
+category: capital-markets
+tags:
+  - stablecoin
+  - ace
+  - ccip
+  - proof-of-reserve
+  - compliance
+  - cross-chain
+workflows:
+  - dir: bank-stablecoin-workflow
+    description: "Core stablecoin mint/burn workflow"
+  - dir: bank-stablecoin-por-ace-ccip-workflow
+    description: "PoR + ACE compliance check with CCIP"
+  - dir: ccip-transfer-workflow
+    description: "Cross-chain CCIP transfer workflow"
+postInit: |
+  This template requires extensive setup. See DEPLOYMENT_GUIDE.md for step-by-step instructions.

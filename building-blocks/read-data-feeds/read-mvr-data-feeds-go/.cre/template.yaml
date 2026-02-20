@@ -1,0 +1,15 @@
+kind: building-block
+id: read-mvr-data-feeds-go
+projectDir: .
+title: "Read MVR Data Feeds (Go)"
+description: "Read Multiple Variable Response (MVR) data feeds via BundleAggregatorProxy on a cron schedule."
+language: go
+category: data-feeds
+tags:
+  - data-feeds
+  - mvr
+  - bundle-aggregator
+  - chain-reader
+  - cron
+workflows:
+  - dir: my-workflow

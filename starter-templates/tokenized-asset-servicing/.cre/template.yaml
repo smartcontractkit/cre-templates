@@ -1,0 +1,18 @@
+kind: starter-template
+id: tokenized-asset-servicing-ts
+projectDir: .
+title: "Tokenized Asset Servicing (TypeScript)"
+description: "Off-chain data orchestration for tokenized real-world assets using LogTrigger and HTTP capabilities."
+language: typescript
+category: capital-markets
+tags:
+  - rwa
+  - tokenization
+  - log-trigger
+  - http
+  - aws-lambda
+  - dynamodb
+workflows:
+  - dir: asset-log-trigger-workflow
+postInit: |
+  Deploy the AWS Lambda function and contracts before running. See README.md for details.
