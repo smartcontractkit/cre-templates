@@ -1,5 +1,6 @@
 kind: building-block
-name: block-trigger-go
+id: block-trigger-go
+projectDir: .
 title: "Block Trigger (Go)"
 description: "Process new blocks and transactions using block-triggered webhooks with watched address matching."
 language: go

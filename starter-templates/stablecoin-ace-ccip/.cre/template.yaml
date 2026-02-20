@@ -1,5 +1,6 @@
 kind: starter-template
-name: stablecoin-ace-ccip-ts
+id: stablecoin-ace-ccip-ts
+projectDir: .
 title: "Stablecoin ACE + CCIP (TypeScript)"
 description: "Demo stablecoin issuance integrating Proof of Reserve, Automated Compliance Engine (ACE), and CCIP."
 language: typescript

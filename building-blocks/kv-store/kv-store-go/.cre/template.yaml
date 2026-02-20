@@ -1,5 +1,6 @@
 kind: building-block
-name: kv-store-go
+id: kv-store-go
+projectDir: .
 title: "KV Store (Go)"
 description: "Read, increment, and write a counter in AWS S3 using SigV4-signed HTTP requests."
 language: go

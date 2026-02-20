@@ -1,5 +1,6 @@
 kind: starter-template
-name: multi-chain-token-manager-go
+id: multi-chain-token-manager-go
+projectDir: .
 title: "Multi-Chain Token Manager (Go)"
 description: "Maximize lending yields via automated cross-chain rebalancing using CRE with CCIP."
 language: go

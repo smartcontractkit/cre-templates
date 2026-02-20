@@ -1,5 +1,6 @@
 kind: starter-template
-name: cre-custom-data-feed-ts
+id: cre-custom-data-feed-ts
+projectDir: .
 title: "Custom Data Feed (TypeScript)"
 description: "Fetch custom off-chain data and push it on-chain using cron and log triggers."
 language: typescript

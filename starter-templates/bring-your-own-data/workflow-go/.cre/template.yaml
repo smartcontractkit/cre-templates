@@ -1,5 +1,6 @@
 kind: starter-template
-name: bring-your-own-data-go
+id: bring-your-own-data-go
+projectDir: .
 title: "Bring Your Own Data (Go)"
 description: "Bring your own off-chain data on-chain with Proof of Reserve (PoR) and NAV publishing."
 language: go

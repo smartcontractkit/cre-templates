@@ -1,5 +1,6 @@
 kind: building-block
-name: kv-store-ts
+id: kv-store-ts
+projectDir: .
 title: "KV Store (TypeScript)"
 description: "Read, increment, and write a counter in AWS S3 using SigV4-signed HTTP requests."
 language: typescript

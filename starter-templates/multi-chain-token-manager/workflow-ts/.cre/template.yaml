@@ -1,5 +1,6 @@
 kind: starter-template
-name: multi-chain-token-manager-ts
+id: multi-chain-token-manager-ts
+projectDir: .
 title: "Multi-Chain Token Manager (TypeScript)"
 description: "Maximize lending yields via automated cross-chain rebalancing using CRE with CCIP."
 language: typescript

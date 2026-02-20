@@ -1,5 +1,6 @@
 kind: building-block
-name: block-trigger-ts
+id: block-trigger-ts
+projectDir: .
 title: "Block Trigger (TypeScript)"
 description: "Process new blocks and transactions using block-triggered webhooks with watched address matching."
 language: typescript

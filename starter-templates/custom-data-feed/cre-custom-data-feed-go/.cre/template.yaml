@@ -1,15 +1,18 @@
 kind: starter-template
-name: cre-custom-data-feed-go
+id: cre-custom-data-feed-go
+projectDir: .
 title: "Custom Data Feed (Go)"
-description: "Fetch custom off-chain data and push it on-chain using cron and log triggers."
+description: "Fetch custom off-chain data and push it on-chain using cron and log triggers." 
 language: go
-category: data-feeds
+category: data
 tags:
-  - custom-data
-  - proof-of-reserve
+  - tokenization
+  - data
+  - ai
+capabilities:
   - http
   - log-trigger
-  - on-chain-write
+  - chain-write
 workflows:
   - dir: my-workflow
 postInit: |

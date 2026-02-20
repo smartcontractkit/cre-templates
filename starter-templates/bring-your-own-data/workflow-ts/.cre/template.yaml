@@ -1,5 +1,6 @@
 kind: starter-template
-name: bring-your-own-data-ts
+id: bring-your-own-data-ts
+projectDir: .
 title: "Bring Your Own Data (TypeScript)"
 description: "Bring your own off-chain data on-chain with Proof of Reserve (PoR) and NAV publishing."
 language: typescript
