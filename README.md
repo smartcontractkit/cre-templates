@@ -24,6 +24,7 @@ Use these as references or starting points to compose your own production workfl
 
 - [Repository Structure](#repository-structure)
 - [When to Use Which](#when-to-use-which)
+- [E2E Tests](#e2e-tests)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -53,6 +54,55 @@ More complex, end-to-end workflows. Each directory includes its own README (some
 
 * **Starter Templates**
   Choose these when you want a **runnable reference architecture** that strings together multiple steps (off-chain + on-chain), includes contracts/bindings, and mirrors real workflows.
+
+---
+
+## E2E Tests
+
+The `e2e/` directory contains end-to-end tests that scaffold every template using the real `cre init` CLI and validate the resulting project structure and build.
+
+### Prerequisites
+
+- [`cre` CLI](https://docs.chain.link/cre) installed (or a pre-built binary)
+- Go toolchain
+- `bun` or `npm` (for TypeScript templates)
+
+### Running the tests
+
+```bash
+cd e2e
+
+# Run all template tests:
+go test -v -count=1 -timeout 300s
+
+# Run a single template:
+go test -run "TestAllTemplates/kv-store-go" -v -count=1
+```
+
+### Environment variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `CRE_CLI_PATH` | Path to the `cre` binary | `cre` (looked up on `$PATH`) |
+| `CRE_TEMPLATE_REPO` | Local repo path used for template discovery | Parent of `e2e/` directory |
+| `CRE_TEMPLATE_REPO_REF` | GitHub `owner/repo@ref` to add as a template source before running | Default remote repos |
+
+### Testing a feature branch
+
+By default the CLI fetches templates from the published remote repo. To test templates from an unpublished branch, push your branch and run:
+
+```bash
+CRE_TEMPLATE_REPO_REF="smartcontractkit/cre-templates@my-branch" go test -v -count=1 -timeout 300s
+```
+
+### What the tests verify
+
+For each template discovered in the repo:
+
+1. **Scaffold** — runs `cre init` with the template ID in an isolated temp directory
+2. **Structure** — asserts `project.yaml`, workflow directories, and entrypoint files (`main.go`/`main.ts`) exist
+3. **Build (Go)** — runs `go mod tidy` and `go build` (with WASM cross-compilation fallback for `wasip1`-tagged code)
+4. **Build (TypeScript)** — finds all `package.json` files and runs `bun install` (or `npm install`)
 
 ---
 
