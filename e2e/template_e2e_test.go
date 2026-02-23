@@ -312,9 +312,6 @@ func TestAllTemplates(t *testing.T) {
 				if tmpl.ProjectDir == "" {
 					t.Skip("template has no projectDir, skipping simulate")
 				}
-				if tmpl.Language != "go" {
-					t.Skip("workflow simulate only applies to Go templates")
-				}
 				validateWorkflowSimulate(t, projectDir, tmpl.Workflows)
 			})
 		})
