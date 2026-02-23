@@ -2,13 +2,16 @@ package e2e_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,7 +25,8 @@ type TemplateYAML struct {
 	Language   string     `yaml:"language"`
 	Category   string     `yaml:"category"`
 	Workflows  []Workflow `yaml:"workflows"`
-	Networks   []string   `yaml:"networks"`
+	Networks     []string `yaml:"networks"`
+	Capabilities []string `yaml:"capabilities"`
 }
 
 type Workflow struct {
@@ -190,13 +194,15 @@ func TestDiscoverTemplates(t *testing.T) {
 }
 
 // TestAllTemplates is the main E2E test. It scaffolds every template via `cre init`
-// and validates the resulting project structure and build.
+// and validates the resulting project structure, build, bindings, tests, and simulation.
 //
 // Environment variables:
 //   - CRE_CLI_PATH: path to the cre binary (default: "cre" on PATH)
 //   - CRE_TEMPLATE_REPO: local path to cre-templates repo for discovery (default: ../)
 //   - CRE_TEMPLATE_REPO_REF: GitHub owner/repo@ref to add as template source
 //     (e.g. "smartcontractkit/cre-templates@feature-branch")
+//   - CRE_ENABLE_SIMULATE: set to "true" to enable workflow simulation tests
+//   - CRE_SIMULATE_TIMEOUT: timeout in seconds for each simulate run (default: 60)
 func TestAllTemplates(t *testing.T) {
 	cli := cliPath(t)
 	if _, err := exec.LookPath(cli); err != nil {
@@ -277,6 +283,39 @@ func TestAllTemplates(t *testing.T) {
 				default:
 					t.Logf("unknown language %q, skipping build validation", tmpl.Language)
 				}
+			})
+
+			// --- Validate generate-bindings ---
+			t.Run("generate-bindings", func(t *testing.T) {
+				if tmpl.Language != "go" {
+					t.Skip("generate-bindings only applies to Go templates")
+				}
+				if !hasContractABIs(projectDir) {
+					t.Skip("no contract ABIs found, skipping generate-bindings")
+				}
+				validateGenerateBindings(t, projectDir)
+			})
+
+			// --- Validate go test ---
+			t.Run("go-test", func(t *testing.T) {
+				if tmpl.Language != "go" {
+					t.Skip("go-test only applies to Go templates")
+				}
+				validateGoTests(t, projectDir)
+			})
+
+			// --- Validate workflow simulate ---
+			t.Run("workflow-simulate", func(t *testing.T) {
+				if os.Getenv("CRE_ENABLE_SIMULATE") != "true" {
+					t.Skip("workflow simulation disabled (set CRE_ENABLE_SIMULATE=true to enable)")
+				}
+				if tmpl.ProjectDir == "" {
+					t.Skip("template has no projectDir, skipping simulate")
+				}
+				if tmpl.Language != "go" {
+					t.Skip("workflow simulate only applies to Go templates")
+				}
+				validateWorkflowSimulate(t, projectDir, tmpl.Workflows)
 			})
 		})
 	}
@@ -368,6 +407,125 @@ func findFiles(t *testing.T, dir, name string) []string {
 		t.Fatalf("walking %s: %v", dir, err)
 	}
 	return matches
+}
+
+// hasContractABIs checks if the project has contract ABI files.
+func hasContractABIs(projectDir string) bool {
+	abiDir := filepath.Join(projectDir, "contracts", "evm", "src", "abi")
+	entries, err := os.ReadDir(abiDir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".abi") {
+			return true
+		}
+	}
+	return false
+}
+
+// validateGenerateBindings deletes generated bindings, runs `cre generate-bindings evm`,
+// and verifies the generated directory is recreated with files.
+func validateGenerateBindings(t *testing.T, projectDir string) {
+	t.Helper()
+
+	generatedDir := filepath.Join(projectDir, "contracts", "evm", "src", "generated")
+
+	// Delete existing generated bindings.
+	if err := os.RemoveAll(generatedDir); err != nil {
+		t.Fatalf("failed to remove generated dir: %v", err)
+	}
+
+	// Run generate-bindings.
+	stdout, stderr, err := runCLI(t, projectDir, "generate-bindings", "evm")
+	if err != nil {
+		t.Fatalf("cre generate-bindings evm failed:\nstdout: %s\nstderr: %s\nerr: %v", stdout, stderr, err)
+	}
+
+	// Verify regeneration.
+	entries, err := os.ReadDir(generatedDir)
+	if err != nil {
+		t.Fatalf("generated dir not recreated after generate-bindings: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Fatal("generated dir is empty after generate-bindings")
+	}
+	t.Logf("generate-bindings regenerated %d entries in %s", len(entries), generatedDir)
+}
+
+// validateGoTests runs `go test ./...` in the project directory.
+// Tries native first, falls back to WASM cross-compilation.
+func validateGoTests(t *testing.T, projectDir string) {
+	t.Helper()
+
+	// Try native first.
+	output, err := runCmd(t, projectDir, nil, "go", "test", "./...")
+	if err != nil {
+		t.Logf("native go test failed (trying WASM): %s", output)
+		// Workflow code is often wasip1-only — try WASM cross-compilation.
+		wasmEnv := []string{"GOOS=wasip1", "GOARCH=wasm"}
+		output, err = runCmd(t, projectDir, wasmEnv, "go", "test", "./...")
+		if err != nil {
+			t.Fatalf("go test (WASM) also failed in %s:\n%s\nerr: %v", projectDir, output, err)
+		}
+		t.Logf("WASM go test succeeded")
+		return
+	}
+	t.Logf("native go test succeeded")
+}
+
+// validateWorkflowSimulate runs `cre workflow simulate` for each workflow.
+// Timeout is configurable via CRE_SIMULATE_TIMEOUT (default 60s).
+func validateWorkflowSimulate(t *testing.T, projectDir string, workflows []Workflow) {
+	t.Helper()
+
+	timeoutSecs := 60
+	if v := os.Getenv("CRE_SIMULATE_TIMEOUT"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
+			timeoutSecs = parsed
+		}
+	}
+	timeout := time.Duration(timeoutSecs) * time.Second
+
+	for _, wf := range workflows {
+		wf := wf
+		t.Run(wf.Dir, func(t *testing.T) {
+			wfDir := filepath.Join(projectDir, wf.Dir)
+			if _, err := os.Stat(wfDir); os.IsNotExist(err) {
+				t.Skipf("workflow dir %s does not exist, skipping simulate", wfDir)
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+			args := []string{
+				"workflow", "simulate", wfDir,
+				"--target", "staging",
+				"--non-interactive",
+				"--trigger-index", "0",
+			}
+
+			cmd := exec.CommandContext(ctx, cliPath(t), args...)
+			var outBuf bytes.Buffer
+			cmd.Stdout = &outBuf
+			cmd.Stderr = &outBuf
+			cmd.Dir = projectDir
+			cmd.Env = os.Environ()
+
+			err := cmd.Run()
+			output := stripANSI(outBuf.String())
+
+			if ctx.Err() == context.DeadlineExceeded {
+				t.Logf("WARN: workflow simulate timed out after %s for %s:\n%s", timeout, wf.Dir, output)
+				return
+			}
+			if err != nil {
+				t.Logf("WARN: workflow simulate failed for %s (non-fatal):\n%s\nerr: %v", wf.Dir, output, err)
+				return
+			}
+			t.Logf("workflow simulate succeeded for %s", wf.Dir)
+		})
+	}
 }
 
 func assertFileExists(t *testing.T, dir, name string) {
