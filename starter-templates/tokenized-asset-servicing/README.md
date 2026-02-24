@@ -218,7 +218,7 @@ Follow these steps to deploy and interact with the project:
     You will see the following if the process succeeds.
 
     ```
-    $ bunx cre-setup
+    $ bun x cre-setup
     [cre-sdk-javy-plugin] Detected platform: darwin, arch: arm64
     [cre-sdk-javy-plugin] Using cached binary: /Users/qingyangkong/.cache/javy/v5.0.4/darwin-arm64/javy
     ✅ CRE TS SDK is ready to use.
