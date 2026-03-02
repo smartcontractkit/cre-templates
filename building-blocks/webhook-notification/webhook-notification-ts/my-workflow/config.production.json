@@ -1,0 +1,11 @@
+{
+  "schedule": "0 */10 * * * *",
+  "chainName": "ethereum-mainnet-arbitrum-1",
+  "feed": {
+    "name": "ETH/USD",
+    "address": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612"
+  },
+  "webhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
+  "notificationType": "slack",
+  "telegramChatId": ""
+}
