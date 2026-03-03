@@ -22,23 +22,23 @@ type Feed struct {
 }
 
 type Config struct {
-	Schedule         string `json:"schedule"`         // 6-field cron; e.g. "0 */10 * * * *"
-	ChainName        string `json:"chainName"`        // e.g. "ethereum-mainnet-arbitrum-1"
-	Feed             Feed   `json:"feed"`             // single feed to monitor
-	WebhookURL       string `json:"webhookUrl"`       // full webhook URL (including any embedded credentials)
-	NotificationType string `json:"notificationType"` // "slack" or "telegram"
-	TelegramChatID   string `json:"telegramChatId"`   // Telegram chat ID (only for telegram)
+	Schedule  string `json:"schedule"`  // 6-field cron; e.g. "0 */10 * * * *"
+	ChainName string `json:"chainName"` // e.g. "ethereum-mainnet-arbitrum-1"
+	Feed      Feed   `json:"feed"`      // single feed to monitor
+	Endpoint  string `json:"endpoint"`  // PagerDuty Events API v2 endpoint
+	Severity  string `json:"severity"`  // "critical", "error", "warning", or "info"
+	Source    string `json:"source"`    // source identifier for the alert
 }
 
-type NotificationResult struct {
-	Feed              string `json:"feed"`
-	Address           string `json:"address"`
-	Decimals          uint8  `json:"decimals"`
-	LatestAnswerRaw   string `json:"latestAnswerRaw"`
-	Scaled            string `json:"scaled"`
-	FormattedPrice    string `json:"formattedPrice"`
-	NotificationType  string `json:"notificationType"`
-	WebhookStatusCode uint32 `json:"webhookStatusCode"`
+type AlertResult struct {
+	Feed            string `json:"feed"`
+	Address         string `json:"address"`
+	Decimals        uint8  `json:"decimals"`
+	LatestAnswerRaw string `json:"latestAnswerRaw"`
+	Scaled          string `json:"scaled"`
+	FormattedPrice  string `json:"formattedPrice"`
+	AlertEndpoint   string `json:"alertEndpoint"`
+	AlertStatusCode uint32 `json:"alertStatusCode"`
 }
 
 func InitWorkflow(cfg *Config, logger *slog.Logger, _ cre.SecretsProvider) (cre.Workflow[*Config], error) {
@@ -85,49 +85,50 @@ func onTick(cfg *Config, runtime cre.Runtime, _ *cron.Payload) (string, error) {
 		"latestAnswerScaled", scaled.String(),
 	)
 
-	// 2. Format price and build webhook body
+	// 2. Format price and build PagerDuty alert body
 	formattedPrice := formatPrice(raw, int32(decimals))
-	webhookBody, err := buildWebhookBody(cfg, formattedPrice)
+	alertBody, err := buildPagerDutyBody(cfg, formattedPrice)
 	if err != nil {
-		return "", fmt.Errorf("build webhook body: %w", err)
+		return "", fmt.Errorf("build alert body: %w", err)
 	}
 
-	lg.Info("Sending notification",
-		"type", cfg.NotificationType,
-		"url", cfg.WebhookURL,
+	lg.Info("Sending PagerDuty alert",
+		"endpoint", cfg.Endpoint,
 	)
 
-	// 3. Send webhook via ConfidentialHTTPClient
-	//    The request is executed inside a secure enclave, so the full URL
-	//    (which may contain embedded credentials) is never exposed to
-	//    the node operator or visible outside the enclave.
+	// 3. Send alert via ConfidentialHTTPClient with secret injection
+	//    The {{.pagerdutyRoutingKey}} template in the body is resolved by the
+	//    enclave from VaultDON secrets (or from env vars during simulation).
 	confHttpClient := &confidentialhttp.Client{}
 	resp, err := confHttpClient.SendRequest(runtime, &confidentialhttp.ConfidentialHTTPRequest{
+		VaultDonSecrets: []*confidentialhttp.SecretIdentifier{
+			{Key: "pagerdutyRoutingKey"},
+		},
 		Request: &confidentialhttp.HTTPRequest{
-			Url:    cfg.WebhookURL,
+			Url:    cfg.Endpoint,
 			Method: "POST",
-			Body:   &confidentialhttp.HTTPRequest_BodyString{BodyString: webhookBody},
+			Body:   &confidentialhttp.HTTPRequest_BodyString{BodyString: alertBody},
 			MultiHeaders: map[string]*confidentialhttp.HeaderValues{
 				"Content-Type": {Values: []string{"application/json"}},
 			},
 		},
 	}).Await()
 	if err != nil {
-		return "", fmt.Errorf("webhook send failed: %w", err)
+		return "", fmt.Errorf("alert send failed: %w", err)
 	}
 
-	lg.Info("Webhook response", "statusCode", resp.StatusCode)
+	lg.Info("Alert response", "statusCode", resp.StatusCode)
 
 	// 4. Return summary
-	result := NotificationResult{
-		Feed:              cfg.Feed.Name,
-		Address:           cfg.Feed.Address,
-		Decimals:          decimals,
-		LatestAnswerRaw:   raw.String(),
-		Scaled:            scaled.String(),
-		FormattedPrice:    formattedPrice,
-		NotificationType:  cfg.NotificationType,
-		WebhookStatusCode: resp.StatusCode,
+	result := AlertResult{
+		Feed:            cfg.Feed.Name,
+		Address:         cfg.Feed.Address,
+		Decimals:        decimals,
+		LatestAnswerRaw: raw.String(),
+		Scaled:          scaled.String(),
+		FormattedPrice:  formattedPrice,
+		AlertEndpoint:   cfg.Endpoint,
+		AlertStatusCode: resp.StatusCode,
 	}
 
 	out, err := json.Marshal(result)
@@ -140,24 +141,18 @@ func onTick(cfg *Config, runtime cre.Runtime, _ *cron.Payload) (string, error) {
 func formatPrice(raw *big.Int, decimals int32) string {
 	scale := decimal.New(1, decimals)
 	price := decimal.NewFromBigInt(raw, 0).Div(scale)
-	// Format with 2 decimal places
 	return price.StringFixed(2)
 }
 
-func buildWebhookBody(cfg *Config, formattedPrice string) (string, error) {
-	var payload interface{}
-
-	if cfg.NotificationType == "telegram" {
-		payload = map[string]string{
-			"chat_id":    cfg.TelegramChatID,
-			"text":       fmt.Sprintf("*%s*: $%s", cfg.Feed.Name, formattedPrice),
-			"parse_mode": "Markdown",
-		}
-	} else {
-		// Default: Slack
-		payload = map[string]string{
-			"text": fmt.Sprintf(":chart_with_upwards_trend: *%s*: $%s", cfg.Feed.Name, formattedPrice),
-		}
+func buildPagerDutyBody(cfg *Config, formattedPrice string) (string, error) {
+	payload := map[string]interface{}{
+		"routing_key":  "{{.pagerdutyRoutingKey}}",
+		"event_action": "trigger",
+		"payload": map[string]string{
+			"summary":  fmt.Sprintf("%s price: $%s on %s", cfg.Feed.Name, formattedPrice, cfg.ChainName),
+			"severity": cfg.Severity,
+			"source":   cfg.Source,
+		},
 	}
 
 	body, err := json.Marshal(payload)

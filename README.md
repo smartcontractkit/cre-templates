@@ -36,7 +36,8 @@ Small, focused examples. Each directory includes its own README.
 
 - **`building-blocks/kv-store`** – Read/modify/write a value in **AWS S3** using SigV4-signed HTTP requests, CRE secrets, and a **consensus read → single write** flow.
 - **`building-blocks/read-data-feeds`** – Read `decimals()` and `latestAnswer()` from **Chainlink Data Feeds** on a schedule; includes ABI/bindings and RPC config examples.
-- **`building-blocks/webhook-notification`** – Read a **Chainlink Data Feed** on-chain and send a price notification to **Slack** or **Telegram** via webhook; combines EVM reads with HTTP POST.
+- **`building-blocks/webhook-alerting`** – Read a **Chainlink Data Feed** on-chain and trigger a **PagerDuty alert** via ConfidentialHTTPClient; demonstrates **VaultDON secret injection** with `{{.secretName}}` body templates.
+- **`building-blocks/webhook-notification`** – Read a **Chainlink Data Feed** on-chain and send a price notification to **Slack** or **Telegram** via webhook; demonstrates **enclave privacy** for URL-embedded credentials.
 
 ### Starter Templates
 More complex, end-to-end workflows. Each directory includes its own README (some marked **WIP**).

@@ -16498,9 +16498,9 @@ var configSchema = exports_external.object({
     name: exports_external.string(),
     address: exports_external.string()
   }),
-  webhookUrl: exports_external.string(),
-  notificationType: exports_external.enum(["slack", "telegram"]),
-  telegramChatId: exports_external.string().optional().default("")
+  endpoint: exports_external.string(),
+  severity: exports_external.string(),
+  source: exports_external.string()
 });
 function getEvmClient(chainName) {
   const net = getNetwork({
@@ -16557,16 +16557,15 @@ function readFeed(runtime2, evmClient, name, address) {
   runtime2.log(`Price feed read | chain=${runtime2.config.chainName} feed="${name}" address=${address} decimals=${decimals} latestAnswerRaw=${latestAnswer.toString()} latestAnswerScaled=${scaled}`);
   return { decimals, latestAnswer, scaled };
 }
-function buildWebhookBody(config, feedName, formattedPrice) {
-  if (config.notificationType === "telegram") {
-    return JSON.stringify({
-      chat_id: config.telegramChatId,
-      text: `*${feedName}*: $${formattedPrice}`,
-      parse_mode: "Markdown"
-    });
-  }
+function buildPagerDutyBody(config, formattedPrice) {
   return JSON.stringify({
-    text: `:chart_with_upwards_trend: *${feedName}*: $${formattedPrice}`
+    routing_key: "{{.pagerdutyRoutingKey}}",
+    event_action: "trigger",
+    payload: {
+      summary: `${config.feed.name} price: $${formattedPrice} on ${config.chainName}`,
+      severity: config.severity,
+      source: config.source
+    }
   });
 }
 function onCron(runtime2, _payload) {
@@ -16575,23 +16574,24 @@ function onCron(runtime2, _payload) {
   const result = readFeed(runtime2, evmClient, feed.name, feed.address);
   const formattedPrice = formatPrice(result.latestAnswer, result.decimals);
   runtime2.log(`Formatted price | feed="${feed.name}" price=$${formattedPrice}`);
-  const webhookBody = buildWebhookBody(runtime2.config, feed.name, formattedPrice);
-  runtime2.log(`Sending ${runtime2.config.notificationType} notification`);
+  const alertBody = buildPagerDutyBody(runtime2.config, formattedPrice);
+  runtime2.log("Sending PagerDuty alert");
   const confHttpClient = new ClientCapability2;
   const response = confHttpClient.sendRequest(runtime2, {
+    vaultDonSecrets: [{ key: "pagerdutyRoutingKey" }],
     request: {
-      url: runtime2.config.webhookUrl,
+      url: runtime2.config.endpoint,
       method: "POST",
-      bodyString: webhookBody,
+      bodyString: alertBody,
       multiHeaders: {
         "Content-Type": { values: ["application/json"] }
       }
     }
   }).result();
   if (!ok(response)) {
-    runtime2.log(`Webhook request failed | statusCode=${response.statusCode}`);
+    runtime2.log(`Alert request failed | statusCode=${response.statusCode}`);
   }
-  runtime2.log(`Webhook response | statusCode=${response.statusCode}`);
+  runtime2.log(`Alert response | statusCode=${response.statusCode}`);
   return safeJsonStringify({
     feed: feed.name,
     address: feed.address,
@@ -16599,8 +16599,8 @@ function onCron(runtime2, _payload) {
     latestAnswerRaw: result.latestAnswer,
     scaled: result.scaled,
     formattedPrice,
-    notificationType: runtime2.config.notificationType,
-    webhookStatusCode: response.statusCode
+    alertEndpoint: runtime2.config.endpoint,
+    alertStatusCode: response.statusCode
   });
 }
 function initWorkflow(config) {

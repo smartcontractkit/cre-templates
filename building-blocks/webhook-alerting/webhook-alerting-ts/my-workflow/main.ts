@@ -26,14 +26,12 @@ const configSchema = z.object({
 		name: z.string(),    // "ETH/USD"
 		address: z.string(), // proxy address
 	}),
-	// full webhook endpoint URL (including any embedded credentials)
-	//   Slack:    "https://hooks.slack.com/services/T.../B.../xxx"
-	//   Telegram: "https://api.telegram.org/bot<token>/sendMessage"
-	webhookUrl: z.string(),
-	// "slack" or "telegram"
-	notificationType: z.enum(['slack', 'telegram']),
-	// Telegram chat ID (only used when notificationType is "telegram")
-	telegramChatId: z.string().optional().default(''),
+	// PagerDuty Events API v2 endpoint
+	endpoint: z.string(),
+	// PagerDuty severity: "critical", "error", "warning", or "info"
+	severity: z.string(),
+	// source identifier for the alert
+	source: z.string(),
 });
 
 type Config = z.infer<typeof configSchema>;
@@ -122,20 +120,17 @@ function readFeed(
 	return { decimals, latestAnswer, scaled };
 }
 
-// ---------- Webhook ----------
+// ---------- PagerDuty Alert ----------
 
-function buildWebhookBody(config: Config, feedName: string, formattedPrice: string): string {
-	if (config.notificationType === 'telegram') {
-		return JSON.stringify({
-			chat_id: config.telegramChatId,
-			text: `*${feedName}*: $${formattedPrice}`,
-			parse_mode: 'Markdown',
-		});
-	}
-
-	// Slack incoming webhook
+function buildPagerDutyBody(config: Config, formattedPrice: string): string {
 	return JSON.stringify({
-		text: `:chart_with_upwards_trend: *${feedName}*: $${formattedPrice}`,
+		routing_key: '{{.pagerdutyRoutingKey}}',
+		event_action: 'trigger',
+		payload: {
+			summary: `${config.feed.name} price: $${formattedPrice} on ${config.chainName}`,
+			severity: config.severity,
+			source: config.source,
+		},
 	});
 }
 
@@ -151,24 +146,22 @@ function onCron(runtime: Runtime<Config>, _payload: CronPayload): string {
 
 	runtime.log(`Formatted price | feed="${feed.name}" price=$${formattedPrice}`);
 
-	// 2. Build webhook payload
-	const webhookBody = buildWebhookBody(runtime.config, feed.name, formattedPrice);
+	// 2. Build PagerDuty Events API v2 body
+	//    The {{.pagerdutyRoutingKey}} template is resolved by the enclave
+	//    from VaultDON secrets (or from env vars during simulation).
+	const alertBody = buildPagerDutyBody(runtime.config, formattedPrice);
 
-	runtime.log(
-		`Sending ${runtime.config.notificationType} notification`,
-	);
+	runtime.log('Sending PagerDuty alert');
 
-	// 3. Send webhook via ConfidentialHTTPClient
-	//    The request is executed inside a secure enclave, so the full URL
-	//    (which may contain embedded credentials) is never exposed to
-	//    the node operator or visible outside the enclave.
+	// 3. Send alert via ConfidentialHTTPClient with secret injection
 	const confHttpClient = new ConfidentialHTTPClient();
 	const response = confHttpClient
 		.sendRequest(runtime, {
+			vaultDonSecrets: [{ key: 'pagerdutyRoutingKey' }],
 			request: {
-				url: runtime.config.webhookUrl,
+				url: runtime.config.endpoint,
 				method: 'POST',
-				bodyString: webhookBody,
+				bodyString: alertBody,
 				multiHeaders: {
 					'Content-Type': { values: ['application/json'] },
 				},
@@ -177,10 +170,10 @@ function onCron(runtime: Runtime<Config>, _payload: CronPayload): string {
 		.result();
 
 	if (!ok(response)) {
-		runtime.log(`Webhook request failed | statusCode=${response.statusCode}`);
+		runtime.log(`Alert request failed | statusCode=${response.statusCode}`);
 	}
 
-	runtime.log(`Webhook response | statusCode=${response.statusCode}`);
+	runtime.log(`Alert response | statusCode=${response.statusCode}`);
 
 	// 4. Return summary
 	return safeJsonStringify({
@@ -190,8 +183,8 @@ function onCron(runtime: Runtime<Config>, _payload: CronPayload): string {
 		latestAnswerRaw: result.latestAnswer,
 		scaled: result.scaled,
 		formattedPrice,
-		notificationType: runtime.config.notificationType,
-		webhookStatusCode: response.statusCode,
+		alertEndpoint: runtime.config.endpoint,
+		alertStatusCode: response.statusCode,
 	});
 }
 

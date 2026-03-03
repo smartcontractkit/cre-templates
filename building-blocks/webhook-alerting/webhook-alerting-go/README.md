@@ -9,15 +9,19 @@
 
 </div>
 
-## Webhook Notification (Go)
+## Webhook Alerting (Go)
 
-Read a Chainlink Data Feed on-chain and send a price notification to **Slack** or **Telegram** via webhook.
+Read a Chainlink Data Feed on-chain and trigger a **PagerDuty alert** via the ConfidentialHTTPClient.
 
-This building block combines two CRE capabilities:
-- **EVM Client** to read on-chain data (price feed)
-- **Confidential HTTP Client** to POST a notification to an external webhook
+This building block demonstrates **VaultDON secret injection** — the PagerDuty routing key is referenced as `{{.pagerdutyRoutingKey}}` in the JSON request body and resolved at runtime by the secure enclave (from env vars during simulation, from VaultDON in production).
 
-The Confidential HTTP Client executes requests inside a secure enclave, so the full webhook URL (which may contain embedded credentials like a Slack token or Telegram bot token) is never exposed to the node operator.
+> **Looking for Slack/Telegram notifications?** See the sibling [`webhook-notification`](../webhook-notification/) building block, which demonstrates enclave privacy for URL-embedded credentials.
+
+### Capabilities used
+
+- **EVM Client** — read on-chain price feed data
+- **Confidential HTTP Client** — POST the alert with secret injection (`VaultDonSecrets`)
+- **Cron Scheduler** — fire on a configurable schedule
 
 ## Quick start
 
@@ -59,9 +63,19 @@ rpcs:
     url: <YOUR_ARBITRUM_MAINNET_RPC_URL>
 ```
 
-### 4) Configure the workflow
+### 4) Set your PagerDuty routing key
 
-Update `my-workflow/config.production.json` with your webhook settings:
+Add your routing key to `.env`:
+
+```
+PAGERDUTY_ROUTING_KEY=YOUR_PAGERDUTY_ROUTING_KEY_HERE
+```
+
+The `secrets.yaml` file maps the vault secret name `pagerdutyRoutingKey` to the `PAGERDUTY_ROUTING_KEY` env var. During simulation the CLI reads the value from `.env`; in production the enclave fetches it from VaultDON.
+
+### 5) Configure the workflow
+
+Update `my-workflow/config.production.json` with your settings:
 
 ```json
 {
@@ -71,9 +85,9 @@ Update `my-workflow/config.production.json` with your webhook settings:
     "name": "ETH/USD",
     "address": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612"
   },
-  "webhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL",
-  "notificationType": "slack",
-  "telegramChatId": ""
+  "endpoint": "https://events.pagerduty.com/v2/enqueue",
+  "severity": "critical",
+  "source": "cre-workflow"
 }
 ```
 
@@ -85,21 +99,11 @@ Update `my-workflow/config.production.json` with your webhook settings:
 | `chainName` | Must match the RPC entry in `project.yaml` |
 | `feed.name` | Human-readable feed name (e.g., `"ETH/USD"`) |
 | `feed.address` | Chainlink Data Feed proxy address on the target chain |
-| `webhookUrl` | Slack incoming webhook URL or Telegram bot API URL |
-| `notificationType` | `"slack"` or `"telegram"` |
-| `telegramChatId` | Required when `notificationType` is `"telegram"` |
+| `endpoint` | PagerDuty Events API v2 URL (or `https://httpbin.org/post` for testing) |
+| `severity` | PagerDuty severity: `"critical"`, `"error"`, `"warning"`, or `"info"` |
+| `source` | Source identifier included in the alert payload |
 
-**Telegram example:**
-
-```json
-{
-  "webhookUrl": "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/sendMessage",
-  "notificationType": "telegram",
-  "telegramChatId": "123456789"
-}
-```
-
-### 5) Run a local simulation
+### 6) Run a local simulation
 
 The staging config uses `https://httpbin.org/post` as a test echo endpoint:
 
@@ -115,9 +119,17 @@ Workflow compiled
 
 [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
 [USER LOG] msg="Data feed read" chain=ethereum-mainnet-arbitrum-1 feed=ETH/USD address=0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612 decimals=8 latestAnswerRaw=378968000000 latestAnswerScaled=3789.68
-[USER LOG] msg="Sending notification" type=slack url=https://httpbin.org/post
-[USER LOG] msg="Webhook response" statusCode=200
+[USER LOG] msg="Sending PagerDuty alert" endpoint=https://httpbin.org/post
+[USER LOG] msg="Alert response" statusCode=200
 
 Workflow Simulation Result:
  "{\"feed\":\"ETH/USD\",\"address\":\"0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612\",\"decimals\":8,...}"
 ```
+
+### How secret injection works
+
+1. `secrets.yaml` declares `pagerdutyRoutingKey` mapped to the `PAGERDUTY_ROUTING_KEY` env var.
+2. The workflow builds a JSON body containing the literal string `{{.pagerdutyRoutingKey}}`.
+3. The `ConfidentialHTTPClient.SendRequest()` call includes `VaultDonSecrets` with the key `"pagerdutyRoutingKey"`.
+4. Before sending the request, the enclave resolves `{{.pagerdutyRoutingKey}}` in the body with the actual secret value.
+5. The secret never appears in logs or leaves the enclave boundary.

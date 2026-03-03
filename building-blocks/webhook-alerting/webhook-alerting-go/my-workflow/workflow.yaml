@@ -1,6 +1,6 @@
 staging-settings:
   user-workflow:
-    workflow-name: "webhook-notification-staging"
+    workflow-name: "webhook-alerting-staging"
   workflow-artifacts:
     workflow-path: "."
     config-path: "./config.staging.json"
@@ -8,7 +8,7 @@ staging-settings:
 
 production-settings:
   user-workflow:
-    workflow-name: "webhook-notification-production"
+    workflow-name: "webhook-alerting-production"
   workflow-artifacts:
     workflow-path: "."
     config-path: "./config.production.json"

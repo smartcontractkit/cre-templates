@@ -15,7 +15,9 @@ Read a Chainlink Data Feed on-chain and send a price notification to **Slack** o
 
 This building block combines two CRE capabilities:
 - **EVM Client** to read on-chain data (price feed)
-- **HTTP Client** to POST a notification to an external webhook
+- **Confidential HTTP Client** to POST a notification to an external webhook
+
+The Confidential HTTP Client executes requests inside a secure enclave, so the full webhook URL (which may contain embedded credentials like a Slack token or Telegram bot token) is never exposed to the node operator.
 
 ## Quick start
 
