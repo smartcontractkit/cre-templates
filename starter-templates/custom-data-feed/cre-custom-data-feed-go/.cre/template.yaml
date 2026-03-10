@@ -13,6 +13,8 @@ capabilities:
   - http
   - log-trigger
   - chain-write
+networks:
+  - ethereum-testnet-sepolia
 workflows:
   - dir: my-workflow
 postInit: |

@@ -11,5 +11,7 @@ tags:
   - bundle-aggregator
   - chain-reader
   - cron
+networks:
+  - ethereum-mainnet-base-1
 workflows:
   - dir: my-workflow

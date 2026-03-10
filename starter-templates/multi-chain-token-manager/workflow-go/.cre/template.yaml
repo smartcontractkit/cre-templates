@@ -10,6 +10,10 @@ tags:
   - cross-chain
   - rebalancing
   - token-management
+networks:
+  - ethereum-testnet-sepolia
+  - avalanche-testnet-fuji
+  - ethereum-testnet-sepolia-base-1
 workflows:
   - dir: workflow
 postInit: |

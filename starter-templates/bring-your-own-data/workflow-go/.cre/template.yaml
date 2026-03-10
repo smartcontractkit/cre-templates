@@ -12,7 +12,9 @@ tags:
   - http
   - on-chain-write
 networks:
+  - ethereum-mainnet
   - ethereum-testnet-sepolia
+  - ethereum-testnet-sepolia-base-1
 workflows:
   - dir: por
     description: "Proof of Reserve workflow"

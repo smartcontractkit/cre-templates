@@ -10,5 +10,7 @@ tags:
   - price-feeds
   - chain-reader
   - cron
+networks:
+  - ethereum-mainnet-arbitrum-1
 workflows:
   - dir: my-workflow

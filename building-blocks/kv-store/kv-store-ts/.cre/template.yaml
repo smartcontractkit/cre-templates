@@ -11,6 +11,9 @@ tags:
   - sigv4
   - cron
   - secrets
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
 workflows:
   - dir: my-workflow
 postInit: |

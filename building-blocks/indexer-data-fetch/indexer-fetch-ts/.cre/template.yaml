@@ -10,5 +10,8 @@ tags:
   - graphql
   - the-graph
   - cron
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
 workflows:
   - dir: workflow

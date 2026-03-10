@@ -10,5 +10,8 @@ tags:
   - block-trigger
   - webhook
   - alchemy
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
 workflows:
   - dir: workflow
