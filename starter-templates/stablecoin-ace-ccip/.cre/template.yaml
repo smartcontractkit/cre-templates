@@ -4,7 +4,7 @@ projectDir: .
 title: "Stablecoin ACE + CCIP (TypeScript)"
 description: "Bank-initiated stablecoin minting and redemption with Proof of Reserve, Automated Compliance Engine, and cross-chain CCIP transfers."
 language: typescript
-category: workflow
+category: demo-app
 solutions:
   - stablecoins-tokenized-assets
   - cross-chain-coordination

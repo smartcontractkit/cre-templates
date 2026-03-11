@@ -4,7 +4,7 @@ projectDir: .
 title: "Tokenized Asset Servicing (TypeScript)"
 description: "Capture on-chain asset events via LogTrigger, process through AWS Lambda, and update asset metadata via HTTP triggers."
 language: typescript
-category: workflow
+category: demo-app
 solutions:
   - stablecoins-tokenized-assets
 capabilities:
