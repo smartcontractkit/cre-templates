@@ -1,0 +1,24 @@
+kind: starter-template
+id: tokenized-asset-servicing-ts
+projectDir: .
+title: "Tokenized Asset Servicing (TypeScript)"
+description: "Capture on-chain asset events via LogTrigger, process through AWS Lambda, and update asset metadata via HTTP triggers."
+language: typescript
+category: workflow
+solutions:
+  - stablecoins-tokenized-assets
+capabilities:
+  - log-trigger
+  - http
+  - chain-read
+  - chain-write
+tags:
+  - custom-data
+  - webhook
+networks:
+  - ethereum-testnet-sepolia
+workflows:
+  - dir: asset-log-trigger-workflow
+    description: "Asset lifecycle event processing workflow"
+postInit: |
+  Deploy contracts, configure AWS Lambda, and update secrets.yaml before running. See README.md for details.

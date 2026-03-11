@@ -1,0 +1,30 @@
+kind: starter-template
+id: stablecoin-ace-ccip-ts
+projectDir: .
+title: "Stablecoin ACE + CCIP (TypeScript)"
+description: "Bank-initiated stablecoin minting and redemption with Proof of Reserve, Automated Compliance Engine, and cross-chain CCIP transfers."
+language: typescript
+category: workflow
+solutions:
+  - stablecoins-tokenized-assets
+  - cross-chain-coordination
+capabilities:
+  - http
+  - chain-read
+  - chain-write
+  - ccip
+tags:
+  - cross-chain
+  - proof-of-reserve
+networks:
+  - ethereum-testnet-sepolia
+  - avalanche-testnet-fuji
+workflows:
+  - dir: bank-stablecoin-workflow
+    description: "Basic mint/redeem workflow"
+  - dir: ccip-transfer-workflow
+    description: "Cross-chain CCIP transfer workflow"
+  - dir: bank-stablecoin-por-ace-ccip-workflow
+    description: "PoR + ACE + CCIP integration workflow"
+postInit: |
+  Deploy contracts and update secrets.yaml before running. See README.md for details.
