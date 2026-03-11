@@ -4,13 +4,19 @@ projectDir: .
 title: "Bring Your Own Data (Go)"
 description: "Bring your own off-chain data on-chain with Proof of Reserve (PoR) and NAV publishing."
 language: go
-category: data-feeds
+category: workflow
+solutions:
+  - custom-oracles-data-feeds
+  - stablecoins-tokenized-assets
+capabilities:
+  - cron
+  - http
+  - chain-read
+  - chain-write
 tags:
+  - data-feeds
   - custom-data
   - proof-of-reserve
-  - nav
-  - http
-  - on-chain-write
 networks:
   - ethereum-mainnet
   - ethereum-testnet-sepolia

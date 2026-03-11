@@ -4,12 +4,14 @@ projectDir: .
 title: "Read Data Feeds (Go)"
 description: "Read Chainlink Data Feeds on-chain, decode price values, and return results on a cron schedule."
 language: go
-category: data-feeds
+category: workflow
+solutions:
+  - custom-oracles-data-feeds
+capabilities:
+  - cron
+  - chain-read
 tags:
   - data-feeds
-  - price-feeds
-  - chain-reader
-  - cron
 networks:
   - ethereum-mainnet-arbitrum-1
 workflows:

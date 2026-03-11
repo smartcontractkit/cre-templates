@@ -4,13 +4,14 @@ projectDir: .
 title: "Read MVR Data Feeds (TypeScript)"
 description: "Read Multiple Variable Response (MVR) data feeds via BundleAggregatorProxy on a cron schedule."
 language: typescript
-category: data-feeds
+category: workflow
+solutions:
+  - custom-oracles-data-feeds
+capabilities:
+  - cron
+  - chain-read
 tags:
   - data-feeds
-  - mvr
-  - bundle-aggregator
-  - chain-reader
-  - cron
 networks:
   - ethereum-mainnet-base-1
 workflows:

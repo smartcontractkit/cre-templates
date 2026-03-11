@@ -4,12 +4,18 @@ projectDir: .
 title: "Multi-Chain Token Manager (TypeScript)"
 description: "Maximize lending yields via automated cross-chain rebalancing using CRE with CCIP."
 language: typescript
-category: defi
-tags:
+category: workflow
+solutions:
+  - cross-chain-coordination
+  - defi-vault-operations
+capabilities:
+  - cron
+  - chain-read
+  - chain-write
   - ccip
+tags:
   - cross-chain
-  - rebalancing
-  - token-management
+  - defi
 networks:
   - ethereum-mainnet
   - ethereum-testnet-sepolia
