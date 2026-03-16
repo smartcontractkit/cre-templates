@@ -1,0 +1,20 @@
+kind: starter-template
+id: vault-harvester-ts
+projectDir: .
+title: "Vault Harvester (TypeScript)"
+description: "Automated DeFi vault harvesting — check if yield is profitable, then harvest and compound."
+language: typescript
+category: automation
+tags:
+  - vault
+  - harvester
+  - yield
+  - compounder
+  - defi
+  - cron
+  - on-chain-read
+  - on-chain-write
+workflows:
+  - dir: my-workflow
+postInit: |
+  Run `cd my-workflow && bun install && cd ..` then simulate with `cre workflow simulate my-workflow`. A demo VaultHarvester contract is pre-deployed on Sepolia. See README.md for details.
