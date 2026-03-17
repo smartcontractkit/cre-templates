@@ -1,0 +1,24 @@
+kind: starter-template
+id: prediction-market-ts
+projectDir: .
+title: "Prediction Market (TypeScript)"
+description: "Full prediction market lifecycle: create, resolve, and dispute binary markets using Chainlink Data Feeds."
+language: typescript
+category: workflow
+tags:
+  - prediction-market
+  - creation
+  - resolution
+  - dispute
+  - cron
+  - log-trigger
+  - on-chain-read
+  - on-chain-write
+  - data-feeds
+workflows:
+  - dir: market-creation
+  - dir: market-resolution
+  - dir: market-dispute
+postInit: |
+  A demo PredictionMarket contract is pre-deployed on Sepolia. See README.md for details.
+  Run `cd market-creation && bun install && cd ..` for each workflow, then simulate.
