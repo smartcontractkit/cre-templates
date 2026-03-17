@@ -4,7 +4,7 @@ projectDir: .
 title: "Keeper Bot (TypeScript)"
 description: "Cron-based smart contract maintenance — read state, check condition, execute if needed."
 language: typescript
-category: automation
+category: workflow
 tags:
   - keeper
   - upkeep
@@ -14,4 +14,4 @@ tags:
 workflows:
   - dir: my-workflow
 postInit: |
-  Run `cd my-workflow && bun install && cd ..` then simulate with `cre workflow simulate my-workflow`. A demo KeeperConsumer contract is pre-deployed on Sepolia. See README.md for details.
+  A demo KeeperConsumer contract is pre-deployed on Sepolia. See README.md for details.
