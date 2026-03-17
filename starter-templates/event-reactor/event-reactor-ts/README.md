@@ -97,7 +97,7 @@ LogTrigger simulation requires a real transaction hash that emitted the event:
 
 ```bash
 # Use the pre-emitted event
-cre workflow simulate my-workflow --target staging-settings \
+cre workflow simulate my-workflow --target staging-settings --non-interactive \
   --trigger-index 0 \
   --evm-tx-hash 0xe5ac97df3f93c5fdc89690a71d68a8e5ebd35ec8ba9c6cb5d1069f5818222553 \
   --evm-event-index 0
@@ -118,7 +118,7 @@ cast send 0x805A04e5C8b2dcb2B26C9e9C9aa12ce34374A35b \
 Copy the `transactionHash` from the output and simulate with it:
 
 ```bash
-cre workflow simulate my-workflow --target staging-settings \
+cre workflow simulate my-workflow --target staging-settings --non-interactive \
   --trigger-index 0 \
   --evm-tx-hash <YOUR_TX_HASH> \
   --evm-event-index 0
