@@ -105,13 +105,12 @@ cd my-workflow && bun test
 
 **Cron health check (trigger index 1):**
 ```bash
-cre workflow simulate my-workflow --target staging-settings \
-  --trigger-index 1
+cre workflow simulate my-workflow --target staging-settings
 ```
 
 **LogTrigger with pre-emitted anomalous price event (trigger index 0):**
 ```bash
-cre workflow simulate my-workflow --target staging-settings \
+cre workflow simulate my-workflow --target staging-settings --non-interactive \
   --trigger-index 0 \
   --evm-tx-hash 0x98dfb56db57cb0689e5e4092949d41431a283f52128066bc941b0c219d3f6203 \
   --evm-event-index 0
@@ -137,7 +136,7 @@ cast send 0xaCb13C9940cB61367b45eEd504E410D4B4d7A6e4 \
 
 Then simulate with the resulting tx hash:
 ```bash
-cre workflow simulate my-workflow --target staging-settings \
+cre workflow simulate my-workflow --target staging-settings --non-interactive \
   --trigger-index 0 \
   --evm-tx-hash <YOUR_TX_HASH> \
   --evm-event-index 0
