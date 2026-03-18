@@ -2,7 +2,7 @@
 
 A CRE starter template implementing a full prediction market lifecycle with three workflows: **Market Creation**, **Market Resolution**, and **Dispute Management**. All three workflows share a single `PredictionMarket` smart contract and use **Chainlink Data Feeds** (BTC/USD) for deterministic on-chain resolution.
 
-> **Important:** This template uses Chainlink Data Feeds for deterministic resolution. For AI-based resolution, see the Prediction Market Demo app.
+> **Important:** This template uses Chainlink Data Feeds for deterministic resolution. For AI-based resolution, see the [CRE Prediction Market Demo](https://github.com/smartcontractkit/cre-gcp-prediction-market-demo/tree/main/cre-workflow).
 
 ## Architecture
 
@@ -396,6 +396,6 @@ Deploy a new contract with a different `disputeWindow` constructor argument.
 ## What's Not Included
 
 - **Betting/staking:** No token deposits or payouts. This is infrastructure, not a full dApp.
-- **AI resolution:** Explicitly excluded. Chainlink Data Feeds provide deterministic, verifiable resolution.
+- **AI resolution:** Not included in this template. Chainlink Data Feeds provide deterministic, verifiable resolution. For AI-based resolution, see the [CRE Prediction Market Demo](https://github.com/smartcontractkit/cre-gcp-prediction-market-demo/tree/main/cre-workflow).
 - **Frontend:** No UI. These are backend workflow templates.
 - **Cross-chain:** Single chain only. CCIP integration would be a separate advanced template.
