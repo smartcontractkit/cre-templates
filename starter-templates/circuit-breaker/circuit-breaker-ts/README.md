@@ -2,6 +2,12 @@
 
 Monitor on-chain events for anomalies, automatically pause contracts when thresholds are breached.
 
+**⚠️ DISCLAIMER**
+
+This template is an educational example to demonstrate how to interact with Chainlink systems, products, and services. It is provided **"AS IS"** and **"AS AVAILABLE"** without warranties of any kind, has **not** been audited, and may omit checks or error handling for clarity. **Do not use this code in production** without performing your own audits and applying best practices. Neither Chainlink Labs, the Chainlink Foundation, nor Chainlink node operators are responsible for unintended outputs generated due to errors in code.
+
+---
+
 ## Overview
 
 This template demonstrates the **dual-trigger circuit breaker** pattern using Chainlink CRE (Compute Runtime Environment). It combines a **LogTrigger** (react to price update events) with a **Cron trigger** (periodic health checks) to provide comprehensive protocol safety monitoring.
