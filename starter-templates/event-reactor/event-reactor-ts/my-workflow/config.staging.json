@@ -1,0 +1,7 @@
+{
+  "chainSelectorName": "ethereum-testnet-sepolia",
+  "monitoredContractAddress": "0x805A04e5C8b2dcb2B26C9e9C9aa12ce34374A35b",
+  "reactorContractAddress": "0x899526269d89284aD454ADb3C3BC1277c0B5E09a",
+  "triggerTxHash": "0xe5ac97df3f93c5fdc89690a71d68a8e5ebd35ec8ba9c6cb5d1069f5818222553",
+  "triggerLogIndex": 291
+}

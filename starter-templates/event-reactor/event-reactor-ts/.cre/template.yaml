@@ -1,0 +1,17 @@
+kind: starter-template
+id: event-reactor-ts
+projectDir: .
+title: "Event Reactor (TypeScript)"
+description: "Listen for on-chain events, fetch off-chain context, and respond on-chain."
+language: typescript
+category: workflow
+tags:
+  - event
+  - log-trigger
+  - http
+  - on-chain-write
+  - compliance
+workflows:
+  - dir: my-workflow
+postInit: |
+  Demo contracts are pre-deployed on Sepolia. See README.md for details.

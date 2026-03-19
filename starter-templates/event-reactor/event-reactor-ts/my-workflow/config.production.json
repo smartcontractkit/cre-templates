@@ -1,0 +1,5 @@
+{
+  "chainSelectorName": "ethereum-mainnet",
+  "monitoredContractAddress": "0xYOUR_MONITORED_CONTRACT_ADDRESS",
+  "reactorContractAddress": "0xYOUR_REACTOR_CONTRACT_ADDRESS"
+}
