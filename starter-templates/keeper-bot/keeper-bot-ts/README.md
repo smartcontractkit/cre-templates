@@ -2,6 +2,12 @@
 
 Cron-based smart contract maintenance — read state, check condition, execute if needed.
 
+**⚠️ DISCLAIMER**
+
+This template is an educational example to demonstrate how to interact with Chainlink systems, products, and services. It is provided **"AS IS"** and **"AS AVAILABLE"** without warranties of any kind, has **not** been audited, and may omit checks or error handling for clarity. **Do not use this code in production** without performing your own audits and applying best practices. Neither Chainlink Labs, the Chainlink Foundation, nor Chainlink node operators are responsible for unintended outputs generated due to errors in code.
+
+---
+
 ## Overview
 
 This template demonstrates the universal **cron -> read -> check -> write** pattern using the Chainlink CRE (Compute Runtime Environment). A cron trigger fires on a configurable schedule, reads on-chain state to check if upkeep is needed, and conditionally writes back to the contract.
