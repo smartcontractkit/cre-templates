@@ -47,7 +47,6 @@ export const onCronTrigger = (runtime: Runtime<Config>, _payload: CronPayload): 
   const network = getNetwork({
     chainFamily: "evm",
     chainSelectorName: evmConfig.chainSelectorName,
-    isTestnet: true,
   })
   if (!network) throw new Error(`Network not found: ${evmConfig.chainSelectorName}`)
 
@@ -92,6 +91,9 @@ export const onCronTrigger = (runtime: Runtime<Config>, _payload: CronPayload): 
     throw new Error(`Create market TX failed: ${resp.errorMessage || resp.txStatus}`)
   }
 
+  if (!resp.txHash) {
+    runtime.log("Warning: transaction succeeded but no tx hash returned")
+  }
   const txHash = bytesToHex(resp.txHash || new Uint8Array(32))
   runtime.log(`Market created! ID: ${nextMarketId}, TX: ${txHash}`)
 

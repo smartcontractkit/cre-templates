@@ -57,7 +57,6 @@ describe('market-creation', () => {
     const network = getNetwork({
       chainFamily: 'evm',
       chainSelectorName: 'ethereum-testnet-sepolia',
-      isTestnet: true,
     })
     expect(network).toBeDefined()
     if (!network) return

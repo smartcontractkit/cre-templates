@@ -50,7 +50,6 @@ export const onDisputeRaised = (runtime: Runtime<Config>, log: DecodedLog<Disput
   const network = getNetwork({
     chainFamily: "evm",
     chainSelectorName: evmConfig.chainSelectorName,
-    isTestnet: true,
   })
   if (!network) throw new Error("Network not found")
 
@@ -99,6 +98,9 @@ export const onDisputeRaised = (runtime: Runtime<Config>, log: DecodedLog<Disput
     throw new Error(`Dispute resolution TX failed: ${resp.errorMessage || resp.txStatus}`)
   }
 
+  if (!resp.txHash) {
+    runtime.log("Warning: transaction succeeded but no tx hash returned")
+  }
   const txHash = bytesToHex(resp.txHash || new Uint8Array(32))
   runtime.log(`Dispute resolved for market ${marketId}! Fresh price: $${priceScaled}, TX: ${txHash}`)
 
@@ -116,7 +118,6 @@ export function initWorkflow(config: Config) {
   const network = getNetwork({
     chainFamily: "evm",
     chainSelectorName: evmConfig.chainSelectorName,
-    isTestnet: true,
   })
   if (!network) throw new Error(`Network not found: ${evmConfig.chainSelectorName}`)
 
