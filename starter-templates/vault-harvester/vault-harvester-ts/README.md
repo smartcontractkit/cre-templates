@@ -2,6 +2,12 @@
 
 Automated DeFi vault harvesting — check if yield is profitable, then harvest and compound.
 
+**⚠️ DISCLAIMER**
+
+This template is an educational example to demonstrate how to interact with Chainlink systems, products, and services. It is provided **"AS IS"** and **"AS AVAILABLE"** without warranties of any kind, has **not** been audited, and may omit checks or error handling for clarity. **Do not use this code in production** without performing your own audits and applying best practices. Neither Chainlink Labs, the Chainlink Foundation, nor Chainlink node operators are responsible for unintended outputs generated due to errors in code.
+
+---
+
 ## Overview
 
 This template demonstrates the **cron -> read -> check profitability -> harvest** pattern using Chainlink CRE (Compute Runtime Environment). Same cron -> read -> check -> write pattern as the Keeper Bot, but with a DeFi-specific vault contract.
