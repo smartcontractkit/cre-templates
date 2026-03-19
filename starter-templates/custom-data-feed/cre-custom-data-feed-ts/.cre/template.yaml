@@ -4,13 +4,20 @@ projectDir: .
 title: "Custom Data Feed (TypeScript)"
 description: "Fetch custom off-chain data and push it on-chain using cron and log triggers."
 language: typescript
-category: data-feeds
-tags:
-  - custom-data
-  - proof-of-reserve
+category: workflow
+solutions:
+  - custom-oracles-data-feeds
+capabilities:
+  - cron
   - http
   - log-trigger
-  - on-chain-write
+  - chain-write
+tags:
+  - data-feeds
+  - custom-data
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
 workflows:
   - dir: my-workflow
 postInit: |
