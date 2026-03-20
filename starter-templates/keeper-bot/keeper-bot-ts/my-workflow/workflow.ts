@@ -64,6 +64,13 @@ export const onCronTrigger = (runtime: Runtime<Config>): string => {
 		throw new Error(`Keeper TX failed: ${writeResult.errorMessage || writeResult.txStatus}`)
 	}
 
+	if (
+		writeResult.receiverContractExecutionStatus !== undefined &&
+		writeResult.receiverContractExecutionStatus !== 0
+	) {
+		throw new Error(`Receiver contract execution failed: status ${writeResult.receiverContractExecutionStatus}`)
+	}
+
 	const txHash = bytesToHex(writeResult.txHash || new Uint8Array(32))
 	runtime.log(`Keeper executed! Counter will increment to ${currentCounter + 1n}. TX: ${txHash}`)
 

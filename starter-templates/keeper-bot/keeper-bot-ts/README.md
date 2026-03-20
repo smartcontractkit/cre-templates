@@ -77,6 +77,7 @@ A demo `KeeperConsumer` contract is pre-deployed on Sepolia — this template wo
 ### 1. Install Dependencies
 
 ```bash
+cd contracts && bun install && cd ..
 cd my-workflow && bun install && cd ..
 ```
 
