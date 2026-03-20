@@ -43,8 +43,11 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 2. **Bring Your Own Data (BYOD)** — NAV & PoR — [`./bring-your-own-data`](./bring-your-own-data)  
    End-to-end examples for publishing **Net Asset Value** and **Proof of Reserve** data on-chain using CRE workflows and demo contracts.
 
-3. **Multi-Chain Token Manager** — [`./multi-chain-token-manager`](./multi-chain-token-manager)  
+3. **Multi-Chain Token Manager** — [`./multi-chain-token-manager`](./multi-chain-token-manager)
    Orchestrate token operations and state across multiple chains, showing RPC configuration, bindings, and cross-chain patterns.
+
+4. **Event Reactor** — [`./event-reactor`](./event-reactor)
+   Listen for on-chain events (LogTrigger), read contract state, and respond on-chain. Demonstrates event-driven workflows with typed event decoding via generated bindings.
 
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
