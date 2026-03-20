@@ -2,6 +2,12 @@
 
 Listen for on-chain events, read contract state, and respond on-chain.
 
+**⚠️ DISCLAIMER**
+
+This template is an educational example to demonstrate how to interact with Chainlink systems, products, and services. It is provided **"AS IS"** and **"AS AVAILABLE"** without warranties of any kind, has **not** been audited, and may omit checks or error handling for clarity. **Do not use this code in production** without performing your own audits and applying best practices. Neither Chainlink Labs, the Chainlink Foundation, nor Chainlink node operators are responsible for unintended outputs generated due to errors in code.
+
+---
+
 ## Overview
 
 This template demonstrates the **event -> read -> decide -> write** pattern using Chainlink CRE (Compute Runtime Environment). Unlike the cron-based Keeper Bot and Vault Harvester templates, this one uses a **LogTrigger** — it reacts to on-chain events in real-time.
