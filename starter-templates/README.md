@@ -58,6 +58,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 7. **Event Reactor** — [`./event-reactor`](./event-reactor)
    Listen for on-chain events (LogTrigger), read contract state, and respond on-chain. Demonstrates event-driven workflows with typed event decoding via generated bindings.
    
+8. **Prediction Market** — [`./prediction-market`](./prediction-market)
+   Full prediction market lifecycle example with 3 workflows: market creation, resolution using Chainlink BTC/USD Data Feed, and dispute management via LogTrigger.
+   
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
