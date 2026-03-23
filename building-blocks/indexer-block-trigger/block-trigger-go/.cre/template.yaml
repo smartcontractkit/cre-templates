@@ -4,11 +4,16 @@ projectDir: .
 title: "Block Trigger (Go)"
 description: "Process new blocks and transactions using block-triggered webhooks with watched address matching."
 language: go
-category: indexer
+category: workflow
+solutions:
+  - defi-vault-operations
+capabilities:
+  - http
 tags:
   - indexer
-  - block-trigger
   - webhook
-  - alchemy
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
 workflows:
   - dir: workflow
