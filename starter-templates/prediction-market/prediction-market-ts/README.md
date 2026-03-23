@@ -399,6 +399,15 @@ Deploy a new contract with a different `disputeWindow` constructor argument.
 - The dispute window ensures finality: after the deadline, no more disputes can be raised
 - Each workflow uses `LAST_FINALIZED_BLOCK_NUMBER` for on-chain reads, ensuring data consistency
 
+## Known Limitations
+
+This template is a **demo implementation** to teach the CRE workflow patterns — it is not a production-ready prediction market.
+
+- **Spot-price resolution only:** The question uses the phrase "Will BTC be above $100,000 **by** [date]?", which implies the market should resolve Yes if BTC exceeded the strike price **at any point** before expiration. However, both the resolution and dispute workflows evaluate the outcome using a **single spot-price read** at resolution time. A price of $99,000 at expiration resolves the market as No, even if BTC traded above $100,000 earlier in the market's lifecycle. For a production system, consider using [Chainlink Data Streams](https://docs.chain.link/data-streams), which provide timestamped historical prices — a Data Streams report showing BTC > $100,000 at time T could be used to prove the condition was met. This would also demonstrate CRE's ability to read off-chain data and could include on-chain verification of a Streams report. Note that Data Streams requires an API key (see [Data Streams Getting Started](https://docs.chain.link/data-streams/getting-started)), so this template uses on-chain Data Feeds for zero-setup accessibility.
+- **Identical market questions:** The cron schedule creates markets on a fixed interval (default: hourly), all using the same question template and strike price. In production, you would vary the question, the strike price, or the asset per market — or use an HTTP trigger to create markets on demand (see the [HTTP trigger alternative](#alternative-create-markets-via-http-trigger) below).
+
+> **Beyond crypto prices:** This template uses BTC/USD as an example, but the same pattern works for any type of prediction market (sports, elections, weather, etc.) as long as you have an HTTP API that provides the resolution data. Replace the on-chain Data Feed read with a CRE HTTP capability call to your data source, and adapt the contract's resolution logic accordingly.
+
 ## What's Not Included
 
 - **Betting/staking:** No token deposits or payouts. This is infrastructure, not a full dApp.
