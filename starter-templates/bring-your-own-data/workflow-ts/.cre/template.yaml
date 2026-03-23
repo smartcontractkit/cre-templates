@@ -4,16 +4,23 @@ projectDir: .
 title: "Bring Your Own Data (TypeScript)"
 description: "Bring your own off-chain data on-chain with Proof of Reserve (PoR) and NAV publishing."
 language: typescript
-category: data-feeds
+category: workflow
+solutions:
+  - custom-oracles-data-feeds
+  - stablecoins-tokenized-assets
+capabilities:
+  - cron
+  - http
+  - chain-read
+  - chain-write
 tags:
+  - data-feeds
   - custom-data
   - proof-of-reserve
-  - nav
-  - http
-  - on-chain-write
 networks:
+  - ethereum-mainnet
   - ethereum-testnet-sepolia
-  - base-sepolia
+  - ethereum-testnet-sepolia-base-1
 workflows:
   - dir: por
     description: "Proof of Reserve workflow"

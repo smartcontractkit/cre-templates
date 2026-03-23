@@ -49,6 +49,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 4. **Keeper Bot** — [`./keeper-bot`](./keeper-bot)
    Cron-based smart contract maintenance — read state, check condition, execute if needed. The simplest write-path template, teaching the universal cron → read → check → write pattern.
 
+5. **Vault Harvester** — [`./vault-harvester`](./vault-harvester)
+   Automated DeFi vault harvesting — check if yield is profitable, then harvest and compound. Same cron → read → check → write pattern as the Keeper Bot, with a DeFi-specific profitability check.
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
