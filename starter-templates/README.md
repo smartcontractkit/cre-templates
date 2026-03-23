@@ -55,6 +55,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 6. **Circuit Breaker** — [`./circuit-breaker`](./circuit-breaker)
    Monitor on-chain events for anomalies, automatically pause contracts when price deviation thresholds are breached. Dual-trigger pattern combining LogTrigger (event-driven) with Cron (periodic health checks).
 
+7. **Event Reactor** — [`./event-reactor`](./event-reactor)
+   Listen for on-chain events (LogTrigger), read contract state, and respond on-chain. Demonstrates event-driven workflows with typed event decoding via generated bindings.
+   
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
