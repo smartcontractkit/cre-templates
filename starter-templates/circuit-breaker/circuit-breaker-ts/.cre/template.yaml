@@ -1,0 +1,20 @@
+kind: starter-template
+id: circuit-breaker-ts
+projectDir: .
+title: "Circuit Breaker (TypeScript)"
+description: "Monitor on-chain events for anomalies, automatically pause contracts when thresholds are breached."
+language: typescript
+category: workflow
+tags:
+  - circuit-breaker
+  - risk
+  - safety
+  - pause
+  - log-trigger
+  - cron
+  - on-chain-read
+  - on-chain-write
+workflows:
+  - dir: my-workflow
+postInit: |
+  A demo ProtocolWithBreaker contract is pre-deployed on Sepolia. See README.md for details.

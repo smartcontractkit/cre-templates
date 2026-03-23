@@ -52,6 +52,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 5. **Vault Harvester** — [`./vault-harvester`](./vault-harvester)
    Automated DeFi vault harvesting — check if yield is profitable, then harvest and compound. Same cron → read → check → write pattern as the Keeper Bot, with a DeFi-specific profitability check.
 
+6. **Circuit Breaker** — [`./circuit-breaker`](./circuit-breaker)
+   Monitor on-chain events for anomalies, automatically pause contracts when price deviation thresholds are breached. Dual-trigger pattern combining LogTrigger (event-driven) with Cron (periodic health checks).
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
