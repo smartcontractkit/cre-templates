@@ -1,7 +1,7 @@
 kind: starter-template
 id: prediction-market-ts
 projectDir: .
-title: "Prediction Market (TypeScript)"
+title: "Prediction Market (Data Feeds)"
 description: "Full prediction market lifecycle: create, resolve, and dispute binary markets using Chainlink Data Feeds."
 language: typescript
 category: workflow
