@@ -5,15 +5,15 @@ title: "Circuit Breaker (TypeScript)"
 description: "Monitor on-chain events for anomalies, automatically pause contracts when thresholds are breached."
 language: typescript
 category: workflow
+capabilities:
+  - cron
+  - log-trigger
+  - chain-read
+  - chain-write
 tags:
   - circuit-breaker
-  - risk
+  - risk-management
   - safety
-  - pause
-  - log-trigger
-  - cron
-  - on-chain-read
-  - on-chain-write
 workflows:
   - dir: my-workflow
 postInit: |

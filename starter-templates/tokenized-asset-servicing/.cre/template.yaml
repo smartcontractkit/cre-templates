@@ -13,8 +13,9 @@ capabilities:
   - chain-read
   - chain-write
 tags:
-  - custom-data
-  - webhook
+  - tokenized-assets
+  - asset-servicing
+  - compliance
 networks:
   - ethereum-testnet-sepolia
 workflows:

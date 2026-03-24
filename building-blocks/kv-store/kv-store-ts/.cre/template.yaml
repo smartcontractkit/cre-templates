@@ -13,6 +13,7 @@ capabilities:
   - secrets
 tags:
   - storage
+  - key-value
 networks:
   - ethereum-testnet-sepolia
   - ethereum-mainnet

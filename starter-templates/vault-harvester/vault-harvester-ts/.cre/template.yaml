@@ -5,15 +5,14 @@ title: "Vault Harvester (TypeScript)"
 description: "Automated DeFi vault harvesting — check if yield is profitable, then harvest and compound."
 language: typescript
 category: workflow
-tags:
-  - vault
-  - harvester
-  - yield
-  - compounder
-  - defi
+capabilities:
   - cron
-  - on-chain-read
-  - on-chain-write
+  - chain-read
+  - chain-write
+tags:
+  - vault-harvester
+  - yield
+  - defi
 workflows:
   - dir: my-workflow
 postInit: |

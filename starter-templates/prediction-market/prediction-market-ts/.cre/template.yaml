@@ -5,16 +5,15 @@ title: "Prediction Market (Data Feeds)"
 description: "Full prediction market lifecycle: create, resolve, and dispute binary markets using Chainlink Data Feeds."
 language: typescript
 category: workflow
-tags:
-  - prediction-market
-  - creation
-  - resolution
-  - dispute
+capabilities:
   - cron
   - log-trigger
-  - on-chain-read
-  - on-chain-write
+  - chain-read
+  - chain-write
+tags:
+  - prediction-market
   - data-feeds
+  - defi
 workflows:
   - dir: market-creation
   - dir: market-resolution

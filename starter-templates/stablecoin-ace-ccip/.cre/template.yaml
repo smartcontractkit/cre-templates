@@ -14,6 +14,7 @@ capabilities:
   - chain-write
   - ccip
 tags:
+  - stablecoin
   - cross-chain
   - proof-of-reserve
 networks:

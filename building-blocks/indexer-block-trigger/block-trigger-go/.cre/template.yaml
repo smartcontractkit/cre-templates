@@ -12,6 +12,7 @@ capabilities:
 tags:
   - indexer
   - webhook
+  - event-monitoring
 networks:
   - ethereum-testnet-sepolia
   - ethereum-mainnet
