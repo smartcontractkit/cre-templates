@@ -16,6 +16,7 @@ capabilities:
 tags:
   - cross-chain
   - defi
+  - token-management
 networks:
   - ethereum-mainnet
   - ethereum-testnet-sepolia

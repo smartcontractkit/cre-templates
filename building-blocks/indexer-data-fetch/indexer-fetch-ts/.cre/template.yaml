@@ -12,6 +12,7 @@ capabilities:
   - http
 tags:
   - indexer
+  - data-fetch
 networks:
   - ethereum-testnet-sepolia
   - ethereum-mainnet

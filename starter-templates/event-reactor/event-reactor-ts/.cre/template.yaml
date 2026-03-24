@@ -5,11 +5,12 @@ title: "Event Reactor (TypeScript)"
 description: "Listen for on-chain events, fetch off-chain context, and respond on-chain."
 language: typescript
 category: workflow
-tags:
-  - event
+capabilities:
   - log-trigger
   - http
-  - on-chain-write
+  - chain-write
+tags:
+  - event-driven
   - compliance
 workflows:
   - dir: my-workflow

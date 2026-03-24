@@ -5,12 +5,14 @@ title: "Keeper Bot (TypeScript)"
 description: "Cron-based smart contract maintenance — read state, check condition, execute if needed."
 language: typescript
 category: workflow
+capabilities:
+  - cron
+  - chain-read
+  - chain-write
 tags:
   - keeper
   - upkeep
-  - cron
-  - on-chain-read
-  - on-chain-write
+  - automation
 workflows:
   - dir: my-workflow
 postInit: |
