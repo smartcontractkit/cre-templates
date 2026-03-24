@@ -4,3 +4,5 @@
 
 # Root
 * @smartcontractkit/dev-services
+building-blocks/** @smartcontractkit/dev-services @smartcontractkit/gtm-solutions @smartcontractkit/devrel
+starter-templates/** @smartcontractkit/dev-services @smartcontractkit/gtm-solutions @smartcontractkit/devrel
