@@ -1,5 +1,5 @@
 {
-  "name": "typescript-simple-template",
+  "name": "cross-chain-token-aggregator-ts",
   "version": "1.0.0",
   "main": "dist/main.js",
   "private": true,
@@ -8,7 +8,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@chainlink/cre-sdk": "^1.0.1"
+    "@chainlink/cre-sdk": "^1.5.0"
   },
   "devDependencies": {
     "@types/bun": "1.2.21"

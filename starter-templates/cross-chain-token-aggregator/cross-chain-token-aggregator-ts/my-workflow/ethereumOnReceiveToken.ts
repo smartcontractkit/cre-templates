@@ -4,7 +4,6 @@ import { parseAbi, decodeEventLog } from "viem";
 import { sendTelegramMessage } from "./telegramMessageService";
 import { BridgeFactory } from "./bridge/factory"
 import { getEvmClient } from "./utils/getEvmClient";
-import { Uniflow } from "./evm/generated/Uniflow";
 import { getERC20Decimals, getERC20Allowance } from "./utils/erc20Utils";
 
 const TRANSFER_EVENT_ABI = parseAbi(["event Transfer(address indexed from, address indexed to, uint256 amount)"]);
@@ -36,10 +35,6 @@ export const ethereumOnReceiveToken = (runtime: Runtime<IConfig>, evmLog: EVMLog
     if (allowances < decodedLog.args.amount) {
         return { message: "error", error: "Insufficient allowance for config contract" };
     }
-    
-    const uniflowContract = new Uniflow(evmClient, networksConfig['eth'].configContract as `0x${string}`);
-    const owner = uniflowContract.owner(runtime);
-    runtime.log(owner);
 
     const tokenAddress =  bytesToHex(evmLog.address).toString() as `0x${string}`;
     const unichainTokenConfig = runtime.config.networks['eth'].tokenMap[tokenAddress];
