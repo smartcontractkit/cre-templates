@@ -36,8 +36,6 @@ export class AcrossBridge implements IBridge {
     });
     const [approvalContract] = args;
 
-    props.runtime.log(`Approval Contract for Across Bridge: ${approvalContract}`);
-
     // send report to config contract to process token approval and bridging
     const acrossBridgeParams = parseAbiParameters("address receiver, uint256 amount, address token, address approvalContract, address depositContract, bytes memory depositData");
     const encodedBridgeParams = encodeAbiParameters(
@@ -59,8 +57,6 @@ export class AcrossBridge implements IBridge {
       hashingAlgo: "keccak256",
     }).result();
 
-    props.runtime.log(`Report receiver: ${props.sourceConfigContract}`);
-
     const bridgeReportResponse = props.evmClient.writeReport(props.runtime, {
       receiver: props.sourceConfigContract,
       report: signedReport,
@@ -68,8 +64,6 @@ export class AcrossBridge implements IBridge {
         gasLimit: "1000000",
       },
     }).result();
-
-    props.runtime.log(`${bridgeReportResponse.receiverContractExecutionStatus}`);
 
     if (bridgeReportResponse.txStatus == TxStatus.SUCCESS) {
       return { success: true, txHash: bridgeReportResponse.txHash, acrossBridgeRequest: acrossBridgeRequestResponse, report: concatHex(["0x01", encodedBridgeParams]) };

@@ -17,9 +17,9 @@ export const ethereumOnReceiveToken = (runtime: Runtime<IConfig>, evmLog: EVMLog
     const data = bytesToHex(evmLog.data);
     const decodedLog = decodeEventLog({abi: TRANSFER_EVENT_ABI, topics: topics, data: data});
     
-    runtime.log(decodedLog.args.to);
-    runtime.log(`${decodedLog.args.amount}`);
-    runtime.log(bytesToHex(evmLog.eventSig));
+    runtime.log(`To: ${decodedLog.args.to}`);
+    runtime.log(`Amount: ${decodedLog.args.amount}`);
+    runtime.log(`Event Sig: ${bytesToHex(evmLog.eventSig)}`);
 
     const networksConfig = runtime.config.networks;
     const { evmClient } = getEvmClient(...networksConfig['eth'].creNetworkConfig);
@@ -27,7 +27,6 @@ export const ethereumOnReceiveToken = (runtime: Runtime<IConfig>, evmLog: EVMLog
     const tokenDecimals = getERC20Decimals(bytesToHex(evmLog.address).toString(), runtime, evmClient);
     sendTelegramMessage(runtime, `Token sent by: ${decodedLog.args.from} of amount ${decodedLog.args.amount}, decimals ${tokenDecimals} on ${bytesToHex(evmLog.address)}`);
     
-    // @todo check for approval given by from address to the config contract
     const allowances = getERC20Allowance(bytesToHex(evmLog.address).toString(), runtime, evmClient, { owner: decodedLog.args.to, spender: networksConfig['eth'].configContract });
 
     runtime.log(`Allowance to config contract for token: ${allowances.toString()}`);
