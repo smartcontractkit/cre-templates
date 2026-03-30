@@ -16,6 +16,7 @@ A TypeScript workflow template with reproducible builds that work on both Window
 ├── project.yaml
 ├── secrets.yaml
 └── workflow/
+    ├── .dockerignore      # Excludes node_modules and wasm/ from the Docker context to prevent cache poisoning
     ├── Dockerfile
     ├── Makefile
     ├── bun.lock
@@ -71,16 +72,16 @@ The **Workflow hash** is the onchain workflow ID. If it matches the workflow ID 
 3. Run `cre workflow hash` as shown above, using the deployer's public address.
 4. Compare the `Workflow hash` output with the onchain workflow ID. A match confirms the deployed workflow is built from this source.
 
-### Generating the lockfile
+### Generating the lockfile (for workflow authors)
 
-If `bun.lock` is missing, generate it before building:
+If you are the author of this workflow, run `make lock` to generate or update `bun.lock`. You should re-run this whenever you change dependencies in `package.json`:
 
 ```bash
 cd workflow
 make lock
 ```
 
-This runs the lockfile generation inside Docker to ensure consistency across platforms.
+This runs the lockfile generation inside Docker to ensure consistency across platforms. Always commit the updated `bun.lock` so that verifiers can reproduce your build.
 
 ## How Reproducible Builds Work
 
