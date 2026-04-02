@@ -1,16 +1,16 @@
 {
-  "name": "typescript-simple-template",
+  "name": "indexer-fetch-ts",
   "version": "1.0.0",
   "main": "dist/main.js",
   "private": true,
   "scripts": {
-    "postinstall": "bun x cre-setup"
+    "typecheck": "tsc --noEmit"
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@chainlink/cre-sdk": "^1.0.9"
+    "@chainlink/cre-sdk": "^1.5.0"
   },
   "devDependencies": {
-    "@types/bun": "1.2.21"
+    "typescript": "5.9.3"
   }
 }

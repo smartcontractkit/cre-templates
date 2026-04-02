@@ -20,6 +20,12 @@ import {
 
 export interface DecodedLog<T> extends Omit<EVMLog, 'data'> { data: T }
 
+const encodeTopicValue = (t: Hex | Hex[] | null): string[] => {
+  if (t == null) return []
+  if (Array.isArray(t)) return t.map(hexToBase64)
+  return [hexToBase64(t)]
+}
+
 
 
 
@@ -635,7 +641,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'CircuitBreakerReset' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -645,7 +651,7 @@ export class ProtocolWithBreaker {
         eventName: 'CircuitBreakerReset' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -657,7 +663,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -681,7 +687,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as CircuitBreakerResetDecoded }
@@ -702,7 +708,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'CircuitBreakerTripped' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -713,7 +719,7 @@ export class ProtocolWithBreaker {
         eventName: 'CircuitBreakerTripped' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -726,7 +732,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -750,7 +756,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as CircuitBreakerTrippedDecoded }
@@ -771,7 +777,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'ExpectedAuthorUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -783,7 +789,7 @@ export class ProtocolWithBreaker {
         eventName: 'ExpectedAuthorUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -797,7 +803,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -821,7 +827,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedAuthorUpdatedDecoded }
@@ -842,7 +848,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'ExpectedWorkflowIdUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -854,7 +860,7 @@ export class ProtocolWithBreaker {
         eventName: 'ExpectedWorkflowIdUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -868,7 +874,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -892,7 +898,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedWorkflowIdUpdatedDecoded }
@@ -913,7 +919,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'ExpectedWorkflowNameUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -925,7 +931,7 @@ export class ProtocolWithBreaker {
         eventName: 'ExpectedWorkflowNameUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -939,7 +945,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -963,7 +969,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedWorkflowNameUpdatedDecoded }
@@ -984,7 +990,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'ForwarderAddressUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -996,7 +1002,7 @@ export class ProtocolWithBreaker {
         eventName: 'ForwarderAddressUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1010,7 +1016,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1034,7 +1040,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ForwarderAddressUpdatedDecoded }
@@ -1055,7 +1061,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'OwnershipTransferred' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1067,7 +1073,7 @@ export class ProtocolWithBreaker {
         eventName: 'OwnershipTransferred' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1081,7 +1087,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1105,7 +1111,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferredDecoded }
@@ -1126,7 +1132,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'PriceUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1138,7 +1144,7 @@ export class ProtocolWithBreaker {
         eventName: 'PriceUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1152,7 +1158,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1176,7 +1182,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as PriceUpdatedDecoded }
@@ -1197,7 +1203,7 @@ export class ProtocolWithBreaker {
         abi: ProtocolWithBreakerABI,
         eventName: 'SecurityWarning' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1207,7 +1213,7 @@ export class ProtocolWithBreaker {
         eventName: 'SecurityWarning' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1219,7 +1225,7 @@ export class ProtocolWithBreaker {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1243,7 +1249,7 @@ export class ProtocolWithBreaker {
     const decoded = decodeEventLog({
       abi: ProtocolWithBreakerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as SecurityWarningDecoded }

@@ -20,6 +20,12 @@ import {
 
 export interface DecodedLog<T> extends Omit<EVMLog, 'data'> { data: T }
 
+const encodeTopicValue = (t: Hex | Hex[] | null): string[] => {
+  if (t == null) return []
+  if (Array.isArray(t)) return t.map(hexToBase64)
+  return [hexToBase64(t)]
+}
+
 
 
 
@@ -824,7 +830,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'Deposit' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -835,7 +841,7 @@ export class ProtocolSmartWallet {
         eventName: 'Deposit' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -848,7 +854,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -872,7 +878,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as DepositDecoded }
@@ -893,7 +899,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'KeystoneForwarderRemoved' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -904,7 +910,7 @@ export class ProtocolSmartWallet {
         eventName: 'KeystoneForwarderRemoved' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -917,7 +923,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -941,7 +947,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as KeystoneForwarderRemovedDecoded }
@@ -962,7 +968,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'KeystoneForwarderSet' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -973,7 +979,7 @@ export class ProtocolSmartWallet {
         eventName: 'KeystoneForwarderSet' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -986,7 +992,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1010,7 +1016,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as KeystoneForwarderSetDecoded }
@@ -1031,7 +1037,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'MessageReceived' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1043,7 +1049,7 @@ export class ProtocolSmartWallet {
         eventName: 'MessageReceived' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1057,7 +1063,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1081,7 +1087,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as MessageReceivedDecoded }
@@ -1102,7 +1108,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'MessageSent' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1114,7 +1120,7 @@ export class ProtocolSmartWallet {
         eventName: 'MessageSent' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1128,7 +1134,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1152,7 +1158,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as MessageSentDecoded }
@@ -1173,7 +1179,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'OwnershipTransferRequested' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1185,7 +1191,7 @@ export class ProtocolSmartWallet {
         eventName: 'OwnershipTransferRequested' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1199,7 +1205,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1223,7 +1229,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferRequestedDecoded }
@@ -1244,7 +1250,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'OwnershipTransferred' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1256,7 +1262,7 @@ export class ProtocolSmartWallet {
         eventName: 'OwnershipTransferred' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1270,7 +1276,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1294,7 +1300,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferredDecoded }
@@ -1315,7 +1321,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'ReportReceived' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1327,7 +1333,7 @@ export class ProtocolSmartWallet {
         eventName: 'ReportReceived' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1341,7 +1347,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1365,7 +1371,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ReportReceivedDecoded }
@@ -1386,24 +1392,24 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'SenderForSourceChainRemoved' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
-        sourceChainSelector: f.sourceChainSelector,
-        sender: f.sender,
+        _sourceChainSelector: f.sourceChainSelector,
+        _sender: f.sender,
       }
       const encoded = encodeEventTopics({
         abi: ProtocolSmartWalletABI,
         eventName: 'SenderForSourceChainRemoved' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
-          sourceChainSelector: f.sourceChainSelector,
-          sender: f.sender,
+          _sourceChainSelector: f.sourceChainSelector,
+          _sender: f.sender,
         }
         return encodeEventTopics({
           abi: ProtocolSmartWalletABI,
@@ -1412,7 +1418,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1436,7 +1442,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as SenderForSourceChainRemovedDecoded }
@@ -1457,24 +1463,24 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'SenderForSourceChainSet' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
-        sourceChainSelector: f.sourceChainSelector,
-        sender: f.sender,
+        _sourceChainSelector: f.sourceChainSelector,
+        _sender: f.sender,
       }
       const encoded = encodeEventTopics({
         abi: ProtocolSmartWalletABI,
         eventName: 'SenderForSourceChainSet' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
-          sourceChainSelector: f.sourceChainSelector,
-          sender: f.sender,
+          _sourceChainSelector: f.sourceChainSelector,
+          _sender: f.sender,
         }
         return encodeEventTopics({
           abi: ProtocolSmartWalletABI,
@@ -1483,7 +1489,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1507,7 +1513,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as SenderForSourceChainSetDecoded }
@@ -1528,7 +1534,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'Withdraw' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1540,7 +1546,7 @@ export class ProtocolSmartWallet {
         eventName: 'Withdraw' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1554,7 +1560,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1578,7 +1584,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as WithdrawDecoded }
@@ -1599,7 +1605,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'WorkflowOwnerRemoved' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1610,7 +1616,7 @@ export class ProtocolSmartWallet {
         eventName: 'WorkflowOwnerRemoved' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1623,7 +1629,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1647,7 +1653,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as WorkflowOwnerRemovedDecoded }
@@ -1668,7 +1674,7 @@ export class ProtocolSmartWallet {
         abi: ProtocolSmartWalletABI,
         eventName: 'WorkflowOwnerSet' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1679,7 +1685,7 @@ export class ProtocolSmartWallet {
         eventName: 'WorkflowOwnerSet' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1692,7 +1698,7 @@ export class ProtocolSmartWallet {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1716,7 +1722,7 @@ export class ProtocolSmartWallet {
     const decoded = decodeEventLog({
       abi: ProtocolSmartWalletABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as WorkflowOwnerSetDecoded }

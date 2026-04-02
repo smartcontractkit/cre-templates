@@ -4,16 +4,16 @@
   "main": "dist/main.js",
   "private": true,
   "scripts": {
-    "postinstall": "bun x cre-setup"
+    "typecheck": "tsc --noEmit"
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@chainlink/cre-sdk": "^1.0.9",
-    "@openzeppelin/contracts": "^5.4.0",
+    "@chainlink/cre-sdk": "^1.5.0",
+    "@openzeppelin/contracts": "5.4.0",
     "viem": "2.34.0",
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/bun": "1.2.21"
+    "typescript": "5.9.3"
   }
 }

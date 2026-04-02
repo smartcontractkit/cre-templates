@@ -20,6 +20,12 @@ import {
 
 export interface DecodedLog<T> extends Omit<EVMLog, 'data'> { data: T }
 
+const encodeTopicValue = (t: Hex | Hex[] | null): string[] => {
+  if (t == null) return []
+  if (Array.isArray(t)) return t.map(hexToBase64)
+  return [hexToBase64(t)]
+}
+
 
 
 
@@ -532,7 +538,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'ActionTaken' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -544,7 +550,7 @@ export class ReactorConsumer {
         eventName: 'ActionTaken' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -558,7 +564,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -582,7 +588,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ActionTakenDecoded }
@@ -603,7 +609,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'AddressFlagged' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -614,7 +620,7 @@ export class ReactorConsumer {
         eventName: 'AddressFlagged' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -627,7 +633,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -651,7 +657,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as AddressFlaggedDecoded }
@@ -672,7 +678,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'ExpectedAuthorUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -684,7 +690,7 @@ export class ReactorConsumer {
         eventName: 'ExpectedAuthorUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -698,7 +704,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -722,7 +728,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedAuthorUpdatedDecoded }
@@ -743,7 +749,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'ExpectedWorkflowIdUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -755,7 +761,7 @@ export class ReactorConsumer {
         eventName: 'ExpectedWorkflowIdUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -769,7 +775,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -793,7 +799,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedWorkflowIdUpdatedDecoded }
@@ -814,7 +820,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'ExpectedWorkflowNameUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -826,7 +832,7 @@ export class ReactorConsumer {
         eventName: 'ExpectedWorkflowNameUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -840,7 +846,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -864,7 +870,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedWorkflowNameUpdatedDecoded }
@@ -885,7 +891,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'ForwarderAddressUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -897,7 +903,7 @@ export class ReactorConsumer {
         eventName: 'ForwarderAddressUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -911,7 +917,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -935,7 +941,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ForwarderAddressUpdatedDecoded }
@@ -956,7 +962,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'OwnershipTransferred' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -968,7 +974,7 @@ export class ReactorConsumer {
         eventName: 'OwnershipTransferred' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -982,7 +988,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1006,7 +1012,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferredDecoded }
@@ -1027,7 +1033,7 @@ export class ReactorConsumer {
         abi: ReactorConsumerABI,
         eventName: 'SecurityWarning' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1037,7 +1043,7 @@ export class ReactorConsumer {
         eventName: 'SecurityWarning' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1049,7 +1055,7 @@ export class ReactorConsumer {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1073,7 +1079,7 @@ export class ReactorConsumer {
     const decoded = decodeEventLog({
       abi: ReactorConsumerABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as SecurityWarningDecoded }
