@@ -1,0 +1,14 @@
+production-settings:
+  user-workflow:
+    workflow-name: workflow-production
+  workflow-artifacts:
+    config-path: ./config.production.json
+    secrets-path: ""
+    workflow-path: ./wasm/workflow.wasm
+staging-settings:
+  user-workflow:
+    workflow-name: workflow-staging
+  workflow-artifacts:
+    config-path: ./config.staging.json
+    secrets-path: ""
+    workflow-path: ./wasm/workflow.wasm

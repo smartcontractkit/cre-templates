@@ -1,0 +1,16 @@
+{
+  "name": "typescript-simple-template",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chainlink/cre-sdk": "^1.5.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
