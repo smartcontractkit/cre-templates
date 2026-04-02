@@ -4,13 +4,19 @@ projectDir: .
 title: "KV Store (Go)"
 description: "Read, increment, and write a counter in AWS S3 using SigV4-signed HTTP requests."
 language: go
-category: off-chain-storage
-tags:
-  - aws
-  - s3
-  - sigv4
+category: workflow
+solutions:
+  - defi-vault-operations
+capabilities:
   - cron
+  - http
   - secrets
+tags:
+  - storage
+  - key-value
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
 workflows:
   - dir: my-workflow
 postInit: |

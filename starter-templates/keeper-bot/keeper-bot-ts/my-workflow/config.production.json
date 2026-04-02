@@ -1,0 +1,9 @@
+{
+  "schedule": "0 */5 * * * *",
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-mainnet",
+      "contractAddress": "0xYOUR_DEPLOYED_CONTRACT_ADDRESS"
+    }
+  ]
+}

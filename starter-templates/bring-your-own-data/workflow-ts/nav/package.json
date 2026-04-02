@@ -1,18 +1,18 @@
 {
-  "name": "typescript-por-template",
+  "name": "bring-your-own-data-nav-ts",
   "version": "1.0.0",
   "main": "dist/main.js",
   "private": true,
   "scripts": {
-    "postinstall": "bun x cre-setup"
+    "typecheck": "tsc --noEmit"
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@chainlink/cre-sdk": "^1.0.9",
+    "@chainlink/cre-sdk": "^1.5.0",
     "viem": "2.34.0",
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/bun": "1.2.21"
+    "typescript": "5.9.3"
   }
 }

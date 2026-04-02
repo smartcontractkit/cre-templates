@@ -43,9 +43,24 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 2. **Bring Your Own Data (BYOD)** — NAV & PoR — [`./bring-your-own-data`](./bring-your-own-data)  
    End-to-end examples for publishing **Net Asset Value** and **Proof of Reserve** data on-chain using CRE workflows and demo contracts.
 
-3. **Multi-Chain Token Manager** — [`./multi-chain-token-manager`](./multi-chain-token-manager)  
+3. **Multi-Chain Token Manager** — [`./multi-chain-token-manager`](./multi-chain-token-manager)
    Orchestrate token operations and state across multiple chains, showing RPC configuration, bindings, and cross-chain patterns.
 
+4. **Keeper Bot** — [`./keeper-bot`](./keeper-bot)
+   Cron-based smart contract maintenance — read state, check condition, execute if needed. The simplest write-path template, teaching the universal cron → read → check → write pattern.
+
+5. **Vault Harvester** — [`./vault-harvester`](./vault-harvester)
+   Automated DeFi vault harvesting — check if yield is profitable, then harvest and compound. Same cron → read → check → write pattern as the Keeper Bot, with a DeFi-specific profitability check.
+
+6. **Circuit Breaker** — [`./circuit-breaker`](./circuit-breaker)
+   Monitor on-chain events for anomalies, automatically pause contracts when price deviation thresholds are breached. Dual-trigger pattern combining LogTrigger (event-driven) with Cron (periodic health checks).
+
+7. **Event Reactor** — [`./event-reactor`](./event-reactor)
+   Listen for on-chain events (LogTrigger), read contract state, and respond on-chain. Demonstrates event-driven workflows with typed event decoding via generated bindings.
+   
+8. **Prediction Market** — [`./prediction-market`](./prediction-market)
+   Full prediction market lifecycle example with 3 workflows: market creation, resolution using Chainlink BTC/USD Data Feed, and dispute management via LogTrigger.
+   
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License

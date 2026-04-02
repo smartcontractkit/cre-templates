@@ -4,11 +4,17 @@ projectDir: .
 title: "Indexer Data Fetch (Go)"
 description: "Pull data from The Graph indexer on a cron schedule using GraphQL queries."
 language: go
-category: indexer
+category: workflow
+solutions:
+  - custom-oracles-data-feeds
+capabilities:
+  - cron
+  - http
 tags:
   - indexer
-  - graphql
-  - the-graph
-  - cron
+  - data-fetch
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
 workflows:
   - dir: workflow
