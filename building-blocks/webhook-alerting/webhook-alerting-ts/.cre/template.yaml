@@ -1,0 +1,15 @@
+kind: building-block
+id: webhook-alerting-ts
+projectDir: .
+title: "Webhook Alerting (TypeScript)"
+description: "Read a Chainlink Data Feed on-chain and trigger a PagerDuty alert via ConfidentialHTTPClient; demonstrates VaultDON secret injection with {{.secretName}} body templates."
+language: typescript
+category: notifications
+tags:
+  - data-feeds
+  - webhook
+  - alerting
+  - confidential-http
+  - secrets
+workflows:
+  - dir: my-workflow
