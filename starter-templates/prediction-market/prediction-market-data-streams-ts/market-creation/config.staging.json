@@ -1,0 +1,15 @@
+{
+  "schedule": "0 0 * * * *",
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "predictionMarketAddress": "0xEb792aF46AB2c2f1389A774AB806423DB43aA425",
+      "gasLimit": "500000"
+    }
+  ],
+  "marketDefaults": {
+    "question": "Will BTC be above $100,000 by {expirationDate}?",
+    "strikePriceUsd": 100000,
+    "durationSeconds": 86400
+  }
+}
