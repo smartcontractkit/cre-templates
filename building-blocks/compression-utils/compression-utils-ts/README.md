@@ -18,7 +18,7 @@ This building block demonstrates how to use compression and decompression in CRE
 
 ## Features Demonstrated
 
-This workflow fetches a large JSON payload (~94KB, 300 records) via HTTP and uses it as the input for each compression demo:
+This workflow fetches a large JSON payload (~22KB, 75 records) via HTTP and uses it as the input for each compression demo:
 
 | Category | fflate API | Node.js Equivalent |
 |----------|------------|--------------------|
@@ -36,14 +36,14 @@ This workflow fetches a large JSON payload (~94KB, 300 records) via HTTP and use
 
 The workflow fetches its payload using the CRE HTTP capability (`HTTPClient`), which routes requests through the DON's off-chain network layer. The standard `fetch` / `node:https` APIs are not available in QuickJS.
 
-> **Note:** The CRE HTTP capability has a response body limit of **100,000 bytes**. This workflow fetches `/comments?_limit=300` (~94KB) to stay within that limit.
+> **Note:** The CRE HTTP capability has a response body limit of **25kb**. This workflow fetches `/comments?_limit=75` (~22KB) to stay within that limit.
 
 ```typescript
 import { HTTPClient, consensusIdenticalAggregation, type HTTPSendRequester, text } from "@chainlink/cre-sdk";
 
 const fetchComments = (sendRequester: HTTPSendRequester): string => {
   const resp = sendRequester
-    .sendRequest({ url: "https://jsonplaceholder.typicode.com/comments?_limit=300", method: "GET" })
+    .sendRequest({ url: "https://jsonplaceholder.typicode.com/comments?_limit=75", method: "GET" })
     .result();
   return text(resp);
 };
@@ -135,48 +135,48 @@ Compatible with QuickJS / CRE Workflows
 ========================================
 
 Fetching payload from JSONPlaceholder /comments...
-Fetched:   94.32 KB — 300 records
+Fetched:   22.41 KB — 75 records
 
 === GZIP / GUNZIP ===
 Alternative to: zlib.gzipSync() / zlib.gunzipSync()
-Original:   94.32 KB
-Compressed: 21.48 KB (77.2% smaller)
-Verified:   300 records restored via gunzipSync
+Original:   22.41 KB
+Compressed: 6.60 KB (70.5% smaller)
+Verified:   75 records restored via gunzipSync
 
 === DEFLATE / INFLATE (raw) ===
 Alternative to: zlib.deflateRawSync() / zlib.inflateRawSync()
-Original:   94.32 KB
-Compressed: 21.46 KB (77.3% smaller)
-Verified:   300 records restored via inflateSync
+Original:   22.41 KB
+Compressed: 6.58 KB (70.6% smaller)
+Verified:   75 records restored via inflateSync
 
 === ZLIB / UNZLIB ===
 Alternative to: zlib.deflateSync() / zlib.inflateSync()
-Original:   94.32 KB
-Compressed: 21.48 KB (77.2% smaller)
-Verified:   300 records restored via unzlibSync
+Original:   22.41 KB
+Compressed: 6.59 KB (70.6% smaller)
+Verified:   75 records restored via unzlibSync
 
 === AUTO-DETECT DECOMPRESSION ===
 decompressSync() detects gzip / zlib / deflate automatically.
-From gzip   : 300 records (21.48 KB)
-From zlib   : 300 records (21.48 KB)
-From deflate: 300 records (21.46 KB)
+From gzip   : 75 records (6.60 KB)
+From zlib   : 75 records (6.59 KB)
+From deflate: 75 records (6.58 KB)
 
 === COMPRESSION LEVELS ===
 Level 0 = store only  |  Level 4 |  Level 9 = max
-Level 0 (store):   94.35 KB (-0.0% smaller)
-Level 4:           21.78 KB (76.9% smaller)
-Level 9 (max):     21.04 KB (77.7% smaller)
+Level 0 (store): 22.43 KB (-0.1% smaller)
+Level 4: 6.66 KB (70.3% smaller)
+Level 9 (max): 6.60 KB (70.5% smaller)
 
 === ZIP ARCHIVES ===
 Multi-file archiving — no Node.js zlib equivalent.
-Archive:   21.92 KB (4 files, 300 total records)
+Archive:   7.76 KB (4 files, 75 total records)
 Extracted: batch-1.json, batch-2.json, batch-3.json, manifest.json
-Verified:  300 records across 3 batches
+Verified:  75 records across 3 batches
 
 === STRING UTILITIES ===
 strToU8 / strFromU8 — alternative to Buffer.from() / TextEncoder / TextDecoder
-strToU8(rawJson):  94.32 KB Uint8Array
-strFromU8(bytes):  300 records decoded
+strToU8(rawJson):  22.41 KB Uint8Array
+strFromU8(bytes):  75 records decoded
 strToU8("Hello, CRE Workflow!"): [72, 101, 108, 108, 111, 44, 32, 67, 82, 69, 32, 87, 111, 114, 107, 102, 108, 111, 119, 33]
 strFromU8(...):    "Hello, CRE Workflow!"
 

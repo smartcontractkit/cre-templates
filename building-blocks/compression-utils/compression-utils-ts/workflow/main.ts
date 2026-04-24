@@ -28,14 +28,14 @@ type Config = {
 };
 
 // ============================================================================
-// HTTP Fetch — JSONPlaceholder /comments?_limit=300 (~92KB, 300 records)
+// HTTP Fetch — JSONPlaceholder /comments?_limit=75 (~24KB, 75 records)
 // Used as the input payload for all compression demos below.
 // ============================================================================
 
 const fetchComments = (sendRequester: HTTPSendRequester): string => {
   const resp = sendRequester
     .sendRequest({
-      url: "https://jsonplaceholder.typicode.com/comments?_limit=300",
+      url: "https://jsonplaceholder.typicode.com/comments?_limit=75",
       method: "GET",
     })
     .result();
