@@ -7,8 +7,7 @@
     }
   ],
   "dataStreams": {
-    "apiUrl": "https://api.dataengine.chain.link",
-    "feedId": "0x00021f1c95b33f5e56fa5c07968c566586d0e6cea93c9fb79127915892de430d",
-    "owner": ""
+    "apiUrl": "https://api.testnet-dataengine.chain.link",
+    "feedId": "0x00027bbaff688c906a3e20a34fe951715d1018d262a5b66e38edd64e0fdd0d00"
   }
 }

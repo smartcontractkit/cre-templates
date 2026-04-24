@@ -9,8 +9,7 @@
   ],
   "dataStreams": {
     "apiUrl": "https://api.dataengine.chain.link",
-    "feedId": "0xYOUR_FEED_ID",
-    "owner": ""
+    "feedId": "0xYOUR_FEED_ID"
   },
   "marketIdsToCheck": [0, 1, 2]
 }

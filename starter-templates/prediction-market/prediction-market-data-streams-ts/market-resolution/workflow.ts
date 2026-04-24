@@ -29,7 +29,6 @@ export const configSchema = z.object({
   dataStreams: z.object({
     apiUrl: z.string(),
     feedId: z.string(),
-    owner: z.string(),
   }),
   marketIdsToCheck: z.array(z.number()),
 })

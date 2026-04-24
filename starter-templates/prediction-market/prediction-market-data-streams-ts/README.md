@@ -127,21 +127,21 @@ cd market-dispute && bun test && cd ..
 
 ```bash
 # Create a market
-cre workflow simulate market-creation --target staging
+cre workflow simulate market-creation --target staging-settings
 
 # Resolve expired markets (requires Data Streams API credentials)
-cre workflow simulate market-resolution --target staging
+cre workflow simulate market-resolution --target staging-settings
 
 # Handle a dispute (triggered by on-chain DisputeRaised event)
-cre workflow simulate market-dispute --target staging
+cre workflow simulate market-dispute --target staging-settings
 ```
 
 ### 5. Broadcast (Sepolia Testnet)
 
 ```bash
-cre workflow broadcast market-creation --target staging
-cre workflow broadcast market-resolution --target staging
-cre workflow broadcast market-dispute --target staging
+cre workflow broadcast market-creation --target staging-settings
+cre workflow broadcast market-resolution --target staging-settings
+cre workflow broadcast market-dispute --target staging-settings
 ```
 
 ---
@@ -155,6 +155,7 @@ Creates a new binary prediction market every hour. The market asks: "Will BTC be
 **Config** (`market-creation/config.staging.json`):
 - `schedule`: Cron expression (default: hourly)
 - `evms[].predictionMarketAddress`: Deployed PredictionMarket contract
+- `marketDefaults.question`: Market question template; `{expirationDate}` is replaced at creation
 - `marketDefaults.strikePriceUsd`: Price threshold in USD
 - `marketDefaults.durationSeconds`: Market duration (default: 24h)
 
@@ -176,7 +177,7 @@ Checks markets every 10 minutes. For each resolvable market, fetches the latest 
 **How it works:**
 1. Calls `isResolvable(marketId)` on the contract
 2. Fetches the latest report from the Data Streams REST API with HMAC authentication
-3. Decodes the v3 (Crypto Advanced) report to extract the median price
+3. Decodes the v3 (Crypto Advanced) report to extract the benchmark `price`
 4. Converts from 18 decimal places (Data Streams) to 8 decimal places (on-chain)
 5. Encodes a `RESOLVE` action and writes it on-chain via CRE report
 

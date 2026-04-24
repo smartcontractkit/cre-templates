@@ -32,7 +32,6 @@ export const configSchema = z.object({
   dataStreams: z.object({
     apiUrl: z.string(),
     feedId: z.string(),
-    owner: z.string(),
   }),
 })
 type Config = z.infer<typeof configSchema>
