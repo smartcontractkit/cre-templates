@@ -59,11 +59,34 @@ Path: [`./read-data-feeds`](./read-data-feeds)
 
 ---
 
+### 3) **Compression Utils**
+Path: [`./compression-utils`](./compression-utils)
+
+- Demonstrates how to perform compression and decompression operations in CRE workflows using **fflate** as a pure JavaScript alternative to the Node.js `zlib` module.
+- Covers gzip, deflate, zlib formats, compression levels, ZIP archives, and string utilities.
+- Shows how to fetch a large JSON payload via CRE HTTP and compress it to stay within the 100KB response body limit.
+
+👉 See the block’s README for setup, config, and sample logs.
+
+---
+
+### 4) **XML Utils**
+Path: [`./xml-utils`](./xml-utils)
+
+- Demonstrates how to use XML in CRE workflows using **fast-xml-parser** as a pure JavaScript alternative to the browser's `DOMParser` and the Node.js `xml2js` module.
+- Covers parsing, validating, and building XML.
+- Shows how to fetch a XML payload via CRE HTTP, validate it, parse it with attributes and namespaces, and rebuild a filtered XML document.
+
+👉 See the block’s README for setup, config, and sample logs.
+
+---
+
 ## When to Use Which Block
 
 * **kv-store**: You want to see an **off-chain write** pattern (AWS S3), secrets usage, SigV4 signing, and a **consensus read → single write** flow.
 * **read-data-feeds**: You want to **read on-chain data** via contract calls, manage ABIs/bindings, and configure **RPC** access.
-
+* **compression-utils**: You want to handle **data compression** in CRE Typescript workflows, especially when working with large datasets and the CRE HTTP response limit.
+* **xml-utils**: You want to work with **XML data** in CRE workflows, including parsing, validating, and building XML documents.
 ---
 
 ## License
