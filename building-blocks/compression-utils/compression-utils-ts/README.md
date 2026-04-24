@@ -36,7 +36,7 @@ This workflow fetches a large JSON payload (~22KB, 75 records) via HTTP and uses
 
 The workflow fetches its payload using the CRE HTTP capability (`HTTPClient`), which routes requests through the DON's off-chain network layer. The standard `fetch` / `node:https` APIs are not available in QuickJS.
 
-> **Note:** The CRE HTTP capability has a response body limit of **25kb**. This workflow fetches `/comments?_limit=75` (~22KB) to stay within that limit.
+> **Note:** The CRE HTTP capability has a response body limit of **25KB**. This workflow fetches `/comments?_limit=75` (~22KB) to stay within that limit.
 
 ```typescript
 import { HTTPClient, consensusIdenticalAggregation, type HTTPSendRequester, text } from "@chainlink/cre-sdk";
@@ -200,19 +200,19 @@ const compressed = gzipSync(strToU8(payload));
 const restored = JSON.parse(strFromU8(gunzipSync(compressed)));
 ```
 
-### 2. Decompress API responses to get around 100KB limit
-The CRE HTTP capability has a 100KB response body limit. Compress large payloads on the server side and decompress in the workflow:
+### 2. Decompress API responses to get around 25KB limit
+The CRE HTTP capability has a 25KB response body limit. Compress large payloads on the server side and decompress in the workflow:
 ```typescript
 import { gunzipSync, strFromU8 } from "fflate";
 
 // Server sends gzip-compressed data (~25KB)
-// which decompresses to the full ~94KB payload
+// which decompresses to the full ~80KB payload
 const compressedData = sendRequester.sendRequest({ 
   url: "https://api.example.com/data?format=gzip" 
 }).result();
 
 const fullData = JSON.parse(strFromU8(gunzipSync(compressedData)));
-// Now you can work with the full dataset despite the 100KB limit
+// Now you can work with the full dataset despite the 25KB limit
 ```
 
 ### 3. Auto-detect and decompress unknown formats

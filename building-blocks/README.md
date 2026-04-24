@@ -64,7 +64,7 @@ Path: [`./compression-utils`](./compression-utils)
 
 - Demonstrates how to perform compression and decompression operations in CRE workflows using **fflate** as a pure JavaScript alternative to the Node.js `zlib` module.
 - Covers gzip, deflate, zlib formats, compression levels, ZIP archives, and string utilities.
-- Shows how to fetch a large JSON payload via CRE HTTP and compress it to stay within the 100KB response body limit.
+- Shows how to fetch a large JSON payload via CRE HTTP and compress it to stay within the 25KB response body limit.
 
 👉 See the block’s README for setup, config, and sample logs.
 
