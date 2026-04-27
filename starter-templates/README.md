@@ -60,7 +60,10 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
    
 8. **Prediction Market** — [`./prediction-market`](./prediction-market)
    Full prediction market lifecycle example with 3 workflows: market creation, resolution using Chainlink BTC/USD Data Feed, and dispute management via LogTrigger.
-   
+
+9. **Verifiable Build** — [`./verifiable-build`](./verifiable-build)
+   Reproducible Docker-based builds for TypeScript workflows, enabling third-party verification that deployed workflows match their source code.
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
