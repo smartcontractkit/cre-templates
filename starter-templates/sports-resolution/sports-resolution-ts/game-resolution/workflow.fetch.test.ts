@@ -44,10 +44,10 @@ describe('fetchGameResult', () => {
 
   test('throws when the ESPN competitor structure is missing', () => {
     expect(() =>
-      fetchGameResult(makeSendRequester({ competitions: [] }), {
-        url: 'https://espn.example/scoreboard',
-        gameId: '401766123',
-      }),
+      fetchGameResult(
+        makeSendRequester({ status: { type: { completed: true } }, competitions: [] }),
+        { url: 'https://espn.example/scoreboard', gameId: '401766123' },
+      ),
     ).toThrow('Unexpected competitor structure for game 401766123')
   })
 })
