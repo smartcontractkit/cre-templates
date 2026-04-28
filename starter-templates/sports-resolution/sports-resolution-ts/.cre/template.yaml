@@ -20,7 +20,10 @@ workflows:
   - dir: game-resolution
 postInit: |
   Update game-resolution/config.staging.json with your SportsMarket contract address
-  and sports API base URLs. Run `cd game-resolution && bun install`, then simulate:
+  and sports API base URLs. Install both packages with:
+    cd contracts && bun install && cd ..
+    cd game-resolution && bun install && cd ..
+  Then simulate:
     cre workflow simulate game-resolution --target staging-settings \
       --non-interactive --trigger-index 0 \
       --evm-tx-hash <TX_THAT_EMITTED_SETTLEMENT_REQUESTED> \
