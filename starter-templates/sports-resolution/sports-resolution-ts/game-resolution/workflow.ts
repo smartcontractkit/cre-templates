@@ -118,7 +118,13 @@ export const fetchGameResult = (
 
   const body = JSON.parse(Buffer.from(response.body).toString('utf-8'))
 
-  const competitors: Array<{ homeAway: string; score: string }> =
+  const isCompleted =
+    body.status?.type?.completed ?? body.competitions?.[0]?.status?.type?.completed
+  if (isCompleted !== true) {
+    throw new Error(`Game ${config.gameId} is not final`)
+  }
+
+  const competitors: Array<{ homeAway: string; score?: string }> =
     body.competitions?.[0]?.competitors
 
   if (!Array.isArray(competitors) || competitors.length < 2) {
@@ -132,9 +138,16 @@ export const fetchGameResult = (
     throw new Error(`Could not identify home/away for game ${config.gameId}`)
   }
 
+  if (!home.score || !away.score || !/^\d+$/.test(home.score) || !/^\d+$/.test(away.score)) {
+    throw new Error(`Invalid score data for game ${config.gameId}`)
+  }
+
+  const homeScore = Number.parseInt(home.score, 10)
+  const awayScore = Number.parseInt(away.score, 10)
+
   return {
-    homeScore: parseInt(home.score, 10),
-    awayScore: parseInt(away.score, 10),
+    homeScore,
+    awayScore,
   }
 }
 

@@ -3,6 +3,7 @@ import { newTestRuntime, test } from '@chainlink/cre-sdk/test'
 import {
   applyAggregation,
   computeOutcome,
+  fetchGameResult,
   initWorkflow,
   onSettlementRequested,
 } from './workflow'
@@ -19,6 +20,28 @@ const makeConfig = () => ({
   ],
   dataSourceUrls: ['https://api.example1.com/v1', 'https://api.example2.com/v1'],
   aggregationMode: 'majority' as const,
+})
+
+const makeSendRequester = (body: unknown, statusCode = 200) =>
+  ({
+    sendRequest: () => ({
+      result: () => ({
+        statusCode,
+        body: Buffer.from(JSON.stringify(body)),
+      }),
+    }),
+  }) as any
+
+const finalEspnBody = (homeScore: string | undefined, awayScore: string | undefined) => ({
+  status: { type: { completed: true } },
+  competitions: [
+    {
+      competitors: [
+        { homeAway: 'home', score: homeScore },
+        { homeAway: 'away', score: awayScore },
+      ],
+    },
+  ],
 })
 
 // ─── Unit: computeOutcome ────────────────────────────────────
@@ -72,6 +95,40 @@ describe('applyAggregation — unanimous', () => {
 
   test('2-of-2 agree: returns consensus', () => {
     expect(applyAggregation([2, 2], 'unanimous')).toBe(2)
+  })
+})
+
+// ─── Unit: fetchGameResult ───────────────────────────────────
+
+describe('fetchGameResult', () => {
+  test('returns parsed scores for a final ESPN game', () => {
+    const result = fetchGameResult(
+      makeSendRequester(finalEspnBody('123', '107')),
+      { url: 'https://espn.example/scoreboard', gameId: '401766123' },
+    )
+
+    expect(result).toEqual({ homeScore: 123, awayScore: 107 })
+  })
+
+  test('throws when ESPN game is not final', () => {
+    const body = finalEspnBody('12', '10')
+    body.status.type.completed = false
+
+    expect(() =>
+      fetchGameResult(makeSendRequester(body), {
+        url: 'https://espn.example/scoreboard',
+        gameId: '401766123',
+      }),
+    ).toThrow('Game 401766123 is not final')
+  })
+
+  test('throws when scores are missing or invalid', () => {
+    expect(() =>
+      fetchGameResult(makeSendRequester(finalEspnBody(undefined, '107')), {
+        url: 'https://espn.example/scoreboard',
+        gameId: '401766123',
+      }),
+    ).toThrow('Invalid score data for game 401766123')
   })
 })
 
