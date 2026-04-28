@@ -314,6 +314,16 @@ npx hardhat ignition deploy ignition/modules/SportsMarket.ts --network sepolia
 |---|---|---|
 | `forwarder` | `0xf8344cfd5c43616a4366c34e3eee75af79a74482` | Sepolia CRE Forwarder |
 
+### Workflow Identity Hardening
+
+The constructor-level Forwarder check ensures reports come through the trusted CRE Forwarder. For production-like deployments, also restrict reports to your deployed workflow by configuring the optional workflow identity fields on `ReceiverTemplate` after deployment:
+
+- `setExpectedAuthor(address)` restricts reports to a specific workflow owner.
+- `setExpectedWorkflowId(bytes32)` restricts reports to a specific deployed workflow.
+- `setExpectedWorkflowName(string)` can be used with `setExpectedAuthor(address)`; workflow name validation alone is intentionally rejected by the receiver because names are truncated and only unique per owner.
+
+Keep these fields unset only for local demos or PoC deployments where Forwarder-only validation is acceptable.
+
 ---
 
 ## Aggregation Modes
@@ -351,7 +361,7 @@ Update `chainSelectorName` in config and the RPC in `project.yaml`. The contract
 
 ## Security Notes
 
-- `SportsMarket` inherits `ReceiverTemplate`, which enforces that only the trusted Chainlink Forwarder can call `onReport()`. No third party can inject a fake settlement.
+- `SportsMarket` inherits `ReceiverTemplate`, which enforces that only the configured Chainlink Forwarder can call `onReport()`. For production-like deployments, configure workflow identity checks so only your deployed workflow can submit accepted reports through that Forwarder.
 - Each `HTTPClient.sendRequest()` call is BFT-verified across DON nodes — a single compromised node cannot influence the result.
 - The workflow-level aggregation (`applyAggregation`) provides additional protection against a single API source returning incorrect data.
 - Each workflow execution uses `LAST_FINALIZED_BLOCK_NUMBER` for on-chain reads to ensure data consistency.
