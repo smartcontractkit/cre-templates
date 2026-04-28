@@ -2,7 +2,7 @@
 
 A CRE starter template that resolves a sports game outcome on-chain using the full CRE workflow pattern: an **EVM Log Trigger** fires when a prediction market emits `SettlementRequested`, 2–3 sports APIs are queried via the **HTTP Capability** (each BFT-verified across DON nodes), workflow-level aggregation determines consensus, and a **cryptographically signed report** is written back on-chain.
 
-Sports is the illustrative domain. The workflow pattern — *EVM log trigger → parallel HTTP fetches → aggregation → signed onchain write* — is fully domain-agnostic and directly reusable for financial data, election outcomes, weather events, or any binary/categorical resolution use case.
+Sports is the illustrative domain. The workflow pattern — *EVM log trigger → HTTP fetches → aggregation → signed onchain write* — is fully domain-agnostic and directly reusable for financial data, election outcomes, weather events, or any binary/categorical resolution use case.
 
 > **Important:** This template uses user-supplied HTTP APIs for resolution. For resolution using Chainlink Data Feeds (on-chain price sources), see the [Prediction Market template](../prediction-market/).
 
