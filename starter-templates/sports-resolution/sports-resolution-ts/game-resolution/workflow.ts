@@ -159,6 +159,17 @@ export const onSettlementRequested = (
   const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
   const sportsMarket = new SportsMarket(evmClient, evmConfig.sportsMarketAddress as Address)
 
+  const game = sportsMarket.getGame(runtime, gameId)
+  if (game.outcome !== 0 || game.settledAt !== 0n) {
+    runtime.log(`Game ${gameId} is already settled; skipping resolution`)
+    return safeJsonStringify({
+      gameId: gameId.toString(),
+      status: 'already_settled',
+      outcome: game.outcome,
+      settledAt: game.settledAt.toString(),
+    })
+  }
+
   // TODO: support per-source game IDs for providers that use different ID schemes.
   // When dataSourceUrls point to different providers (e.g. ESPN + Sportradar), each
   // may use a different game ID for the same match. A structured description field
