@@ -24,7 +24,7 @@ export const configSchema = z.object({
       sportsMarketAddress: z.string(),
       gasLimit: z.string().optional(),
     })
-  ),
+  ).min(1),
   // Base URLs for each sports data source. The default ESPN example uses
   // a public endpoint; adapt fetchGameResult() when using API-key providers.
   dataSourceUrls: z.array(z.string()).min(2).max(3),
