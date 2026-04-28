@@ -52,7 +52,6 @@ Prediction market contract emits SettlementRequested(gameId)
 |---|---|
 | **EVM Log Trigger** | Fires on `SettlementRequested` — event-driven, no polling |
 | **HTTP Capability** | Fetches from 2–3 sports APIs; each fetch BFT-verified across DON nodes |
-| **Secrets** | API keys stored securely via `secrets.yaml`, never hardcoded |
 | **BFT Consensus (built-in)** | Every `HTTPClient.sendRequest()` is verified across DON nodes automatically |
 | **Workflow aggregation** | Custom majority/unanimous logic in TypeScript callback |
 | **EVM Write + signed report** | Cryptographically verified result delivered on-chain |
@@ -66,7 +65,7 @@ Prediction market contract emits SettlementRequested(gameId)
 sports-resolution-ts/
 ├── .cre/template.yaml          # Template metadata
 ├── project.yaml                # CRE project settings (RPCs)
-├── secrets.yaml                # Secret name declarations
+├── secrets.yaml                # Optional secret name declarations
 ├── README.md
 ├── contracts/                  # Smart contract + generated TypeScript bindings
 │   ├── package.json
@@ -257,32 +256,9 @@ return {
 
 ### Using API Keys
 
-API keys should be stored in CRE Secrets, not hardcoded. Declare them in `secrets.yaml`:
+The default ESPN example uses a public endpoint, so `secrets.yaml` and `workflow.yaml` do not declare secrets by default.
 
-```yaml
-secretsNames:
-    SPORTS_API_KEY_1: []
-    SPORTS_API_KEY_2: []
-```
-
-Then reference them via query param in your `dataSourceUrls` config:
-
-```json
-"dataSourceUrls": [
-  "https://api.sportsdata.io/v3/nba/scores/json?key=YOUR_KEY_1",
-  "https://api.mysportsfeeds.com/v2.1?apikey=YOUR_KEY_2"
-]
-```
-
-Or inject them as request headers by extending `fetchGameResult()` to read from a config field:
-
-```typescript
-const response = sendRequester.sendRequest({
-  url: `${config.url}/${config.gameId}/result`,
-  method: 'GET',
-  headers: [{ key: 'Authorization', value: `Bearer ${config.apiKey}` }],
-}).result()
-```
+If you adapt this template to a private sports data provider, do not hardcode API keys in committed config files or URLs. Add the secret names to `secrets.yaml`, set `secrets-path` in `game-resolution/workflow.yaml`, and extend `fetchGameResult()` to inject the key according to your provider's authentication model, such as a request header or signed URL.
 
 ---
 

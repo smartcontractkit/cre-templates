@@ -25,9 +25,8 @@ export const configSchema = z.object({
       gasLimit: z.string().optional(),
     })
   ),
-  // Base URLs for each sports data source. Each URL is appended with
-  // /{gameId}/result to form the full request path. Store API keys as
-  // query params or configure headers in fetchGameResult() — see README.
+  // Base URLs for each sports data source. The default ESPN example uses
+  // a public endpoint; adapt fetchGameResult() when using API-key providers.
   dataSourceUrls: z.array(z.string()).min(2).max(3),
   // "majority"  — strictly more than half of sources must agree (2-of-2 or 2-of-3)
   // "unanimous" — all sources must agree; any disagreement returns null
