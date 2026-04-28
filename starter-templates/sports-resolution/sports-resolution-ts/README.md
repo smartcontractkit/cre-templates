@@ -293,6 +293,8 @@ The `SportsMarket` contract accepts CRE-signed reports via the `ReceiverTemplate
 ### Option A: Deploy with Foundry (Forge)
 
 ```bash
+cd contracts/evm
+
 forge create --broadcast \
   --private-key $PRIVATE_KEY \
   --rpc-url https://ethereum-sepolia-rpc.publicnode.com \
