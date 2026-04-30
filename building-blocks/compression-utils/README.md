@@ -15,7 +15,7 @@ This building block demonstrates how to perform compression and decompression op
 
 ## The Problem
 
-The CRE TypeScript SDK runs on **QuickJS**, a lightweight JavaScript engine that does not support Node.js native modules. This means the standard `zlib` module from Node.js is **not available** in CRE workflows. Additionally, CRE's HTTP capability has a **25KB response body limit**, making compression essential for working with large datasets.
+The CRE TypeScript SDK runs on **QuickJS**, a lightweight JavaScript engine that does not support Node.js native modules. This means the standard `zlib` module from Node.js is **not available** in CRE workflows. Additionally, CRE's Consensus capability has a **25KB response body limit**, making compression essential for working with large datasets.
 
 ## The Solution
 
@@ -25,7 +25,7 @@ The [fflate library](https://github.com/101arrowz/fflate) provides pure JavaScri
 - **Standards-compliant** - Output is interoperable with native gzip, zlib, and deflate tools
 - **Small** - ~8KB minified, tree-shakeable
 - **Sync-capable** - Provides synchronous APIs (`gzipSync`, `deflateSync`, etc.) that work reliably in QuickJS
-- **Practical** - Enable workflows to handle large datasets despite the 25KB HTTP limit
+- **Practical** - Enable workflows to handle large datasets despite the 25KB Consensus limit
 
 ---
 

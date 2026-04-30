@@ -23,23 +23,29 @@ import {
   zipSync,
 } from "fflate";
 
+import { fromByteArray, toByteArray } from "base64-js";
+
 type Config = {
   schedule: string;
 };
 
 // ============================================================================
-// HTTP Fetch — JSONPlaceholder /comments?_limit=75 (~24KB, 75 records)
-// Used as the input payload for all compression demos below.
+// HTTP Fetch — JSONPlaceholder /comments?_limit=220 (~65KB, 220 records)
+// Response is gzip-compressed and base64-encoded so it fits under the
+// consensus capability size limit. Decompressed after consensus.
 // ============================================================================
 
 const fetchComments = (sendRequester: HTTPSendRequester): string => {
   const resp = sendRequester
     .sendRequest({
-      url: "https://jsonplaceholder.typicode.com/comments?_limit=75",
+      url: "https://jsonplaceholder.typicode.com/comments?_limit=215",
       method: "GET",
     })
     .result();
-  return text(resp);
+  const raw = text(resp);
+  // mtime: 0 makes output deterministic across nodes (required for consensus)
+  const compressed = gzipSync(strToU8(raw), { level: 9, mtime: 0 });
+  return fromByteArray(compressed);
 };
 
 // ============================================================================
@@ -182,15 +188,20 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
   runtime.log("========================================");
   runtime.log("");
 
-  runtime.log("Fetching payload from JSONPlaceholder /comments...");
+  runtime.log("Fetching payload from JSONPlaceholder /comments (compressed over consensus)...");
   const httpClient = new HTTPClient();
-  const rawJson = httpClient
+  const compressedB64 = httpClient
     .sendRequest(runtime, fetchComments, consensusIdenticalAggregation<string>())()
     .result();
 
+  // Decode base64 and decompress — the large payload only crosses consensus compressed
+  const compressedBytes = toByteArray(compressedB64);
+  runtime.log(`Consensus payload: ${formatBytes(compressedB64.length)} (base64-encoded gzip)`);
+  const rawJson = strFromU8(gunzipSync(compressedBytes));
+
   const jsonBytes = strToU8(rawJson);
   const recordCount = (JSON.parse(rawJson) as unknown[]).length;
-  runtime.log(`Fetched:   ${formatBytes(jsonBytes.length)} — ${recordCount} records`);
+  runtime.log(`Decompressed: ${formatBytes(jsonBytes.length)} — ${recordCount} records`);
   runtime.log("");
 
   demoGzip(runtime, jsonBytes);

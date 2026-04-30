@@ -18,7 +18,7 @@ This building block demonstrates how to use compression and decompression in CRE
 
 ## Features Demonstrated
 
-This workflow fetches a large JSON payload (~22KB, 75 records) via HTTP and uses it as the input for each compression demo:
+This workflow fetches a large JSON payload (~65KB, 215 records) via HTTP, compresses it to pass consensus, decompresses it, and uses it as the input for each compression demo:
 
 | Category | fflate API | Node.js Equivalent |
 |----------|------------|--------------------|
@@ -36,14 +36,14 @@ This workflow fetches a large JSON payload (~22KB, 75 records) via HTTP and uses
 
 The workflow fetches its payload using the CRE HTTP capability (`HTTPClient`), which routes requests through the DON's off-chain network layer. The standard `fetch` / `node:https` APIs are not available in QuickJS.
 
-> **Note:** The CRE HTTP capability has a response body limit of **25KB**. This workflow fetches `/comments?_limit=75` (~22KB) to stay within that limit.
+> **Note:** The CRE HTTP capability has a response body limit of **100KB** but the Consensus capability has a smaller limit **25KB**. This workflow fetches `/comments?_limit=215` (~65KB) and compresses it (~24KB) to stay within those limits.
 
 ```typescript
 import { HTTPClient, consensusIdenticalAggregation, type HTTPSendRequester, text } from "@chainlink/cre-sdk";
 
 const fetchComments = (sendRequester: HTTPSendRequester): string => {
   const resp = sendRequester
-    .sendRequest({ url: "https://jsonplaceholder.typicode.com/comments?_limit=75", method: "GET" })
+    .sendRequest({ url: "https://jsonplaceholder.typicode.com/comments?_limit=215", method: "GET" })
     .result();
   return text(resp);
 };
@@ -134,49 +134,50 @@ Alternative to Node.js zlib module
 Compatible with QuickJS / CRE Workflows
 ========================================
 
-Fetching payload from JSONPlaceholder /comments...
-Fetched:   22.41 KB — 75 records
+Fetching payload from JSONPlaceholder /comments (compressed over consensus)...
+Consensus payload: 23.58 KB (base64-encoded gzip)
+Decompressed: 65.04 KB — 215 records
 
 === GZIP / GUNZIP ===
 Alternative to: zlib.gzipSync() / zlib.gunzipSync()
-Original:   22.41 KB
-Compressed: 6.60 KB (70.5% smaller)
-Verified:   75 records restored via gunzipSync
+Original:   65.04 KB
+Compressed: 17.71 KB (72.8% smaller)
+Verified:   215 records restored via gunzipSync
 
 === DEFLATE / INFLATE (raw) ===
 Alternative to: zlib.deflateRawSync() / zlib.inflateRawSync()
-Original:   22.41 KB
-Compressed: 6.58 KB (70.6% smaller)
-Verified:   75 records restored via inflateSync
+Original:   65.04 KB
+Compressed: 17.69 KB (72.8% smaller)
+Verified:   215 records restored via inflateSync
 
 === ZLIB / UNZLIB ===
 Alternative to: zlib.deflateSync() / zlib.inflateSync()
-Original:   22.41 KB
-Compressed: 6.59 KB (70.6% smaller)
-Verified:   75 records restored via unzlibSync
+Original:   65.04 KB
+Compressed: 17.70 KB (72.8% smaller)
+Verified:   215 records restored via unzlibSync
 
 === AUTO-DETECT DECOMPRESSION ===
 decompressSync() detects gzip / zlib / deflate automatically.
-From gzip   : 75 records (6.60 KB)
-From zlib   : 75 records (6.59 KB)
-From deflate: 75 records (6.58 KB)
+From gzip   : 215 records (17.71 KB)
+From zlib   : 215 records (17.70 KB)
+From deflate: 215 records (17.69 KB)
 
 === COMPRESSION LEVELS ===
 Level 0 = store only  |  Level 4 |  Level 9 = max
-Level 0 (store): 22.43 KB (-0.1% smaller)
-Level 4: 6.66 KB (70.3% smaller)
-Level 9 (max): 6.60 KB (70.5% smaller)
+Level 0 (store): 65.07 KB (-0.0% smaller)
+Level 4: 17.99 KB (72.3% smaller)
+Level 9 (max): 17.68 KB (72.8% smaller)
 
 === ZIP ARCHIVES ===
 Multi-file archiving — no Node.js zlib equivalent.
-Archive:   7.76 KB (4 files, 75 total records)
+Archive:   19.09 KB (4 files, 215 total records)
 Extracted: batch-1.json, batch-2.json, batch-3.json, manifest.json
-Verified:  75 records across 3 batches
+Verified:  215 records across 3 batches
 
 === STRING UTILITIES ===
 strToU8 / strFromU8 — alternative to Buffer.from() / TextEncoder / TextDecoder
-strToU8(rawJson):  22.41 KB Uint8Array
-strFromU8(bytes):  75 records decoded
+strToU8(rawJson):  65.04 KB Uint8Array
+strFromU8(bytes):  215 records decoded
 strToU8("Hello, CRE Workflow!"): [72, 101, 108, 108, 111, 44, 32, 67, 82, 69, 32, 87, 111, 114, 107, 102, 108, 111, 119, 33]
 strFromU8(...):    "Hello, CRE Workflow!"
 
@@ -201,17 +202,22 @@ const restored = JSON.parse(strFromU8(gunzipSync(compressed)));
 ```
 
 ### 2. Decompress API responses to get around 25KB limit
-The CRE HTTP capability has a 25KB response body limit. Compress large payloads on the server side and decompress in the workflow:
+The CRE HTTP capability has a 100KB response body limit but the Consensus capability has a 25KB limit. Compress large payloads before passing it to consensus and decompress in the workflow:
 ```typescript
 import { gunzipSync, strFromU8 } from "fflate";
 
-// Server sends gzip-compressed data (~25KB)
-// which decompresses to the full ~80KB payload
+// Server sends data (~65KB)
+// which compresses to ~24KB consensus payload
 const compressedData = sendRequester.sendRequest({ 
   url: "https://api.example.com/data?format=gzip" 
 }).result();
 
-const fullData = JSON.parse(strFromU8(gunzipSync(compressedData)));
+const raw = text(resp);
+const compressed = gzipSync(strToU8(raw), { level: 9 });
+const compressedBase64 = fromByteArray(compressed);
+
+const compressedBytes = toByteArray(compressedBase64);
+const fullData = JSON.parse(strFromU8(gunzipSync(compressedBytes)));
 // Now you can work with the full dataset despite the 25KB limit
 ```
 
