@@ -1,9 +1,11 @@
-import { 
+import {
 	bytesToHex,
 	cre,
+	EVMClient,
 	getNetwork,
 	type HTTPPayload,
 	hexToBase64,
+	HTTPCapability,
 	Runner,
 	type Runtime,
 	TxStatus,
@@ -50,7 +52,7 @@ const safeJsonStringify = (obj: any): string =>
 
 const submitBankInstruction = (
 	runtime: Runtime<Config>,
-	evmClient: cre.capabilities.EVMClient,
+	evmClient: EVMClient,
 	instructionType: number,
 	account: string,
 	amount: bigint,
@@ -112,7 +114,7 @@ const submitBankInstruction = (
 	return txHashHex
 }
 
-const processBankInstruction = (runtime: Runtime<Config>, evmClient: cre.capabilities.EVMClient, swiftData: SWIFTPayload): string => {
+const processBankInstruction = (runtime: Runtime<Config>, evmClient: EVMClient, swiftData: SWIFTPayload): string => {
 	runtime.log(`Processing ${swiftData.instructionCode} instruction from bank: ${swiftData.bankReference}`)
 
 	// Convert amount from string to scaled bigint (e.g., "1000.00" -> 1000000000000000000000)
@@ -142,7 +144,7 @@ const processBankInstruction = (runtime: Runtime<Config>, evmClient: cre.capabil
 	return `${swiftData.instructionCode} instruction processed: ${swiftData.amount} ${swiftData.currency}`
 }
 
-const onHTTPTrigger = (runtime: Runtime<Config>, evmClient: cre.capabilities.EVMClient, payload: HTTPPayload): string => {
+const onHTTPTrigger = (runtime: Runtime<Config>, evmClient: EVMClient, payload: HTTPPayload): string => {
 	runtime.log('Raw HTTP trigger received')
 
 	// Require payload
@@ -169,7 +171,7 @@ const onHTTPTrigger = (runtime: Runtime<Config>, evmClient: cre.capabilities.EVM
 }
 
 const initWorkflow = (config: Config) => {
-	const httpTrigger = new cre.capabilities.HTTPCapability()
+	const httpTrigger = new HTTPCapability()
 	
 	// Initialize EVM client for the configured chain
 	const network = getNetwork({
@@ -184,12 +186,11 @@ const initWorkflow = (config: Config) => {
 		)
 	}
 
-	const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
+	const evmClient = new EVMClient(network.chainSelector.selector)
 
 	return [
-		cre.handler(httpTrigger.trigger({}), (runtime, payload) => 
-			onHTTPTrigger(runtime, evmClient, payload)
-		),
+		cre.handler(httpTrigger.trigger({}), (runtime: Runtime<Config>, payload: HTTPPayload) =>
+			onHTTPTrigger(runtime, evmClient, payload)),
 	]
 }
 
