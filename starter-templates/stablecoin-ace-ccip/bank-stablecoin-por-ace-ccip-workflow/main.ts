@@ -1,14 +1,17 @@
-import { 
+import {
 	bytesToHex,
+	consensusIdenticalAggregation,
 	cre,
+	EVMClient,
 	getNetwork,
 	type HTTPPayload,
 	hexToBase64,
+	HTTPClient,
+	HTTPCapability,
 	Runner,
 	type Runtime,
 	type NodeRuntime,
 	TxStatus,
-	consensusMedianAggregation,
 } from '@chainlink/cre-sdk'
 import { encodeAbiParameters, parseAbiParameters, encodeFunctionData, decodeFunctionResult, getAddress, parseUnits } from 'viem'
 import { z } from 'zod'
@@ -32,6 +35,8 @@ const configSchema = z.object({
 })
 
 type Config = z.infer<typeof configSchema>
+
+type PorReserveData = { totalReserve: number; lastUpdated: string }
 
 // ========================================
 // PAYLOAD SCHEMA
@@ -99,7 +104,7 @@ const validateProofOfReserve = (
 
 	// For mock data (file:// URL), use hardcoded values
 	// In production, this would fetch from a real PoR API endpoint
-	let reserveData: { totalReserve: number; lastUpdated: string }
+	let reserveData: PorReserveData
 
 	if (config.porApiUrl.startsWith('file://')) {
 		// Mock PoR data (matching mock-por-response.json)
@@ -111,8 +116,8 @@ const validateProofOfReserve = (
 	} else {
 		// Fetch from real PoR API in node mode
 		reserveData = runtime.runInNodeMode(
-			(nodeRuntime: NodeRuntime) => {
-				const httpClient = new cre.capabilities.HTTPClient()
+			(nodeRuntime: NodeRuntime<Config>) => {
+				const httpClient = new HTTPClient()
 				const response = httpClient.sendRequest(nodeRuntime, {
 					url: config.porApiUrl,
 					method: 'GET',
@@ -124,7 +129,7 @@ const validateProofOfReserve = (
 					lastUpdated: data.lastUpdated,
 				}
 			},
-			consensusMedianAggregation()
+			consensusIdenticalAggregation<PorReserveData>(),
 		)().result()
 	}
 
@@ -163,7 +168,7 @@ const validateProofOfReserve = (
  */
 const mintWithACE = (
 	runtime: Runtime<Config>,
-	evmClient: cre.capabilities.EVMClient,
+	evmClient: EVMClient,
 	beneficiary: string,
 	mintRecipient: string,
 	amount: bigint,
@@ -231,13 +236,13 @@ const mintWithACE = (
 	// We need to check the actual execution result from Forwarder events
 	// For now, check if txStatus is success and errorMessage is empty
 	if (txStatus !== TxStatus.SUCCESS) {
-		const errorMsg = resp.errorMessage || txStatus
-		
+		const errorMsg = resp.errorMessage ?? String(txStatus)
+
 		// Check if it's a PolicyRunRejected error
 		if (errorMsg.includes('PolicyRunRejected') || errorMsg.includes('blacklisted')) {
 			throw new Error(`[ACE REJECTED] Address ${beneficiary} is blacklisted`)
 		}
-		
+
 		throw new Error(`Failed to mint: ${errorMsg}`)
 	}
 
@@ -265,7 +270,7 @@ const mintWithACE = (
  */
 const transferWithACE = (
 	runtime: Runtime<Config>,
-	evmClient: cre.capabilities.EVMClient,
+	evmClient: EVMClient,
 	sender: string,
 	beneficiary: string,
 	amount: bigint,
@@ -322,13 +327,13 @@ const transferWithACE = (
 	const txStatus = resp.txStatus
 
 	if (txStatus !== TxStatus.SUCCESS) {
-		const errorMsg = resp.errorMessage || txStatus
-		
+		const errorMsg = resp.errorMessage ?? String(txStatus)
+
 		// Check if it's a PolicyRunRejected error
 		if (errorMsg.includes('PolicyRunRejected') || errorMsg.includes('blacklisted')) {
 			throw new Error(`[ACE REJECTED] Beneficiary ${beneficiary} is blacklisted`)
 		}
-		
+
 		throw new Error(`Failed to initiate CCIP transfer: ${errorMsg}`)
 	}
 
@@ -344,7 +349,7 @@ const transferWithACE = (
 // ========================================
 // HTTP TRIGGER HANDLER
 // ========================================
-const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): object => {
+const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload) => {
 	runtime.log('=== Phase 3: PoR + ACE + CCIP Workflow ===')
 
 	// Require payload
@@ -375,7 +380,7 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): object =
 			throw new Error('Sepolia network not found')
 		}
 
-		const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector)
+		const evmClient = new EVMClient(network.chainSelector.selector)
 
 		// Convert amount to wei
 		const amountWei = parseUnits(parsedPayload.amount, runtime.config.decimals)
@@ -510,7 +515,7 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): object =
 		runtime.log(`   Verify on-chain to confirm actual results`)
 		runtime.log(`\nResult: ${safeJsonStringify(result)}`)
 		
-		return JSON.stringify(result)
+		return result
 
 	} catch (error: any) {
 		runtime.log(`❌ Workflow error: ${error.message}`)
@@ -522,7 +527,7 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): object =
 // WORKFLOW INITIALIZATION
 // ========================================
 const initWorkflow = (config: Config) => {
-	const httpTrigger = new cre.capabilities.HTTPCapability()
+	const httpTrigger = new HTTPCapability()
 
 	return [
 		cre.handler(httpTrigger.trigger({}), onHTTPTrigger),
