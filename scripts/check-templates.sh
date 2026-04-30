@@ -307,6 +307,28 @@ process.stdout.write(deps['@chainlink/cre-sdk'] || 'unknown');
     return 0
   fi
 
+  # 2b. npm install in template contracts/ when present (generated bindings import viem / cre-sdk).
+  local contracts_dir="$REPO_ROOT/$template_dir/contracts"
+  if [[ -f "$contracts_dir/package.json" ]]; then
+    vlog "    Installing contracts dependencies..."
+    cd "$contracts_dir"
+    local _contracts_rel="${contracts_dir#"$REPO_ROOT/"}"
+    if git -C "$REPO_ROOT" ls-files --error-unmatch "$_contracts_rel/package-lock.json" &>/dev/null; then
+      cp package-lock.json package-lock.json.__cre_bak
+      LOCKFILE_BACKUPS+=("$(pwd)/package-lock.json.__cre_bak:$(pwd)/package-lock.json")
+    else
+      GENERATED_LOCKFILES+=("$(pwd)/package-lock.json")
+    fi
+    if ! run_captured _out npm install --no-audit --fund=false; then
+      printf '%s' "$_out" > "$_FAIL_OUT"
+      info "    ❌ npm install (contracts) failed"
+      record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "npm install (contracts)" "$_FAIL_OUT"
+      cd "$abs_wf"
+      return 0
+    fi
+    cd "$abs_wf"
+  fi
+
   # 3. Capture resolved SDK version
   if [[ -f "node_modules/@chainlink/cre-sdk/package.json" ]]; then
     sdk_resolved=$(node -e \
@@ -334,9 +356,17 @@ process.stdout.write(deps['@chainlink/cre-sdk'] || 'unknown');
   fi
 
   # 5. cre-compile (if main.ts exists)
+  # Prefer `bun x` so the Bun runtime is used explicitly (cre-compile's bin uses a bun shebang;
+  # `npx` on some Linux/npm combinations does not invoke it reliably).
   if [[ -f "main.ts" ]]; then
     vlog "    Running cre-compile..."
-    if ! run_captured _out npx --no cre-compile main.ts; then
+    local _compile_cmd
+    if command -v bun >/dev/null 2>&1; then
+      _compile_cmd=(bun x cre-compile main.ts)
+    else
+      _compile_cmd=(npx --no cre-compile main.ts)
+    fi
+    if ! run_captured _out "${_compile_cmd[@]}"; then
       printf '%s' "$_out" > "$_FAIL_OUT"
       info "    ❌ cre-compile failed (SDK $sdk_resolved)"
       record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "cre-compile" "$_FAIL_OUT"

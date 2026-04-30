@@ -49,6 +49,11 @@ jobs:
         with:
           node-version: '22'
 
+      # cre-compile is shipped with a bun shebang; npx invokes it as /usr/bin/env bun.
+      # Match local dev machines where Bun is installed alongside Node.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
       # Cache Go module downloads. Keyed on all go.sum files so any new module
       # version busts the cache while unchanged templates stay fast.
       - name: Cache Go modules
