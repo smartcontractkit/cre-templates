@@ -36,7 +36,7 @@ jobs:
       # GOTOOLCHAIN=auto lets Go download the exact toolchain declared in go.mod
       # (e.g. "toolchain go1.24.10") if it differs from the installed version.
       - name: Setup Go
-        uses: actions/setup-go@v5 # TODO: pin to a specific commit SHA
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: 'stable'
           cache: false # cache managed explicitly below
