@@ -30966,8 +30966,7 @@ var onCronTrigger = (runtime3, _payload) => {
   const defaults = runtime3.config.marketDefaults;
   const network495 = getNetwork({
     chainFamily: "evm",
-    chainSelectorName: evmConfig.chainSelectorName,
-    isTestnet: true
+    chainSelectorName: evmConfig.chainSelectorName
   });
   if (!network495)
     throw new Error(`Network not found: ${evmConfig.chainSelectorName}`);
@@ -30988,6 +30987,9 @@ var onCronTrigger = (runtime3, _payload) => {
   });
   if (resp.txStatus !== TxStatus.SUCCESS) {
     throw new Error(`Create market TX failed: ${resp.errorMessage || resp.txStatus}`);
+  }
+  if (!resp.txHash) {
+    runtime3.log("Warning: transaction succeeded but no tx hash returned");
   }
   const txHash = bytesToHex(resp.txHash || new Uint8Array(32));
   runtime3.log(`Market created! ID: ${nextMarketId}, TX: ${txHash}`);
