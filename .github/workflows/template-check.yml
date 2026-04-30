@@ -1,0 +1,127 @@
+name: Template Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Non-blocking informational check — never gates merges.
+# Runs only against templates changed in the PR.
+# Failures are reported via a PR comment (see template-check-comment.yml).
+#
+# Checks performed per template:
+#   TypeScript: YAML validation, npm install, typecheck, cre-compile to WASM
+#   Go:         YAML validation, go mod verify, go vet, go build (GOOS=wasip1 GOARCH=wasm)
+#
+# The SDK version used is captured from the installed package (TS) or go.mod (Go)
+# and included in the PR comment so range-vs-resolved mismatches are visible.
+
+permissions:
+  contents: read
+
+jobs:
+  template-check:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0 # full history needed for git diff against base branch
+
+      # Go is required for Go template builds (GOOS=wasip1 GOARCH=wasm).
+      # GOTOOLCHAIN=auto lets Go download the exact toolchain declared in go.mod
+      # (e.g. "toolchain go1.24.10") if it differs from the installed version.
+      - name: Setup Go
+        uses: actions/setup-go@v5 # TODO: pin to a specific commit SHA
+        with:
+          go-version: 'stable'
+          cache: false # cache managed explicitly below
+        env:
+          GOTOOLCHAIN: auto
+
+      # Node + npm are required for TypeScript template checks.
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      # Cache Go module downloads. Keyed on all go.sum files so any new module
+      # version busts the cache while unchanged templates stay fast.
+      - name: Cache Go modules
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-templates-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-templates-
+
+      # Cache npm package downloads. Multiple templates sharing the same
+      # @chainlink/cre-sdk version (e.g. ^1.5.0) will hit the cache after
+      # the first install, avoiding repeated network downloads.
+      - name: Cache npm
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-templates-${{ hashFiles('**/package.json') }}
+          restore-keys: ${{ runner.os }}-npm-templates-
+
+      - name: Run template checks
+        id: template-check
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          RESULTS_FILE: /tmp/template-results.json
+          GOTOOLCHAIN: auto
+        run: |
+          set +e
+          OUTPUT=$(./scripts/check-templates.sh 2>&1)
+          EXIT_CODE=$?
+          set -e
+
+          echo "$OUTPUT" > /tmp/template-check-output.txt
+
+          # Surface output in the Actions log regardless of pass/fail
+          echo "$OUTPUT"
+
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Save results for comment workflow
+        if: always()
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          EXIT_CODE: ${{ steps.template-check.outputs.exit_code || '0' }}
+        run: |
+          mkdir -p /tmp/check-results
+          printf '%s' "$PR_NUMBER" > /tmp/check-results/pr-number.txt
+          printf '%s' "$HEAD_REF"  > /tmp/check-results/head-ref.txt
+          printf '%s' "$EXIT_CODE" > /tmp/check-results/exit-code.txt
+          [[ -f /tmp/template-check-output.txt ]] \
+            && cp /tmp/template-check-output.txt /tmp/check-results/output.txt || true
+          [[ -f /tmp/template-results.json ]] \
+            && cp /tmp/template-results.json /tmp/check-results/results.json || true
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: template-check-results
+          path: /tmp/check-results/
+          retention-days: 7
+
+      # Always exit 0 — this job is informational, not a merge gate.
+      - name: Report result (non-blocking)
+        if: always()
+        run: |
+          EXIT_CODE="${{ steps.template-check.outputs.exit_code || '0' }}"
+          if [[ "$EXIT_CODE" == "0" ]]; then
+            echo "✅ All changed templates passed."
+          else
+            echo "⚠️  Some templates failed — see PR comment for details."
+            echo "This check is informational and does not block merging."
+          fi
+          exit 0
