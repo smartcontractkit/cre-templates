@@ -20,6 +20,12 @@ import {
 
 export interface DecodedLog<T> extends Omit<EVMLog, 'data'> { data: T }
 
+const encodeTopicValue = (t: Hex | Hex[] | null): string[] => {
+  if (t == null) return []
+  if (Array.isArray(t)) return t.map(hexToBase64)
+  return [hexToBase64(t)]
+}
+
 
 
 
@@ -1082,7 +1088,7 @@ export class DataFeedsCache {
     runtime: Runtime<unknown>,
     dataIds: readonly `0x${string}`[],
     descriptions: readonly string[],
-    decimalsMatrix: readonly readonly number[][],
+    decimalsMatrix: readonly (readonly number[])[],
     workflowMetadata: readonly { allowedSender: `0x${string}`; allowedWorkflowOwner: `0x${string}`; allowedWorkflowName: `0x${string}` }[],
     gasConfig?: { gasLimit?: string },
   ) {
@@ -1238,7 +1244,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'AnswerUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1250,7 +1256,7 @@ export class DataFeedsCache {
         eventName: 'AnswerUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1264,7 +1270,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1288,7 +1294,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as AnswerUpdatedDecoded }
@@ -1309,7 +1315,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'BundleFeedConfigSet' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1320,7 +1326,7 @@ export class DataFeedsCache {
         eventName: 'BundleFeedConfigSet' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1333,7 +1339,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1357,7 +1363,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as BundleFeedConfigSetDecoded }
@@ -1378,7 +1384,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'BundleReportUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1390,7 +1396,7 @@ export class DataFeedsCache {
         eventName: 'BundleReportUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1404,7 +1410,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1428,7 +1434,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as BundleReportUpdatedDecoded }
@@ -1449,7 +1455,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'DecimalFeedConfigSet' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1460,7 +1466,7 @@ export class DataFeedsCache {
         eventName: 'DecimalFeedConfigSet' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1473,7 +1479,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1497,7 +1503,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as DecimalFeedConfigSetDecoded }
@@ -1518,7 +1524,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'DecimalReportUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1531,7 +1537,7 @@ export class DataFeedsCache {
         eventName: 'DecimalReportUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1546,7 +1552,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1570,7 +1576,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as DecimalReportUpdatedDecoded }
@@ -1591,7 +1597,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'FeedAdminSet' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1603,7 +1609,7 @@ export class DataFeedsCache {
         eventName: 'FeedAdminSet' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1617,7 +1623,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1641,7 +1647,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as FeedAdminSetDecoded }
@@ -1662,7 +1668,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'FeedConfigRemoved' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1673,7 +1679,7 @@ export class DataFeedsCache {
         eventName: 'FeedConfigRemoved' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1686,7 +1692,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1710,7 +1716,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as FeedConfigRemovedDecoded }
@@ -1731,7 +1737,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'InvalidUpdatePermission' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1742,7 +1748,7 @@ export class DataFeedsCache {
         eventName: 'InvalidUpdatePermission' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1755,7 +1761,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1779,7 +1785,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as InvalidUpdatePermissionDecoded }
@@ -1800,7 +1806,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'NewRound' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1812,7 +1818,7 @@ export class DataFeedsCache {
         eventName: 'NewRound' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1826,7 +1832,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1850,7 +1856,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as NewRoundDecoded }
@@ -1871,7 +1877,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'OwnershipTransferRequested' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1883,7 +1889,7 @@ export class DataFeedsCache {
         eventName: 'OwnershipTransferRequested' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1897,7 +1903,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1921,7 +1927,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferRequestedDecoded }
@@ -1942,7 +1948,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'OwnershipTransferred' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1954,7 +1960,7 @@ export class DataFeedsCache {
         eventName: 'OwnershipTransferred' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1968,7 +1974,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1992,7 +1998,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferredDecoded }
@@ -2013,7 +2019,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'ProxyDataIdRemoved' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -2025,7 +2031,7 @@ export class DataFeedsCache {
         eventName: 'ProxyDataIdRemoved' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -2039,7 +2045,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -2063,7 +2069,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ProxyDataIdRemovedDecoded }
@@ -2084,7 +2090,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'ProxyDataIdUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -2096,7 +2102,7 @@ export class DataFeedsCache {
         eventName: 'ProxyDataIdUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -2110,7 +2116,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -2134,7 +2140,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ProxyDataIdUpdatedDecoded }
@@ -2155,7 +2161,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'StaleBundleReport' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -2166,7 +2172,7 @@ export class DataFeedsCache {
         eventName: 'StaleBundleReport' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -2179,7 +2185,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -2203,7 +2209,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as StaleBundleReportDecoded }
@@ -2224,7 +2230,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'StaleDecimalReport' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -2235,7 +2241,7 @@ export class DataFeedsCache {
         eventName: 'StaleDecimalReport' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -2248,7 +2254,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -2272,7 +2278,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as StaleDecimalReportDecoded }
@@ -2293,7 +2299,7 @@ export class DataFeedsCache {
         abi: DataFeedsCacheABI,
         eventName: 'TokenRecovered' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -2305,7 +2311,7 @@ export class DataFeedsCache {
         eventName: 'TokenRecovered' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -2319,7 +2325,7 @@ export class DataFeedsCache {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -2343,7 +2349,7 @@ export class DataFeedsCache {
     const decoded = decodeEventLog({
       abi: DataFeedsCacheABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as TokenRecoveredDecoded }

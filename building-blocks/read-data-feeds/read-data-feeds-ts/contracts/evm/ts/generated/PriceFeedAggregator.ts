@@ -20,6 +20,12 @@ import {
 
 export interface DecodedLog<T> extends Omit<EVMLog, 'data'> { data: T }
 
+const encodeTopicValue = (t: Hex | Hex[] | null): string[] => {
+  if (t == null) return []
+  if (Array.isArray(t)) return t.map(hexToBase64)
+  return [hexToBase64(t)]
+}
+
 
 
 
@@ -641,7 +647,7 @@ export class PriceFeedAggregator {
         abi: PriceFeedAggregatorABI,
         eventName: 'AnswerUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -653,7 +659,7 @@ export class PriceFeedAggregator {
         eventName: 'AnswerUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -667,7 +673,7 @@ export class PriceFeedAggregator {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -691,7 +697,7 @@ export class PriceFeedAggregator {
     const decoded = decodeEventLog({
       abi: PriceFeedAggregatorABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as AnswerUpdatedDecoded }
@@ -712,7 +718,7 @@ export class PriceFeedAggregator {
         abi: PriceFeedAggregatorABI,
         eventName: 'NewRound' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -724,7 +730,7 @@ export class PriceFeedAggregator {
         eventName: 'NewRound' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -738,7 +744,7 @@ export class PriceFeedAggregator {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -762,7 +768,7 @@ export class PriceFeedAggregator {
     const decoded = decodeEventLog({
       abi: PriceFeedAggregatorABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as NewRoundDecoded }
@@ -783,7 +789,7 @@ export class PriceFeedAggregator {
         abi: PriceFeedAggregatorABI,
         eventName: 'OwnershipTransferRequested' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -795,7 +801,7 @@ export class PriceFeedAggregator {
         eventName: 'OwnershipTransferRequested' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -809,7 +815,7 @@ export class PriceFeedAggregator {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -833,7 +839,7 @@ export class PriceFeedAggregator {
     const decoded = decodeEventLog({
       abi: PriceFeedAggregatorABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferRequestedDecoded }
@@ -854,7 +860,7 @@ export class PriceFeedAggregator {
         abi: PriceFeedAggregatorABI,
         eventName: 'OwnershipTransferred' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -866,7 +872,7 @@ export class PriceFeedAggregator {
         eventName: 'OwnershipTransferred' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -880,7 +886,7 @@ export class PriceFeedAggregator {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -904,7 +910,7 @@ export class PriceFeedAggregator {
     const decoded = decodeEventLog({
       abi: PriceFeedAggregatorABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferredDecoded }

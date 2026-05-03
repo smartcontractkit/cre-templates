@@ -1,0 +1,30 @@
+kind: starter-template
+id: sports-resolution-ts
+projectDir: .
+title: "Sports Resolution (Bring Your Own Data)"
+description: "Resolve sports game outcomes on-chain: EVM log trigger fires on SettlementRequested, HTTP fetches to 2–3 sports APIs with BFT consensus per source, majority/unanimous aggregation, signed report written back on-chain."
+language: typescript
+category: workflow
+capabilities:
+  - log-trigger
+  - http
+  - chain-read
+  - chain-write
+tags:
+  - prediction-market
+  - sports
+  - bring-your-own-data
+  - resolution
+  - event-driven
+workflows:
+  - dir: game-resolution
+postInit: |
+  Update game-resolution/config.staging.json with your SportsMarket contract address
+  and sports API base URLs. Install both packages with:
+    cd contracts && bun install && cd ..
+    cd game-resolution && bun install && cd ..
+  Then simulate:
+    cre workflow simulate game-resolution --target staging-settings \
+      --non-interactive --trigger-index 0 \
+      --evm-tx-hash <TX_THAT_EMITTED_SETTLEMENT_REQUESTED> \
+      --evm-event-index 0
