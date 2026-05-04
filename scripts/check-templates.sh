@@ -61,7 +61,7 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 RESULTS_FILE="${RESULTS_FILE:-/tmp/template-results.json}"
 JSONL_FILE=$(mktemp /tmp/cre-check-XXXXXX.jsonl)
 
-# Lockfile tracking — populated by check_ts_workflow before each npm install.
+# Lockfile tracking — populated by check_ts_workflow before each bun install.
 # Backed-up lockfiles are restored; generated ones are deleted on exit.
 LOCKFILE_BACKUPS=()    # "backup_path:original_path" pairs
 GENERATED_LOCKFILES=() # paths to delete on exit
@@ -287,42 +287,45 @@ process.stdout.write(deps['@chainlink/cre-sdk'] || 'unknown');
     vlog "    ✅ workflow.yaml valid"
   fi
 
-  # 2. npm install — track package-lock.json so we can restore it on exit.
+  # 2. bun install — track lockfiles so we can restore them on exit.
   # Use git to distinguish committed lockfiles (restore) from untracked/absent
   # ones (delete). This correctly handles leftovers from previous script runs.
   local _wf_rel="${abs_wf#"$REPO_ROOT/"}"
-  if git -C "$REPO_ROOT" ls-files --error-unmatch "$_wf_rel/package-lock.json" &>/dev/null; then
-    # File is committed to git — back up its current content to restore later
-    cp package-lock.json package-lock.json.__cre_bak
-    LOCKFILE_BACKUPS+=("$(pwd)/package-lock.json.__cre_bak:$(pwd)/package-lock.json")
-  else
-    # File is not tracked — mark for deletion after the check
-    GENERATED_LOCKFILES+=("$(pwd)/package-lock.json")
-  fi
+  local lockfile
+  for lockfile in package-lock.json bun.lock; do
+    if git -C "$REPO_ROOT" ls-files --error-unmatch "$_wf_rel/$lockfile" &>/dev/null; then
+      cp "$lockfile" "${lockfile}.__cre_bak"
+      LOCKFILE_BACKUPS+=("$(pwd)/${lockfile}.__cre_bak:$(pwd)/$lockfile")
+    else
+      GENERATED_LOCKFILES+=("$(pwd)/$lockfile")
+    fi
+  done
   vlog "    Installing dependencies (SDK range: $sdk_range)..."
-  if ! run_captured _out npm install --no-audit --fund=false; then
+  if ! run_captured _out bun install; then
     printf '%s' "$_out" > "$_FAIL_OUT"
-    info "    ❌ npm install failed"
-    record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "npm install" "$_FAIL_OUT"
+    info "    ❌ bun install failed"
+    record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "bun install" "$_FAIL_OUT"
     return 0
   fi
 
-  # 2b. npm install in template contracts/ when present (generated bindings import viem / cre-sdk).
+  # 2b. bun install in template contracts/ when present (generated bindings import viem / cre-sdk).
   local contracts_dir="$REPO_ROOT/$template_dir/contracts"
   if [[ -f "$contracts_dir/package.json" ]]; then
     vlog "    Installing contracts dependencies..."
     cd "$contracts_dir"
     local _contracts_rel="${contracts_dir#"$REPO_ROOT/"}"
-    if git -C "$REPO_ROOT" ls-files --error-unmatch "$_contracts_rel/package-lock.json" &>/dev/null; then
-      cp package-lock.json package-lock.json.__cre_bak
-      LOCKFILE_BACKUPS+=("$(pwd)/package-lock.json.__cre_bak:$(pwd)/package-lock.json")
-    else
-      GENERATED_LOCKFILES+=("$(pwd)/package-lock.json")
-    fi
-    if ! run_captured _out npm install --no-audit --fund=false; then
+    for lockfile in package-lock.json bun.lock; do
+      if git -C "$REPO_ROOT" ls-files --error-unmatch "$_contracts_rel/$lockfile" &>/dev/null; then
+        cp "$lockfile" "${lockfile}.__cre_bak"
+        LOCKFILE_BACKUPS+=("$(pwd)/${lockfile}.__cre_bak:$(pwd)/$lockfile")
+      else
+        GENERATED_LOCKFILES+=("$(pwd)/$lockfile")
+      fi
+    done
+    if ! run_captured _out bun install; then
       printf '%s' "$_out" > "$_FAIL_OUT"
-      info "    ❌ npm install (contracts) failed"
-      record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "npm install (contracts)" "$_FAIL_OUT"
+      info "    ❌ bun install (contracts) failed"
+      record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "bun install (contracts)" "$_FAIL_OUT"
       cd "$abs_wf"
       return 0
     fi
@@ -344,7 +347,7 @@ process.stdout.write(deps['@chainlink/cre-sdk'] || 'unknown');
     2>/dev/null || echo "no")
   if [[ "$has_typecheck" == "yes" ]]; then
     vlog "    Running typecheck..."
-    if ! run_captured _out npm run typecheck --silent; then
+    if ! run_captured _out bun run typecheck; then
       printf '%s' "$_out" > "$_FAIL_OUT"
       info "    ❌ typecheck failed (SDK $sdk_resolved)"
       record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "typecheck" "$_FAIL_OUT"
@@ -356,17 +359,9 @@ process.stdout.write(deps['@chainlink/cre-sdk'] || 'unknown');
   fi
 
   # 5. cre-compile (if main.ts exists)
-  # Prefer `bun x` so the Bun runtime is used explicitly (cre-compile's bin uses a bun shebang;
-  # `npx` on some Linux/npm combinations does not invoke it reliably).
   if [[ -f "main.ts" ]]; then
     vlog "    Running cre-compile..."
-    local _compile_cmd
-    if command -v bun >/dev/null 2>&1; then
-      _compile_cmd=(bun x cre-compile main.ts)
-    else
-      _compile_cmd=(npx --no cre-compile main.ts)
-    fi
-    if ! run_captured _out "${_compile_cmd[@]}"; then
+    if ! run_captured _out bunx cre-compile main.ts; then
       printf '%s' "$_out" > "$_FAIL_OUT"
       info "    ❌ cre-compile failed (SDK $sdk_resolved)"
       record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "cre-compile" "$_FAIL_OUT"

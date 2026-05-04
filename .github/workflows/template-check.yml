@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+concurrency:
+  group: template-compat-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 # Non-blocking informational check — never gates merges.
 # Runs only against templates changed in the PR.
 # Failures are reported via a PR comment (see template-check-comment.yml).
