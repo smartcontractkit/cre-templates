@@ -49,9 +49,9 @@ jobs:
 
       # Node + npm are required for TypeScript template checks.
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
 
       # cre-compile is shipped with a bun shebang; npx invokes it as /usr/bin/env bun.
       # Match local dev machines where Bun is installed alongside Node.
@@ -116,7 +116,7 @@ jobs:
 
       - name: Upload results artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: template-check-results
           path: /tmp/check-results/
