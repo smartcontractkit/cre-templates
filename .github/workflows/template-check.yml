@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # full history needed for git diff against base branch
 
@@ -40,7 +40,7 @@ jobs:
       # GOTOOLCHAIN=auto lets Go download the exact toolchain declared in go.mod
       # (e.g. "toolchain go1.24.10") if it differs from the installed version.
       - name: Setup Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        uses: actions/setup-go@v5
         with:
           go-version: 'stable'
           cache: false # cache managed explicitly below
@@ -49,7 +49,7 @@ jobs:
 
       # Node + npm are required for TypeScript template checks.
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 
@@ -61,7 +61,7 @@ jobs:
       # Cache Go module downloads. Keyed on all go.sum files so any new module
       # version busts the cache while unchanged templates stay fast.
       - name: Cache Go modules
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@v5
         with:
           path: |
             ~/go/pkg/mod
@@ -73,7 +73,7 @@ jobs:
       # @chainlink/cre-sdk version (e.g. ^1.5.0) will hit the cache after
       # the first install, avoiding repeated network downloads.
       - name: Cache npm
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-templates-${{ hashFiles('**/package.json') }}
@@ -116,7 +116,7 @@ jobs:
 
       - name: Upload results artifact
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: template-check-results
           path: /tmp/check-results/
