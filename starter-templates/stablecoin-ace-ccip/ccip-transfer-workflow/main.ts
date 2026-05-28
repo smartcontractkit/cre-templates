@@ -1,9 +1,11 @@
-import { 
+import {
 	bytesToHex,
 	cre,
+	EVMClient,
 	getNetwork,
 	type HTTPPayload,
 	hexToBase64,
+	HTTPCapability,
 	Runner,
 	type Runtime,
 	TxStatus,
@@ -53,7 +55,7 @@ const safeJsonStringify = (obj: any): string =>
 
 const submitCCIPTransfer = (
 	runtime: Runtime<Config>,
-	evmClient: cre.capabilities.EVMClient,
+	evmClient: EVMClient,
 	consumerAddress: string,
 	sender: string,
 	recipient: string,
@@ -115,7 +117,7 @@ const submitCCIPTransfer = (
 	return txHashHex
 }
 
-const processCCIPTransfer = (runtime: Runtime<Config>, evmClient: cre.capabilities.EVMClient, transferData: TransferPayload): string => {
+const processCCIPTransfer = (runtime: Runtime<Config>, evmClient: EVMClient, transferData: TransferPayload): string => {
 	runtime.log(`Processing CCIP transfer from bank: ${transferData.bankReference}`)
 
 	// Look up source and destination chain configs
@@ -183,7 +185,7 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
 			throw new Error(`Network not found for source chain: ${transferData.sourceChain}`)
 		}
 
-		const evmClient = new cre.capabilities.EVMClient(sourceNetwork.chainSelector.selector)
+		const evmClient = new EVMClient(sourceNetwork.chainSelector.selector)
 		
 		return processCCIPTransfer(runtime, evmClient, transferData)
 	} catch (error) {
@@ -193,10 +195,12 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
 }
 
 const initWorkflow = (config: Config) => {
-	const httpTrigger = new cre.capabilities.HTTPCapability()
+	const httpTrigger = new HTTPCapability()
 
 	return [
-		cre.handler(httpTrigger.trigger({}), onHTTPTrigger),
+		cre.handler(httpTrigger.trigger({}), (runtime: Runtime<Config>, payload: HTTPPayload) =>
+			onHTTPTrigger(runtime, payload),
+		),
 	]
 }
 

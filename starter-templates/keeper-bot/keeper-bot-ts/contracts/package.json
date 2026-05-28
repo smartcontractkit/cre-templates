@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@chainlink/cre-sdk": "^1.5.0",
+    "@chainlink/cre-sdk": "^1.6.0",
     "viem": "2.34.0"
   }
 }
