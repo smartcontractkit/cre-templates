@@ -14,6 +14,9 @@ import {
   encodeFunctionData,
   encodeAbiParameters,
   parseAbiItem,
+  keccak256,
+  padHex,
+  toBytes,
   type Hex,
   type Address,
   type AbiFunction,
@@ -24,14 +27,14 @@ import { AutomationReceiver } from "../contracts/evm/ts/generated/AutomationRece
 import { IAutomationCompatible } from "../contracts/evm/ts/generated/IAutomationCompatible";
 
 // ─── Config Schema ──────────────────────────────────────────
-export const configSchema = z.object({
+const configSchema = z.object({
   chainSelectorName: z.string(),
   receiverAddress: z.string(),
   targetAddress: z.string(),
   migrationType: z.enum(["CRON", "CUSTOM", "LOG"]),
   // Shared config
-  checkData: z.string().optional().default("0x"),
-  writeGasLimit: z.string().optional().default("500000"),
+  checkData: z.string().optional(),
+  writeGasLimit: z.string().optional(),
   
   // Cron/Custom specific
   schedule: z.string().optional(),
@@ -49,8 +52,27 @@ export const configSchema = z.object({
 });
 type Config = z.infer<typeof configSchema>;
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+type AutomationLog = {
+  index: bigint;
+  timestamp: bigint;
+  txHash: Hex;
+  blockNumber: bigint;
+  blockHash: Hex;
+  source: Address;
+  topics: readonly Hex[];
+  data: Hex;
+};
+
+function assertConfiguredAddress(value: string | undefined, fieldName: string): asserts value is Address {
+  if (!value || value.toLowerCase() === ZERO_ADDRESS) {
+    throw new Error(`${fieldName} must be configured with a deployed contract address`);
+  }
+}
+
 // ─── Utility: Map CRE Log to Automation Log Struct ──────────
-function mapLogToAutomation(log: EVMLog): any {
+function mapLogToAutomation(log: EVMLog): AutomationLog {
   return {
     index: BigInt(log.index || 0),
     timestamp: 0n, 
@@ -63,17 +85,50 @@ function mapLogToAutomation(log: EVMLog): any {
   };
 }
 
+function encodeTopicFilter(value?: string): string[] {
+  if (!value) return [];
+  return [hexToBase64(padHex(value as Hex, { size: 32 }))];
+}
+
+function buildTopicsFilter(config: Config): Array<{ values: string[] }> {
+  if (!config.logTriggerEventSignature) {
+    throw new Error("logTriggerEventSignature is required for LOG migration");
+  }
+
+  const topics: Array<{ values: string[] }> = [
+    { values: [hexToBase64(keccak256(toBytes(config.logTriggerEventSignature)))] },
+  ];
+
+  if (config.topic1 || config.topic2 || config.topic3) {
+    topics.push({ values: encodeTopicFilter(config.topic1) });
+  }
+
+  if (config.topic2 || config.topic3) {
+    topics.push({ values: encodeTopicFilter(config.topic2) });
+  }
+
+  if (config.topic3) {
+    topics.push({ values: encodeTopicFilter(config.topic3) });
+  }
+
+  return topics;
+}
+
 // ─── Handler ────────────────────────────────────────────────
-const onTrigger = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => {
+const runMigration = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => {
   const config = runtime.config;
+  const checkData = (config.checkData ?? "0x") as Hex;
+  const writeGasLimit = config.writeGasLimit ?? "500000";
+  assertConfiguredAddress(config.receiverAddress, "receiverAddress");
+  assertConfiguredAddress(config.targetAddress, "targetAddress");
   runtime.log(`=== Migration Workflow Started: ${config.migrationType} ===`);
 
   const network = getNetwork({ chainFamily: "evm", chainSelectorName: config.chainSelectorName });
   if (!network) throw new Error(`Network not found: ${config.chainSelectorName}`);
 
   const evmClient = new EVMClient(network.chainSelector.selector);
-  const target = new IAutomationCompatible(evmClient, config.targetAddress as Address);
-  const receiver = new AutomationReceiver(evmClient, config.receiverAddress as Address);
+  const target = new IAutomationCompatible(evmClient, config.targetAddress);
+  const receiver = new AutomationReceiver(evmClient, config.receiverAddress);
 
   let performData: Hex = "0x";
   let upkeepNeeded = false;
@@ -94,7 +149,7 @@ const onTrigger = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => {
     
   } else if (config.migrationType === "CUSTOM") {
     runtime.log("Checking custom logic upkeep...");
-    const [needed, data] = target.checkUpkeep(runtime, config.checkData as Hex);
+    const [needed, data] = target.checkUpkeep(runtime, checkData);
     upkeepNeeded = needed;
     performData = data;
     
@@ -107,7 +162,7 @@ const onTrigger = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => {
   } else if (config.migrationType === "LOG") {
     if (!triggerLog) throw new Error("Log data missing for LOG migration");
     runtime.log("Checking log trigger upkeep...");
-    const [needed, data] = target.checkLog(runtime, mapLogToAutomation(triggerLog), config.checkData as Hex);
+    const [needed, data] = target.checkLog(runtime, mapLogToAutomation(triggerLog), checkData);
     upkeepNeeded = needed;
     performData = data;
     
@@ -134,7 +189,7 @@ const onTrigger = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => {
   // Write the report to the Receiver
   runtime.log("Writing report to AutomationReceiver...");
   const writeResult = receiver.writeReport(runtime, reportPayload, {
-    gasLimit: config.writeGasLimit
+    gasLimit: writeGasLimit
   });
 
   if (writeResult.txStatus !== TxStatus.SUCCESS) {
@@ -146,23 +201,31 @@ const onTrigger = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => {
   return txHash;
 };
 
+const onCronTrigger = (runtime: Runtime<Config>): string => {
+  return runMigration(runtime);
+};
+
+const onLogTrigger = (runtime: Runtime<Config>, triggerLog: EVMLog): string => {
+  return runMigration(runtime, triggerLog);
+};
+
 // ─── Workflow Init ──────────────────────────────────────────
-export function initWorkflow(config: Config) {
+function initWorkflow(config: Config) {
   const network = getNetwork({ chainFamily: "evm", chainSelectorName: config.chainSelectorName });
   if (!network) throw new Error(`Network not found: ${config.chainSelectorName}`);
   const evmClient = new EVMClient(network.chainSelector.selector);
 
   if (config.migrationType === "LOG") {
-    // Build topics filter if needed (Topic 0 is always the event hash)
-    // For simplicity in this template, we assume Topic 0 is provided via event signature
+    assertConfiguredAddress(config.logTriggerAddress, "logTriggerAddress");
+
     return [
       cre.handler(
         evmClient.logTrigger({
-          addresses: [hexToBase64(config.logTriggerAddress as Address)],
-          // In a real scenario, you'd build the topics array here
-          // This template uses the basic trigger and lets the user refine in code
+          addresses: [hexToBase64(config.logTriggerAddress)],
+          topics: buildTopicsFilter(config),
+          confidence: "CONFIDENCE_LEVEL_FINALIZED",
         }),
-        onTrigger,
+        onLogTrigger,
       ),
     ];
   } else {
@@ -171,7 +234,7 @@ export function initWorkflow(config: Config) {
     return [
       cre.handler(
         new cre.capabilities.CronCapability().trigger({ schedule: config.schedule }),
-        onTrigger,
+        onCronTrigger,
       ),
     ];
   }
