@@ -1,4 +1,4 @@
-import { cre, type Runtime, type EVMLog, bytesToHex, getNetwork } from "@chainlink/cre-sdk";
+import { type Runtime, type EVMLog, bytesToHex } from "@chainlink/cre-sdk";
 import { IConfig } from "./interfaces/IConfig"
 import { parseAbi, decodeEventLog } from "viem";
 import { sendTelegramMessage } from "./telegramMessageService";
