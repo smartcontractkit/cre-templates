@@ -1,0 +1,31 @@
+{
+  "networks": {
+    "eth": {
+      "chainId": "11155111",
+      "creNetworkConfig": [
+        {
+          "chainFamily": "evm",
+          "chainSelectorName": "ethereum-testnet-sepolia",
+          "isTestnet": true
+        }
+      ],
+      "configContract": "0x4d236Ec82Af6c73835F29BBdc4b34574a0E0FdaE",
+      "targetUserAddress": "0xF1c8170181364DeD1C56c4361DED2eB47f2eef1b",
+      "tokenArr": ["0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"],
+      "tokenMap": {
+        "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238": {
+          "unichainToken": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+          "bridge": "chainlink_ccip"
+        }
+      }
+    }
+  },
+  "unichain": {
+    "chainId": "84532",
+    "unichainDestinationAddress": "0xF1c8170181364DeD1C56c4361DED2eB47f2eef1b",
+    "configContract": "",
+    "chainlinkCCIPSelector": "10344971235874465080"
+  },
+  "telegramMessageApi": "https://api.telegram.org/bot{{TELEGRAM_BOT_ACCESS_TOKEN}}/sendMessage?chat_id={{TELEGRAM_CHAT_ID}}&text={{MESSAGE}}",
+  "acrossApiUrl": "https://testnet.across.to"
+}

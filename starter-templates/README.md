@@ -67,6 +67,10 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 10. **Sports Resolution** — [`./sports-resolution`](./sports-resolution)
     Resolve sports game outcomes on-chain using an EVM log trigger, HTTP data sources, majority/unanimous aggregation, and a signed report write.
 
+11. **Cross Chain Token Aggregator** — [`./cross-chain-token-aggregator`](./cross-chain-token-aggregator)
+   Let users aggregate their tokens received on scattered chains to a single chain by monitoring the Transfer event of ERC-20 compatible token, powered by event-driven CRE workflows, Across and Chainlink CCIP Bridge.
+    
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License

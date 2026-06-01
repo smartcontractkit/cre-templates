@@ -1,0 +1,26 @@
+kind: starter-template
+id: cross-chain-token-aggregator-ts
+projectDir: .
+title: "Cross Chain Token Aggregator (TypeScript)"
+description: "Monitor on-chain events for token transfer, and routes the token to the user desired address via the configured bridge (chainlink ccip or across)"
+language: typescript
+category: workflow
+capabilities:
+  - log-trigger
+  - chain-read
+  - chain-write
+  - http
+  - ccip
+tags:
+  - cross-chain
+  - bridging
+  - event-driven
+  - ccip
+  - defi
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-testnet-sepolia-base-1
+workflows:
+  - dir: my-workflow
+postInit: |
+  Deploy the Uniflow contract and update config for runtime and secrets accordingly. Refer to README.md for details.
