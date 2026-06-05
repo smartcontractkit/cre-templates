@@ -5,10 +5,15 @@ This template provides a modernized, type-safe path for migrating existing **Cha
 ## Architecture
 
 This migration uses a "Bridge" pattern:
-1. **AutomationReceiver.sol**: A generic bridge contract deployed once on-chain. It receives CRE reports and forwards the execution to your existing legacy contracts.
-2. **Type-Safe Workflows**: CRE workflows that poll your legacy `checkUpkeep` or `checkLog` functions and trigger the bridge when needed.
+1. **AutomationReceiver.sol**: A bridge contract deployed once on-chain. It receives CRE reports and forwards the execution to your existing legacy contracts. It enforces two independent authorization layers (see [Security Model](#security-model)).
+2. **Workflows**: CRE workflows that poll your legacy `checkUpkeep` or `checkLog` functions and trigger the bridge when needed. The `CUSTOM`/`LOG` paths use generated, type-safe contract bindings; the `CRON` path ABI-encodes a configured function signature at runtime.
 
-**Result: You can usually migrate to CRE without rewriting your original upkeep logic.** If your legacy contract checks `msg.sender`, uses an Automation Forwarder allowlist, or has role-based permissions, authorize the deployed `AutomationReceiver` before relying on the workflow.
+**Result: You can usually migrate to CRE without rewriting your original upkeep logic** — provided your legacy contract lets you re-point who is allowed to call it (see [Compatibility](#compatibility)). If it checks `msg.sender`, uses an Automation Forwarder allowlist, or has role-based permissions, authorize the deployed `AutomationReceiver` there before relying on the workflow.
+
+### Security Model
+The receiver authorizes reports on two separate layers, and **both** apply:
+- **Inbound — who may deliver a report** (`ReceiverTemplate`): the CRE Forwarder address (mandatory, cannot be disabled) plus optional `workflowId` / `workflowName` / `workflowOwner` identity checks.
+- **Outbound — what a report may make the receiver do** (`AutomationReceiver`): a **closed-by-default allowlist** of `(target, function-selector)` pairs. Inbound checks only prove a report came from your workflow; they do **not** constrain the `(target, data)` it carries. Until you allowlist a pair with `setCallAllowed`, the receiver will reject it.
 
 ---
 
@@ -33,18 +38,52 @@ cre init --template=automation-migration-ts --project-name my-automation-migrati
 
 While working directly from this branch, copy or open `starter-templates/automation-migration`.
 
-### 2. Deploy the Bridge
+### 2. Build and Deploy the Bridge
 Deploy `AutomationReceiver.sol` to your target chain. You only need to do this once to support multiple upkeeps.
-- Pass the address of the **CRE Forwarder** for your DON to the constructor.
-- For production, configure workflow identity checks on `ReceiverTemplate` (`setExpectedWorkflowId`, `setExpectedAuthor`, or both) or narrow this bridge to known target contracts and function selectors.
 
-### 3. Configure the Workflow
+The `contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfoundry.sh/) project: a `foundry.toml` and a vendored copy of the only OpenZeppelin files used (`Ownable`, `Context`). No `forge install` or local node is required — just build and deploy:
+
+```bash
+cd contracts/evm
+forge build
+forge test          # 18 tests covering the receiver + permission template
+
+# Deploy, passing the CRE Forwarder address for your DON as the constructor arg
+forge create src/AutomationReceiver.sol:AutomationReceiver \
+  --rpc-url "$RPC_URL" \
+  --private-key "$PRIVATE_KEY" \
+  --constructor-args "$FORWARDER_ADDRESS"
+```
+
+- `FORWARDER_ADDRESS` is the CRE Forwarder for your target network — it is the **only** address allowed to call `onReport`. Look it up in the [CRE documentation](https://docs.chain.link/cre) for your network; do not guess it. A wrong value means the DON's reports are rejected, and it can never be set to `address(0)`.
+- For production, also configure inbound workflow identity checks (`setExpectedWorkflowId`, `setExpectedAuthor`, and/or `setExpectedWorkflowName` — note the name check requires the author check).
+
+### 3. Authorize the Upkeep Call(s)
+The receiver rejects every outbound call until you allowlist it. For each migrated upkeep, allow the exact `(target, selector)` the workflow will invoke:
+
+```bash
+# Custom-logic / log-trigger upkeeps call performUpkeep(bytes)
+cast send "$RECEIVER_ADDRESS" \
+  "setCallAllowed(address,bytes4,bool)" \
+  "$TARGET_ADDRESS" "$(cast sig 'performUpkeep(bytes)')" true \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Time-based upkeeps call your specific function, e.g. performAction(uint256)
+cast send "$RECEIVER_ADDRESS" \
+  "setCallAllowed(address,bytes4,bool)" \
+  "$TARGET_ADDRESS" "$(cast sig 'performAction(uint256)')" true \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+```
+
+The selector must match the function the workflow encodes (`performUpkeep` for `CUSTOM`/`LOG`, or your `targetFunction` for `CRON`). A mismatch makes `onReport` revert with `CallNotAllowed`.
+
+### 4. Configure the Workflow
 Update `my-workflow/config.test.json`:
 - `receiverAddress`: Your deployed `AutomationReceiver`.
 - `targetAddress`: Your existing Automation contract.
 - `migrationType`: `CRON`, `CUSTOM`, or `LOG`.
 - `schedule`: Required for `CRON` and `CUSTOM`.
-- `targetFunction` and `targetInputs`: Required for `CRON`.
+- `targetFunction` and `targetInputs`: Required for `CRON`. These are ABI-encoded at runtime from the config string (e.g. `"performAction(uint256)"`), so unlike the `CUSTOM`/`LOG` paths they are not statically type-checked — a malformed signature or mismatched inputs fails when the workflow runs.
 - `logTriggerAddress`, `logTriggerEventSignature`, and optional `topic1`/`topic2`/`topic3`: Required for `LOG`.
 
 Install workflow dependencies once:
@@ -55,9 +94,11 @@ bun install
 cd ..
 ```
 
-### 4. Run Simulation
+### 5. Run Simulation
+> The workflow throws on startup if `receiverAddress` or `targetAddress` is still the zero address, so configure Step 4 before simulating.
+
 ```bash
-# For Custom Logic
+# For CRON (time-based) or CUSTOM (custom logic) — both run on the cron scheduler
 cre workflow simulate my-workflow --target=test-settings
 
 # For Log Trigger (requires a transaction hash containing the event)
@@ -74,12 +115,39 @@ cre workflow simulate my-workflow \
 ## Technical Details
 
 ### Log Mapping
-Legacy Automation contracts expect a specific `Log` struct in `checkLog`. This template includes a utility that automatically maps the CRE `EVMLog` to this legacy format, ensuring compatibility with your existing on-chain decoding logic.
+Legacy Automation contracts expect a specific `Log` struct in `checkLog`. This template includes a utility (`mapLogToAutomation`) that maps the CRE `EVMLog` into that struct so your existing on-chain decoding logic keeps working.
 
-### Generic Execution
-The `AutomationReceiver` uses `target.call(data)` to execute actions. This means it can handle any function signature, not just `performUpkeep`. This is particularly useful for migrating time-based upkeeps that call custom functions like `performAction(uint256)`.
+> **Limitation:** the CRE log does not carry the block timestamp, so `log.timestamp` is always mapped to `0`. If your `checkLog` relies on `log.timestamp`, read it from another source (e.g. an EVM read of the block) instead.
 
-Because the bridge is generic, production deployments should pair it with explicit authorization: keep the CRE forwarder check enabled, configure expected workflow identity fields, and only grant the receiver permissions that the migrated upkeep needs.
+### Read Finality
+The generated `checkUpkeep` / `checkLog` bindings read at the **last finalized block** so every DON node observes the same state and reaches consensus deterministically. This differs from Automation, which simulates against the chain head. On Ethereum mainnet finality lags the head by ~13 minutes; on most L2s it is seconds. Account for this latency when migrating time-sensitive interval checks.
+
+### Execution
+The `AutomationReceiver` executes `target.call(data)`, so it can drive any function signature — `performUpkeep(bytes)` for custom-logic/log upkeeps, or a custom function like `performAction(uint256)` for time-based ones. Every call is gated by the closed-by-default `(target, selector)` allowlist (Step 3).
+
+The receiver distinguishes two failure modes:
+- **Authorization failure** — a zero target, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
+- **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
+
+### Gas Limit
+`writeGasLimit` (default `"500000"`) caps the on-chain execution. Carry over the `performGasLimit` you tuned for your existing upkeep rather than relying on the default.
+
+---
+
+## Compatibility
+
+Migrating **without redeploying** your upkeep contract requires that contract to let you re-point who is authorized to call it:
+- Contracts that expose a setter for the Automation Forwarder / caller (the recommended Automation pattern) can simply point it at the deployed `AutomationReceiver`.
+- Contracts that **hardcode** the Automation registry/forwarder with no setter, or that have an immutable role for it, cannot be migrated in place and must be redeployed.
+
+After migration, the `msg.sender` your target sees is the `AutomationReceiver` address (not the Automation Forwarder), so authorize that address in whatever permission check your contract uses.
+
+## Out of Scope
+
+- **StreamsLookup / Data Streams upkeeps.** Automation upkeeps that revert `checkUpkeep` with a `StreamsLookup` error and resolve via `checkCallback` are not handled by this template. Migrating them requires fetching the report through the CRE Data Streams capability and feeding it to your callback before writing — a larger change than the three standard upkeep types above.
+- **Off-chain `offchainConfig` / gas-price-threshold controls.** In CRE these are expressed in the workflow, not on the registry.
+
+> **Bindings note:** if you change `AutomationReceiver.sol`, regenerate the TypeScript bindings in `contracts/evm/ts/generated/` and the committed ABI in `contracts/evm/src/abi/`. The workflow itself only uses the generic `writeReport` entrypoint, so it is unaffected by the receiver's other ABI changes.
 
 ---
 

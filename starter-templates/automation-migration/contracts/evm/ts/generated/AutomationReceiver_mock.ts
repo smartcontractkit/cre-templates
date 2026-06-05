@@ -9,6 +9,7 @@ export type AutomationReceiverMock = {
   getExpectedWorkflowId?: () => `0x${string}`
   getExpectedWorkflowName?: () => `0x${string}`
   getForwarderAddress?: () => `0x${string}`
+  isCallAllowed?: (target: `0x${string}`, selector: `0x${string}`) => boolean
   owner?: () => `0x${string}`
   supportsInterface?: (interfaceId: `0x${string}`) => boolean
 } & Pick<ContractMock<typeof AutomationReceiverABI>, 'writeReport'>

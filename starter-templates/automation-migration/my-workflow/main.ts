@@ -75,7 +75,9 @@ function assertConfiguredAddress(value: string | undefined, fieldName: string): 
 function mapLogToAutomation(log: EVMLog): AutomationLog {
   return {
     index: BigInt(log.index || 0),
-    timestamp: 0n, 
+    // CRE's EVMLog does not carry the block timestamp; legacy checkLog logic that
+    // depends on log.timestamp must source it elsewhere. See README "Log Mapping".
+    timestamp: 0n,
     txHash: (log.txHash ? bytesToHex(log.txHash) : "0x" + "0".repeat(64)) as Hex,
     blockNumber: log.blockNumber ? bytesToBigint(log.blockNumber.absVal) : 0n,
     blockHash: (log.blockHash ? bytesToHex(log.blockHash) : "0x" + "0".repeat(64)) as Hex,
