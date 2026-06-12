@@ -4,7 +4,7 @@ projectDir: .
 title: "Automation Migration (TypeScript)"
 description: "Migrate Chainlink Automation time-based, custom logic, and log trigger upkeeps to CRE using a reusable receiver bridge."
 language: typescript
-category: starter
+category: workflow
 capabilities:
   - cron
   - log-trigger
