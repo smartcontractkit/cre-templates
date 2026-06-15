@@ -21,4 +21,4 @@ workflows:
   - dir: my-workflow
     description: "Automation upkeep migration workflow"
 postInit: |
-  Deploy AutomationReceiver.sol, authorize it in any legacy target contract permission checks, update my-workflow/config.test.json, then run bun install inside my-workflow before simulating.
+  Deploy AutomationReceiver.sol from my-workflow/contracts/evm, authorize it in any legacy target contract permission checks, update my-workflow/config.test.json, then run bun install inside my-workflow before simulating.

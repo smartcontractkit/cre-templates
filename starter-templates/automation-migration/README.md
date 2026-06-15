@@ -41,10 +41,10 @@ While working directly from this branch, copy or open `starter-templates/automat
 ### 2. Build and Deploy the Bridge
 Deploy `AutomationReceiver.sol` to your target chain. You only need to do this once to support multiple upkeeps.
 
-The `contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfoundry.sh/) project: a `foundry.toml` and a vendored copy of the only OpenZeppelin files used (`Ownable`, `Context`). No `forge install` or local node is required — just build and deploy:
+The `my-workflow/contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfoundry.sh/) project: a `foundry.toml` and a vendored copy of the only OpenZeppelin files used (`Ownable`, `Context`). No `forge install` or local node is required — just build and deploy:
 
 ```bash
-cd contracts/evm
+cd my-workflow/contracts/evm
 forge build
 forge test          # 18 tests covering the receiver + permission template
 
@@ -184,7 +184,7 @@ After migration, the `msg.sender` your target sees is the `AutomationReceiver` a
 
 - **Off-chain `offchainConfig` / gas-price-threshold controls.** In CRE these are expressed in the workflow, not on the registry.
 
-> **Bindings note:** if you change `AutomationReceiver.sol`, regenerate the TypeScript bindings in `contracts/evm/ts/generated/` and the committed ABI in `contracts/evm/src/abi/`. The workflow itself only uses the generic `writeReport` entrypoint, so it is unaffected by the receiver's other ABI changes.
+> **Bindings note:** if you change `AutomationReceiver.sol`, regenerate the TypeScript bindings in `my-workflow/contracts/evm/ts/generated/` and the committed ABI in `my-workflow/contracts/evm/src/abi/`. The workflow itself only uses the generic `writeReport` entrypoint, so it is unaffected by the receiver's other ABI changes.
 
 ---
 
