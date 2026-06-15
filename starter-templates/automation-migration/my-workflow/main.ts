@@ -22,9 +22,9 @@ import {
   type AbiFunction,
 } from "viem";
 import { z } from "zod";
-import { IAutomationCompatibleABI } from "./contracts/evm/ts/generated/IAutomationCompatible";
-import { AutomationReceiver } from "./contracts/evm/ts/generated/AutomationReceiver";
-import { IAutomationCompatible } from "./contracts/evm/ts/generated/IAutomationCompatible";
+import { IAutomationCompatibleABI } from "../contracts/evm/ts/generated/IAutomationCompatible";
+import { AutomationReceiver } from "../contracts/evm/ts/generated/AutomationReceiver";
+import { IAutomationCompatible } from "../contracts/evm/ts/generated/IAutomationCompatible";
 
 // ─── Config Schema ──────────────────────────────────────────
 const configSchema = z.object({
