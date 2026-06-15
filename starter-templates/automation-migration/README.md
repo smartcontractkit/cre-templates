@@ -56,10 +56,14 @@ forge create src/AutomationReceiver.sol:AutomationReceiver \
 ```
 
 - `FORWARDER_ADDRESS` is the CRE Forwarder for your target network — it is the **only** address allowed to call `onReport`. Look it up in the [CRE documentation](https://docs.chain.link/cre) for your network; do not guess it. A wrong value means the DON's reports are rejected, and it can never be set to `address(0)`.
-- For production, also configure inbound workflow identity checks (`setExpectedWorkflowId`, `setExpectedAuthor`, and/or `setExpectedWorkflowName` — note the name check requires the author check).
 
-### 3. Authorize the Upkeep Call(s)
-The receiver rejects every outbound call until you allowlist it. For each migrated upkeep, allow the exact `(target, selector)` the workflow will invoke:
+### 3. Configure and Authorize the Receiver
+
+The receiver rejects every outbound call until you allowlist it. You must set up both the call allowlist and optional workflow identity checks.
+
+#### 3a. Allow Upkeep Calls
+
+For each migrated upkeep, allowlist the exact `(target, selector)` the workflow will invoke:
 
 ```bash
 # Custom-logic / log-trigger upkeeps call performUpkeep(bytes)
@@ -75,7 +79,41 @@ cast send "$RECEIVER_ADDRESS" \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 ```
 
+**Parameters:**
+- `target`: The address of your existing upkeep contract.
+- `selector`: The 4-byte function selector (computed from the function signature via `cast sig`).
+- `allowed`: Set to `true` to allow, `false` to revoke.
+
 The selector must match the function the workflow encodes (`performUpkeep` for `CUSTOM`/`LOG`, or your `targetFunction` for `CRON`). A mismatch makes `onReport` revert with `CallNotAllowed`.
+
+#### 3b. Set Workflow Identity Checks (Optional but Recommended for Production)
+
+Once deployed, configure the receiver to accept reports only from your workflow. These checks are optional for development but strongly recommended for production:
+
+```bash
+# Set the workflow owner (required if using author or name checks)
+cast send "$RECEIVER_ADDRESS" \
+  "setExpectedAuthor(address)" \
+  "$WORKFLOW_OWNER_ADDRESS" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Set the workflow ID (optional, adds defense-in-depth)
+cast send "$RECEIVER_ADDRESS" \
+  "setExpectedWorkflowId(bytes32)" \
+  "$WORKFLOW_ID" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Set the workflow name (optional, requires author to be set)
+cast send "$RECEIVER_ADDRESS" \
+  "setExpectedWorkflowName(string)" \
+  "$WORKFLOW_NAME" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+```
+
+**Parameters:**
+- `setExpectedAuthor(_author)`: The account that deploys or owns the workflow (ensures only that entity's workflows can trigger this receiver).
+- `setExpectedWorkflowId(_id)`: The exact workflow ID (available from `cre workflow info`).
+- `setExpectedWorkflowName(_name)`: The exact workflow name (requires author check to be set for this to work).
 
 ### 4. Configure the Workflow
 Update `my-workflow/config.test.json`:
@@ -144,7 +182,6 @@ After migration, the `msg.sender` your target sees is the `AutomationReceiver` a
 
 ## Out of Scope
 
-- **StreamsLookup / Data Streams upkeeps.** Automation upkeeps that revert `checkUpkeep` with a `StreamsLookup` error and resolve via `checkCallback` are not handled by this template. Migrating them requires fetching the report through the CRE Data Streams capability and feeding it to your callback before writing — a larger change than the three standard upkeep types above.
 - **Off-chain `offchainConfig` / gas-price-threshold controls.** In CRE these are expressed in the workflow, not on the registry.
 
 > **Bindings note:** if you change `AutomationReceiver.sol`, regenerate the TypeScript bindings in `contracts/evm/ts/generated/` and the committed ABI in `contracts/evm/src/abi/`. The workflow itself only uses the generic `writeReport` entrypoint, so it is unaffected by the receiver's other ABI changes.
