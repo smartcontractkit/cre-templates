@@ -1,0 +1,19 @@
+# ==========================================================================
+# CRE WORKFLOW SETTINGS FILE
+# ==========================================================================
+test-settings:
+  user-workflow:
+    workflow-name: "automation-migration-test"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.test.json"
+    secrets-path: ""
+
+# ==========================================================================
+production-settings:
+  user-workflow:
+    workflow-name: "automation-migration-production"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.production.json"
+    secrets-path: ""
