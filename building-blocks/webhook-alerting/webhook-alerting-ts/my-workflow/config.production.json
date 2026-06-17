@@ -1,0 +1,11 @@
+{
+  "schedule": "0 */10 * * * *",
+  "chainName": "ethereum-mainnet-arbitrum-1",
+  "feed": {
+    "name": "ETH/USD",
+    "address": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612"
+  },
+  "endpoint": "https://events.pagerduty.com/v2/enqueue",
+  "severity": "critical",
+  "source": "cre-workflow"
+}
