@@ -8,7 +8,7 @@
     }
   ],
   "marketDefaults": {
-    "question": "Will BTC be above $100,000 by {expirationDate}?",
+    "question": "Will BTC be above $100,000 on {expirationDate}?",
     "strikePriceUsd": 100000,
     "durationSeconds": 86400
   }

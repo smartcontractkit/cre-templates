@@ -150,7 +150,7 @@ cre workflow broadcast market-dispute --target staging-settings
 
 ### 1. Market Creation (Cron Trigger)
 
-Creates a new binary prediction market every hour. The market asks: "Will BTC be above $100,000 by {date}?"
+Creates a new binary prediction market every hour. The market asks: "Will BTC be above $100,000 on {date}?"
 
 **Config** (`market-creation/config.staging.json`):
 - `schedule`: Cron expression (default: hourly)
@@ -304,6 +304,7 @@ Redeploy the contract with a different `_disputeWindow` constructor argument.
 - **Single feed**: All markets use the same BTC/USD feed
 - **No betting**: This contract does not implement token deposits or payouts
 - **API access required**: Data Streams requires approved API credentials
+- **Dispute price mismatch**: The dispute workflow fetches the latest price from Data Streams when the dispute is raised, not the price that was used during the original resolution, nor the price at the market's intended expiration time. This means the dispute may re-resolve based on a different price than what closed the original market. For production systems, consider storing the resolution price on-chain and using that for dispute verification, or implement a time-bounded price snapshot mechanism.
 
 ---
 
