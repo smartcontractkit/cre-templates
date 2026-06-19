@@ -759,7 +759,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'DisputeRaised' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -771,7 +771,7 @@ export class PredictionMarket {
         eventName: 'DisputeRaised' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -785,7 +785,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -809,7 +809,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as DisputeRaisedDecoded }
@@ -830,7 +830,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'DisputeResolved' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -841,7 +841,7 @@ export class PredictionMarket {
         eventName: 'DisputeResolved' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -854,7 +854,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -878,7 +878,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as DisputeResolvedDecoded }
@@ -899,7 +899,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'ExpectedAuthorUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -911,7 +911,7 @@ export class PredictionMarket {
         eventName: 'ExpectedAuthorUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -925,7 +925,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -949,7 +949,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedAuthorUpdatedDecoded }
@@ -970,7 +970,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'ExpectedWorkflowIdUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -982,7 +982,7 @@ export class PredictionMarket {
         eventName: 'ExpectedWorkflowIdUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -996,7 +996,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1020,7 +1020,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedWorkflowIdUpdatedDecoded }
@@ -1041,7 +1041,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'ExpectedWorkflowNameUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1053,7 +1053,7 @@ export class PredictionMarket {
         eventName: 'ExpectedWorkflowNameUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1067,7 +1067,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1091,7 +1091,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ExpectedWorkflowNameUpdatedDecoded }
@@ -1112,7 +1112,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'ForwarderAddressUpdated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1124,7 +1124,7 @@ export class PredictionMarket {
         eventName: 'ForwarderAddressUpdated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1138,7 +1138,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1162,7 +1162,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as ForwarderAddressUpdatedDecoded }
@@ -1183,7 +1183,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'MarketCreated' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1194,7 +1194,7 @@ export class PredictionMarket {
         eventName: 'MarketCreated' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1207,7 +1207,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1231,7 +1231,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as MarketCreatedDecoded }
@@ -1252,7 +1252,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'MarketResolved' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1263,7 +1263,7 @@ export class PredictionMarket {
         eventName: 'MarketResolved' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1276,7 +1276,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1300,7 +1300,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as MarketResolvedDecoded }
@@ -1321,7 +1321,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'OwnershipTransferred' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1333,7 +1333,7 @@ export class PredictionMarket {
         eventName: 'OwnershipTransferred' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1347,7 +1347,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1371,7 +1371,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferredDecoded }
@@ -1392,7 +1392,7 @@ export class PredictionMarket {
         abi: PredictionMarketABI,
         eventName: 'SecurityWarning' as const,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else if (filters.length === 1) {
       const f = filters[0]
       const args = {
@@ -1402,7 +1402,7 @@ export class PredictionMarket {
         eventName: 'SecurityWarning' as const,
         args,
       })
-      topics = encoded.map((t) => ({ values: [hexToBase64(t)] }))
+      topics = encoded.map((t) => ({ values: [hexToBase64(t as string)] }))
     } else {
       const allEncoded = filters.map((f) => {
         const args = {
@@ -1414,7 +1414,7 @@ export class PredictionMarket {
         })
       })
       topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i])))],
+        values: [...new Set(allEncoded.map((row) => hexToBase64(row[i] as string)))],
       }))
     }
     const baseTrigger = this.client.logTrigger({
@@ -1438,7 +1438,7 @@ export class PredictionMarket {
     const decoded = decodeEventLog({
       abi: PredictionMarketABI,
       data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as readonly Hex[],
+      topics: log.topics.map((t) => bytesToHex(t)) as any,
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as SecurityWarningDecoded }
