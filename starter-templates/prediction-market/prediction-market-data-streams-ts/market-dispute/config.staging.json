@@ -1,0 +1,13 @@
+{
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "predictionMarketAddress": "0xEb792aF46AB2c2f1389A774AB806423DB43aA425",
+      "gasLimit": "500000"
+    }
+  ],
+  "dataStreams": {
+    "apiUrl": "https://api.testnet-dataengine.chain.link",
+    "feedId": "0x00027bbaff688c906a3e20a34fe951715d1018d262a5b66e38edd64e0fdd0d00"
+  }
+}
