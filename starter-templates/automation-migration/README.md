@@ -165,7 +165,7 @@ The `AutomationReceiver` executes `target.call(data)`, so it can drive any funct
 
 The receiver distinguishes two failure modes:
 - **Authorization failure** — a zero target, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
-- **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
+- **Execution failure** — an allowed call that reverts or runs out of gas — also **reverts** `onReport` with `TargetCallFailed(target, selector, reason)`. The forwarder does not consume the transmission, so the same signed report can be retried (for example with a higher `writeGasLimit`). The workflow surfaces these as `TxStatus.REVERTED`.
 
 ### Gas Limit
 `writeGasLimit` (default `"500000"`) caps the on-chain execution. Carry over the `performGasLimit` you tuned for your existing upkeep rather than relying on the default.

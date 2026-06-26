@@ -14,6 +14,7 @@ interface Vm {
 ///      can be toggled to revert, to exercise the execution-failure path.
 contract MockUpkeep {
     bool public shouldRevert;
+    bool public shouldFailSilently;
     uint256 public performCount;
     bytes public lastPerformData;
 
@@ -21,7 +22,16 @@ contract MockUpkeep {
         shouldRevert = value;
     }
 
+    function setShouldFailSilently(bool value) external {
+        shouldFailSilently = value;
+    }
+
     function performUpkeep(bytes calldata performData) external {
+        if (shouldFailSilently) {
+            assembly {
+                invalid()
+            }
+        }
         if (shouldRevert) {
             revert("upkeep failed");
         }
@@ -99,15 +109,29 @@ contract AutomationReceiverTest {
         _deliver(_report(address(target), _performCall(hex"01")));
     }
 
-    // ─── execution failure is swallowed (Automation parity) ─────
-    function testAllowedButFailingCallDoesNotRevert() external {
+    // ─── execution failure reverts (forwarder retry semantics) ────
+    function testAllowedButFailingCallReverts() external {
         receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
         target.setShouldRevert(true);
 
-        // Must NOT revert: the report is consumed and CallFailed is emitted.
+        bytes memory reason = abi.encodeWithSignature("Error(string)", "upkeep failed");
+        vm.expectRevert(
+            abi.encodeWithSelector(AutomationReceiver.TargetCallFailed.selector, address(target), PERFORM_SELECTOR, reason)
+        );
         _deliver(_report(address(target), _performCall(hex"01")));
 
-        // The reverting upkeep changed no state.
+        _assertEq(target.performCount(), 0);
+    }
+
+    function testAllowedButOOGStyleFailureReverts() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        target.setShouldFailSilently(true);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(AutomationReceiver.TargetCallFailed.selector, address(target), PERFORM_SELECTOR, hex"")
+        );
+        _deliver(_report(address(target), _performCall(hex"01")));
+
         _assertEq(target.performCount(), 0);
     }
 

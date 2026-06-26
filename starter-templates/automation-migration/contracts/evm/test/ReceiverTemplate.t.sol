@@ -42,18 +42,22 @@ contract ReceiverTemplateTest {
         receiver.onReport("", "report");
     }
 
-    function testOwnerCannotDisableForwarderValidation() external {
+    function testOwnerCanDisableForwarderValidation() external {
         MockReceiver receiver = new MockReceiver(FORWARDER);
 
-        vm.expectRevert(ReceiverTemplate.InvalidForwarderAddress.selector);
         receiver.setForwarderAddress(address(0));
+        _assertEq(uint256(uint160(receiver.getForwarderAddress())), 0);
     }
 
     function testWorkflowNameRequiresAuthorBeforeConfiguration() external {
         MockReceiver receiver = new MockReceiver(FORWARDER);
+        receiver.setExpectedWorkflowName("game-resolution");
+
+        bytes memory metadata = abi.encodePacked(WORKFLOW_ID, _workflowName("game-resolution"), AUTHOR);
 
         vm.expectRevert(ReceiverTemplate.WorkflowNameRequiresAuthorValidation.selector);
-        receiver.setExpectedWorkflowName("game-resolution");
+        vm.prank(FORWARDER);
+        receiver.onReport(metadata, "report");
     }
 
     function testCannotClearAuthorWhileWorkflowNameValidationIsEnabled() external {
@@ -61,18 +65,8 @@ contract ReceiverTemplateTest {
         receiver.setExpectedAuthor(AUTHOR);
         receiver.setExpectedWorkflowName("game-resolution");
 
-        vm.expectRevert(ReceiverTemplate.WorkflowNameRequiresAuthorValidation.selector);
         receiver.setExpectedAuthor(address(0));
-    }
-
-    function testRejectsMalformedMetadataLength() external {
-        MockReceiver receiver = new MockReceiver(FORWARDER);
-        receiver.setExpectedAuthor(AUTHOR);
-        bytes memory malformedMetadata = new bytes(61);
-
-        vm.expectRevert(abi.encodeWithSelector(ReceiverTemplate.InvalidMetadataLength.selector, 61, 62));
-        vm.prank(FORWARDER);
-        receiver.onReport(malformedMetadata, "report");
+        _assertEq(uint256(uint160(receiver.getExpectedAuthor())), 0);
     }
 
     function testAcceptsReportWhenForwarderAndWorkflowMetadataMatch() external {

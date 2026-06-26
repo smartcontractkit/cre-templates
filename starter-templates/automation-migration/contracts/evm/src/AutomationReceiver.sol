@@ -27,8 +27,6 @@ contract AutomationReceiver is ReceiverTemplate {
 
     /// @notice Emitted when a target call succeeds.
     event CallExecuted(address indexed target, bytes4 indexed selector, bytes returnData);
-    /// @notice Emitted when an allowed target call reverts. The report is still consumed.
-    event CallFailed(address indexed target, bytes4 indexed selector, bytes reason);
     /// @notice Emitted when the owner updates the outbound allowlist.
     event CallAllowedSet(address indexed target, bytes4 indexed selector, bool allowed);
 
@@ -38,6 +36,8 @@ contract AutomationReceiver is ReceiverTemplate {
     error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
     error CallNotAllowed(address target, bytes4 selector);
+    /// @notice Thrown when an allowlisted target call reverts or runs out of gas.
+    error TargetCallFailed(address target, bytes4 selector, bytes reason);
 
     constructor(address _forwarder) ReceiverTemplate(_forwarder) {}
 
@@ -66,9 +66,9 @@ contract AutomationReceiver is ReceiverTemplate {
     ///        function call (4-byte selector followed by its arguments).
     /// @dev Authorization failures (zero target, missing selector, not-allowlisted) revert
     ///      loudly — they indicate misconfiguration or a malformed report. Execution failures
-    ///      (an allowed call that reverts) are swallowed: `CallFailed` is emitted and the
-    ///      report is consumed, matching Chainlink Automation's fire-and-forget semantics
-    ///      where the next trigger re-evaluates eligibility.
+    ///      (an allowed call that reverts or runs out of gas) also revert with
+    ///      {TargetCallFailed}, so the forwarder does not consume the transmission and the
+    ///      same signed report can be retried (e.g. with a higher gas limit).
     function _processReport(bytes calldata report) internal override {
         (address target, bytes memory data) = abi.decode(report, (address, bytes));
 
@@ -94,7 +94,7 @@ contract AutomationReceiver is ReceiverTemplate {
         if (success) {
             emit CallExecuted(target, selector, returnData);
         } else {
-            emit CallFailed(target, selector, returnData);
+            revert TargetCallFailed(target, selector, returnData);
         }
     }
 }

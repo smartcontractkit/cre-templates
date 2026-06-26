@@ -69,25 +69,6 @@ export type CallExecutedDecoded = {
 
 
 /**
- * Filter params for CallFailed. Only indexed fields can be used for filtering.
- * Indexed string/bytes must be passed as keccak256 hash (Hex).
- */
-export type CallFailedTopics = {
-  target?: `0x${string}`
-  selector?: `0x${string}`
-}
-
-/**
- * Decoded CallFailed event data.
- */
-export type CallFailedDecoded = {
-  target: `0x${string}`
-  selector: `0x${string}`
-  reason: `0x${string}`
-}
-
-
-/**
  * Filter params for ExpectedAuthorUpdated. Only indexed fields can be used for filtering.
  * Indexed string/bytes must be passed as keccak256 hash (Hex).
  */
@@ -177,7 +158,22 @@ export type OwnershipTransferredDecoded = {
 }
 
 
-export const AutomationReceiverABI = [{"type":"constructor","inputs":[{"name":"_forwarder","type":"address","internalType":"address"}],"stateMutability":"nonpayable"},{"type":"function","name":"getExpectedAuthor","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"getExpectedWorkflowId","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"getExpectedWorkflowName","inputs":[],"outputs":[{"name":"","type":"bytes10","internalType":"bytes10"}],"stateMutability":"view"},{"type":"function","name":"getForwarderAddress","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"isCallAllowed","inputs":[{"name":"target","type":"address","internalType":"address"},{"name":"selector","type":"bytes4","internalType":"bytes4"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"onReport","inputs":[{"name":"metadata","type":"bytes","internalType":"bytes"},{"name":"report","type":"bytes","internalType":"bytes"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"renounceOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setCallAllowed","inputs":[{"name":"target","type":"address","internalType":"address"},{"name":"selector","type":"bytes4","internalType":"bytes4"},{"name":"allowed","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setExpectedAuthor","inputs":[{"name":"_author","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setExpectedWorkflowId","inputs":[{"name":"_id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setExpectedWorkflowName","inputs":[{"name":"_name","type":"string","internalType":"string"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setForwarderAddress","inputs":[{"name":"_forwarder","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"supportsInterface","inputs":[{"name":"interfaceId","type":"bytes4","internalType":"bytes4"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"CallAllowedSet","inputs":[{"name":"target","type":"address","indexed":true,"internalType":"address"},{"name":"selector","type":"bytes4","indexed":true,"internalType":"bytes4"},{"name":"allowed","type":"bool","indexed":false,"internalType":"bool"}],"anonymous":false},{"type":"event","name":"CallExecuted","inputs":[{"name":"target","type":"address","indexed":true,"internalType":"address"},{"name":"selector","type":"bytes4","indexed":true,"internalType":"bytes4"},{"name":"returnData","type":"bytes","indexed":false,"internalType":"bytes"}],"anonymous":false},{"type":"event","name":"CallFailed","inputs":[{"name":"target","type":"address","indexed":true,"internalType":"address"},{"name":"selector","type":"bytes4","indexed":true,"internalType":"bytes4"},{"name":"reason","type":"bytes","indexed":false,"internalType":"bytes"}],"anonymous":false},{"type":"event","name":"ExpectedAuthorUpdated","inputs":[{"name":"previousAuthor","type":"address","indexed":true,"internalType":"address"},{"name":"newAuthor","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"ExpectedWorkflowIdUpdated","inputs":[{"name":"previousId","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"newId","type":"bytes32","indexed":true,"internalType":"bytes32"}],"anonymous":false},{"type":"event","name":"ExpectedWorkflowNameUpdated","inputs":[{"name":"previousName","type":"bytes10","indexed":true,"internalType":"bytes10"},{"name":"newName","type":"bytes10","indexed":true,"internalType":"bytes10"}],"anonymous":false},{"type":"event","name":"ForwarderAddressUpdated","inputs":[{"name":"previousForwarder","type":"address","indexed":true,"internalType":"address"},{"name":"newForwarder","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"previousOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"error","name":"CallNotAllowed","inputs":[{"name":"target","type":"address","internalType":"address"},{"name":"selector","type":"bytes4","internalType":"bytes4"}]},{"type":"error","name":"InvalidAuthor","inputs":[{"name":"received","type":"address","internalType":"address"},{"name":"expected","type":"address","internalType":"address"}]},{"type":"error","name":"InvalidForwarderAddress","inputs":[]},{"type":"error","name":"InvalidMetadataLength","inputs":[{"name":"received","type":"uint256","internalType":"uint256"},{"name":"expected","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"InvalidSender","inputs":[{"name":"sender","type":"address","internalType":"address"},{"name":"expected","type":"address","internalType":"address"}]},{"type":"error","name":"InvalidTargetAddress","inputs":[]},{"type":"error","name":"InvalidWorkflowId","inputs":[{"name":"received","type":"bytes32","internalType":"bytes32"},{"name":"expected","type":"bytes32","internalType":"bytes32"}]},{"type":"error","name":"InvalidWorkflowName","inputs":[{"name":"received","type":"bytes10","internalType":"bytes10"},{"name":"expected","type":"bytes10","internalType":"bytes10"}]},{"type":"error","name":"MissingSelector","inputs":[]},{"type":"error","name":"OwnableInvalidOwner","inputs":[{"name":"owner","type":"address","internalType":"address"}]},{"type":"error","name":"OwnableUnauthorizedAccount","inputs":[{"name":"account","type":"address","internalType":"address"}]},{"type":"error","name":"WorkflowNameRequiresAuthorValidation","inputs":[]}] as const
+/**
+ * Filter params for SecurityWarning. Only indexed fields can be used for filtering.
+ * Indexed string/bytes must be passed as keccak256 hash (Hex).
+ */
+export type SecurityWarningTopics = {
+}
+
+/**
+ * Decoded SecurityWarning event data.
+ */
+export type SecurityWarningDecoded = {
+  message: string
+}
+
+
+export const AutomationReceiverABI = [{"type":"constructor","inputs":[{"name":"_forwarder","type":"address","internalType":"address"}],"stateMutability":"nonpayable"},{"type":"function","name":"getExpectedAuthor","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"getExpectedWorkflowId","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"getExpectedWorkflowName","inputs":[],"outputs":[{"name":"","type":"bytes10","internalType":"bytes10"}],"stateMutability":"view"},{"type":"function","name":"getForwarderAddress","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"isCallAllowed","inputs":[{"name":"target","type":"address","internalType":"address"},{"name":"selector","type":"bytes4","internalType":"bytes4"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"onReport","inputs":[{"name":"metadata","type":"bytes","internalType":"bytes"},{"name":"report","type":"bytes","internalType":"bytes"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"owner","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"renounceOwnership","inputs":[],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setCallAllowed","inputs":[{"name":"target","type":"address","internalType":"address"},{"name":"selector","type":"bytes4","internalType":"bytes4"},{"name":"allowed","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setExpectedAuthor","inputs":[{"name":"_author","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setExpectedWorkflowId","inputs":[{"name":"_id","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setExpectedWorkflowName","inputs":[{"name":"_name","type":"string","internalType":"string"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setForwarderAddress","inputs":[{"name":"_forwarder","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"supportsInterface","inputs":[{"name":"interfaceId","type":"bytes4","internalType":"bytes4"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"transferOwnership","inputs":[{"name":"newOwner","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"CallAllowedSet","inputs":[{"name":"target","type":"address","indexed":true,"internalType":"address"},{"name":"selector","type":"bytes4","indexed":true,"internalType":"bytes4"},{"name":"allowed","type":"bool","indexed":false,"internalType":"bool"}],"anonymous":false},{"type":"event","name":"CallExecuted","inputs":[{"name":"target","type":"address","indexed":true,"internalType":"address"},{"name":"selector","type":"bytes4","indexed":true,"internalType":"bytes4"},{"name":"returnData","type":"bytes","indexed":false,"internalType":"bytes"}],"anonymous":false},{"type":"event","name":"ExpectedAuthorUpdated","inputs":[{"name":"previousAuthor","type":"address","indexed":true,"internalType":"address"},{"name":"newAuthor","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"ExpectedWorkflowIdUpdated","inputs":[{"name":"previousId","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"newId","type":"bytes32","indexed":true,"internalType":"bytes32"}],"anonymous":false},{"type":"event","name":"ExpectedWorkflowNameUpdated","inputs":[{"name":"previousName","type":"bytes10","indexed":true,"internalType":"bytes10"},{"name":"newName","type":"bytes10","indexed":true,"internalType":"bytes10"}],"anonymous":false},{"type":"event","name":"ForwarderAddressUpdated","inputs":[{"name":"previousForwarder","type":"address","indexed":true,"internalType":"address"},{"name":"newForwarder","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"OwnershipTransferred","inputs":[{"name":"previousOwner","type":"address","indexed":true,"internalType":"address"},{"name":"newOwner","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"SecurityWarning","inputs":[{"name":"message","type":"string","indexed":false,"internalType":"string"}],"anonymous":false},{"type":"error","name":"CallNotAllowed","inputs":[{"name":"target","type":"address","internalType":"address"},{"name":"selector","type":"bytes4","internalType":"bytes4"}]},{"type":"error","name":"InvalidAuthor","inputs":[{"name":"received","type":"address","internalType":"address"},{"name":"expected","type":"address","internalType":"address"}]},{"type":"error","name":"InvalidForwarderAddress","inputs":[]},{"type":"error","name":"InvalidSender","inputs":[{"name":"sender","type":"address","internalType":"address"},{"name":"expected","type":"address","internalType":"address"}]},{"type":"error","name":"InvalidTargetAddress","inputs":[]},{"type":"error","name":"InvalidWorkflowId","inputs":[{"name":"received","type":"bytes32","internalType":"bytes32"},{"name":"expected","type":"bytes32","internalType":"bytes32"}]},{"type":"error","name":"InvalidWorkflowName","inputs":[{"name":"received","type":"bytes10","internalType":"bytes10"},{"name":"expected","type":"bytes10","internalType":"bytes10"}]},{"type":"error","name":"MissingSelector","inputs":[]},{"type":"error","name":"OwnableInvalidOwner","inputs":[{"name":"owner","type":"address","internalType":"address"}]},{"type":"error","name":"OwnableUnauthorizedAccount","inputs":[{"name":"account","type":"address","internalType":"address"}]},{"type":"error","name":"TargetCallFailed","inputs":[{"name":"target","type":"address","internalType":"address"},{"name":"selector","type":"bytes4","internalType":"bytes4"},{"name":"reason","type":"bytes","internalType":"bytes"}]},{"type":"error","name":"WorkflowNameRequiresAuthorValidation","inputs":[]}] as const
 
 export class AutomationReceiver {
   constructor(
@@ -676,77 +672,6 @@ export class AutomationReceiver {
   }
 
   /**
-   * Creates a log trigger for CallFailed events.
-   * The returned trigger's adapt method decodes the raw log into CallFailedDecoded,
-   * so the handler receives typed event data directly.
-   * When multiple filters are provided, topic values are merged with OR semantics (match any).
-   */
-  logTriggerCallFailed(
-    filters?: CallFailedTopics[],
-  ) {
-    let topics: { values: string[] }[]
-    if (!filters || filters.length === 0) {
-      const encoded = encodeEventTopics({
-        abi: AutomationReceiverABI,
-        eventName: 'CallFailed' as const,
-      })
-      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
-    } else if (filters.length === 1) {
-      const f = filters[0]
-      const args = {
-        target: f.target,
-        selector: f.selector,
-      }
-      const encoded = encodeEventTopics({
-        abi: AutomationReceiverABI,
-        eventName: 'CallFailed' as const,
-        args,
-      })
-      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
-    } else {
-      const allEncoded = filters.map((f) => {
-        const args = {
-          target: f.target,
-          selector: f.selector,
-        }
-        return encodeEventTopics({
-          abi: AutomationReceiverABI,
-          eventName: 'CallFailed' as const,
-          args,
-        })
-      })
-      topics = allEncoded[0].map((_, i) => ({
-        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
-      }))
-    }
-    const baseTrigger = this.client.logTrigger({
-      addresses: [hexToBase64(this.address)],
-      topics,
-    })
-    const contract = this
-    return {
-      capabilityId: () => baseTrigger.capabilityId(),
-      method: () => baseTrigger.method(),
-      outputSchema: () => baseTrigger.outputSchema(),
-      configAsAny: () => baseTrigger.configAsAny(),
-      adapt: (rawOutput: EVMLog): DecodedLog<CallFailedDecoded> => contract.decodeCallFailed(rawOutput),
-    }
-  }
-
-  /**
-   * Decodes a log into CallFailed data, preserving all log metadata.
-   */
-  decodeCallFailed(log: EVMLog): DecodedLog<CallFailedDecoded> {
-    const decoded = decodeEventLog({
-      abi: AutomationReceiverABI,
-      data: bytesToHex(log.data),
-      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
-    })
-    const { data: _, ...rest } = log
-    return { ...rest, data: decoded.args as unknown as CallFailedDecoded }
-  }
-
-  /**
    * Creates a log trigger for ExpectedAuthorUpdated events.
    * The returned trigger's adapt method decodes the raw log into ExpectedAuthorUpdatedDecoded,
    * so the handler receives typed event data directly.
@@ -1099,6 +1024,73 @@ export class AutomationReceiver {
     })
     const { data: _, ...rest } = log
     return { ...rest, data: decoded.args as unknown as OwnershipTransferredDecoded }
+  }
+
+  /**
+   * Creates a log trigger for SecurityWarning events.
+   * The returned trigger's adapt method decodes the raw log into SecurityWarningDecoded,
+   * so the handler receives typed event data directly.
+   * When multiple filters are provided, topic values are merged with OR semantics (match any).
+   */
+  logTriggerSecurityWarning(
+    filters?: SecurityWarningTopics[],
+  ) {
+    let topics: { values: string[] }[]
+    if (!filters || filters.length === 0) {
+      const encoded = encodeEventTopics({
+        abi: AutomationReceiverABI,
+        eventName: 'SecurityWarning' as const,
+      })
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
+    } else if (filters.length === 1) {
+      const f = filters[0]
+      const args = {
+      }
+      const encoded = encodeEventTopics({
+        abi: AutomationReceiverABI,
+        eventName: 'SecurityWarning' as const,
+        args,
+      })
+      topics = encoded.map((t) => ({ values: encodeTopicValue(t) }))
+    } else {
+      const allEncoded = filters.map((f) => {
+        const args = {
+        }
+        return encodeEventTopics({
+          abi: AutomationReceiverABI,
+          eventName: 'SecurityWarning' as const,
+          args,
+        })
+      })
+      topics = allEncoded[0].map((_, i) => ({
+        values: [...new Set(allEncoded.flatMap((row) => encodeTopicValue(row[i])))],
+      }))
+    }
+    const baseTrigger = this.client.logTrigger({
+      addresses: [hexToBase64(this.address)],
+      topics,
+    })
+    const contract = this
+    return {
+      capabilityId: () => baseTrigger.capabilityId(),
+      method: () => baseTrigger.method(),
+      outputSchema: () => baseTrigger.outputSchema(),
+      configAsAny: () => baseTrigger.configAsAny(),
+      adapt: (rawOutput: EVMLog): DecodedLog<SecurityWarningDecoded> => contract.decodeSecurityWarning(rawOutput),
+    }
+  }
+
+  /**
+   * Decodes a log into SecurityWarning data, preserving all log metadata.
+   */
+  decodeSecurityWarning(log: EVMLog): DecodedLog<SecurityWarningDecoded> {
+    const decoded = decodeEventLog({
+      abi: AutomationReceiverABI,
+      data: bytesToHex(log.data),
+      topics: log.topics.map((t) => bytesToHex(t)) as [Hex, ...Hex[]],
+    })
+    const { data: _, ...rest } = log
+    return { ...rest, data: decoded.args as unknown as SecurityWarningDecoded }
   }
 }
 
