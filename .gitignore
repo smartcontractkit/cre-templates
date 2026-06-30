@@ -29,6 +29,7 @@ dist
 *.wasm
 *.wasm.br
 *.wasm.br.b64
+.cre_build_tmp.*
 
 # env files
 *.env

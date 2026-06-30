@@ -67,6 +67,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 10. **Sports Resolution** — [`./sports-resolution`](./sports-resolution)
     Resolve sports game outcomes on-chain using an EVM log trigger, HTTP data sources, majority/unanimous aggregation, and a signed report write.
 
+11. **Automation Migration** — [`./automation-migration`](./automation-migration)
+    Migrate existing Chainlink Automation upkeeps (time-based, custom logic, and log trigger) to CRE via a reusable `AutomationReceiver` bridge, without rewriting the legacy upkeep logic.
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
