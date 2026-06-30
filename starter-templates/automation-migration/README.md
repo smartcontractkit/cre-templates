@@ -12,7 +12,7 @@ This migration uses a "Bridge" pattern:
 
 ### Security Model
 The receiver authorizes reports on two separate layers, and **both** apply:
-- **Inbound — who may deliver a report** (`ReceiverTemplate`): the CRE Forwarder address (mandatory, cannot be disabled) plus optional `workflowId` / `workflowName` / `workflowOwner` identity checks.
+- **Inbound — who may deliver a report**: the CRE Forwarder address is set at construction and validated by `ReceiverTemplate`. `AutomationReceiver._processReport` adds two additional hard guards: (1) it rejects any delivery if the forwarder was ever set to `address(0)` post-deployment (closing the gap in `ReceiverTemplate.setForwarderAddress`), and (2) it requires at least one workflow identity field (`workflowId` or `workflowOwner`) to be configured — an unconfigured receiver rejects all reports with `WorkflowIdentityNotConfigured`.
 - **Outbound — what a report may make the receiver do** (`AutomationReceiver`): a **closed-by-default allowlist** of `(target, function-selector)` pairs. Inbound checks only prove a report came from your workflow; they do **not** constrain the `(target, data)` it carries. Until you allowlist a pair with `setCallAllowed`, the receiver will reject it.
 
 ---
@@ -46,7 +46,7 @@ The `my-workflow/contracts/evm` directory ships a ready-to-use [Foundry](https:/
 ```bash
 cd my-workflow/contracts/evm
 forge build
-forge test          # 18 tests covering the receiver + permission template
+forge test          # 19 tests covering the receiver + permission template
 
 # Deploy, passing the CRE Forwarder address for your DON as the constructor arg
 forge create src/AutomationReceiver.sol:AutomationReceiver \
@@ -55,7 +55,7 @@ forge create src/AutomationReceiver.sol:AutomationReceiver \
   --constructor-args "$FORWARDER_ADDRESS"
 ```
 
-- `FORWARDER_ADDRESS` is the CRE Forwarder for your target network — it is the **only** address allowed to call `onReport`. Look it up in the [CRE documentation](https://docs.chain.link/cre) for your network; do not guess it. A wrong value means the DON's reports are rejected, and it can never be set to `address(0)`.
+- `FORWARDER_ADDRESS` is the CRE Forwarder for your target network — it is the **only** address allowed to call `onReport`. Look it up in the [CRE documentation](https://docs.chain.link/cre) for your network; do not guess it. A wrong value means the DON's reports are rejected. The constructor blocks `address(0)`, and even if the owner ever sets the forwarder to `address(0)` post-deployment (via `setForwarderAddress`), `AutomationReceiver._processReport` will reject all subsequent deliveries with `InvalidForwarderAddress`.
 
 ### 3. Configure and Authorize the Receiver
 
@@ -86,24 +86,24 @@ cast send "$RECEIVER_ADDRESS" \
 
 The selector must match the function the workflow encodes (`performUpkeep` for `CUSTOM`/`LOG`, or your `targetFunction` for `CRON`). A mismatch makes `onReport` revert with `CallNotAllowed`.
 
-#### 3b. Set Workflow Identity Checks (Optional but Recommended for Production)
+#### 3b. Set Workflow Identity (Required)
 
-Once deployed, configure the receiver to accept reports only from your workflow. These checks are optional for development but strongly recommended for production:
+**At least one of `workflowId` or `workflowOwner` must be configured before the receiver will accept any report.** Without a workflow binding, `_processReport` reverts with `WorkflowIdentityNotConfigured` on every delivery attempt. Set both for the strongest guarantee:
 
 ```bash
-# Set the workflow owner (required if using author or name checks)
-cast send "$RECEIVER_ADDRESS" \
-  "setExpectedAuthor(address)" \
-  "$WORKFLOW_OWNER_ADDRESS" \
-  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
-
-# Set the workflow ID (optional, adds defense-in-depth)
+# Required: set the workflow ID (binds the receiver to one specific workflow)
 cast send "$RECEIVER_ADDRESS" \
   "setExpectedWorkflowId(bytes32)" \
   "$WORKFLOW_ID" \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 
-# Set the workflow name (optional, requires author to be set)
+# Required: set the workflow owner (ensures only reports from this owner's workflows are accepted)
+cast send "$RECEIVER_ADDRESS" \
+  "setExpectedAuthor(address)" \
+  "$WORKFLOW_OWNER_ADDRESS" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Optional: set the workflow name for an additional check (requires author to also be set)
 cast send "$RECEIVER_ADDRESS" \
   "setExpectedWorkflowName(string)" \
   "$WORKFLOW_NAME" \
@@ -111,9 +111,9 @@ cast send "$RECEIVER_ADDRESS" \
 ```
 
 **Parameters:**
-- `setExpectedAuthor(_author)`: The account that deploys or owns the workflow (ensures only that entity's workflows can trigger this receiver).
-- `setExpectedWorkflowId(_id)`: The exact workflow ID (available from `cre workflow info`).
-- `setExpectedWorkflowName(_name)`: The exact workflow name (requires author check to be set for this to work).
+- `setExpectedWorkflowId(_id)`: The exact workflow ID (available from `cre workflow info`). Mandatory unless `setExpectedAuthor` is used.
+- `setExpectedAuthor(_author)`: The account that deploys or owns the workflow. Mandatory unless `setExpectedWorkflowId` is used.
+- `setExpectedWorkflowName(_name)`: The exact workflow name — provides an additional check but requires `setExpectedAuthor` to also be configured (workflow names are unique per owner, not globally).
 
 ### 4. Configure the Workflow
 Update `my-workflow/config.test.json`:

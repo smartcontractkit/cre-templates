@@ -9,9 +9,13 @@ import "./ReceiverTemplate.sol";
  *
  * @dev Two independent authorization layers protect this contract:
  *
- *      1. INBOUND (inherited from {ReceiverTemplate}) — answers "who may deliver a report?":
- *         the CRE Forwarder address plus the optional workflowId / workflowName / workflowOwner
- *         identity checks. These prove a report came from your workflow.
+ *      1. INBOUND — answers "who may deliver a report?":
+ *         a) {ReceiverTemplate} enforces the CRE Forwarder address check and optional
+ *            workflowId / workflowName / workflowOwner identity checks.
+         *         b) {_processReport} additionally requires that the forwarder is non-zero (closing
+ *            the gap left by `ReceiverTemplate.setForwarderAddress` which permits address(0))
+ *            and that both workflowId and workflowOwner are configured before any report is
+ *            accepted. Either field alone does not fully bind the receiver to a single workflow.
  *
  *      2. OUTBOUND (this contract) — answers "what may a report make this contract do?":
  *         a closed-by-default allowlist of (target, function-selector) pairs. The inbound checks
@@ -38,6 +42,10 @@ contract AutomationReceiver is ReceiverTemplate {
     error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
     error CallNotAllowed(address target, bytes4 selector);
+    /// @notice Thrown when onReport is called but neither workflowId nor workflowOwner has been
+    ///         configured. At least one must be set so the receiver is bound to a specific
+    ///         workflow and cannot be triggered by an arbitrary DON-signed report.
+    error WorkflowIdentityNotConfigured();
 
     constructor(address _forwarder) ReceiverTemplate(_forwarder) {}
 
@@ -64,12 +72,29 @@ contract AutomationReceiver is ReceiverTemplate {
     /// @notice Decodes and executes the call on the target contract.
     /// @param report ABI-encoded (address target, bytes data), where `data` is a full
     ///        function call (4-byte selector followed by its arguments).
-    /// @dev Authorization failures (zero target, missing selector, not-allowlisted) revert
+    /// @dev Two pre-conditions are enforced before any decoding:
+    ///      1. The forwarder address must not be zero. `ReceiverTemplate.setForwarderAddress`
+    ///         does not block address(0), so this guard closes that gap: if the owner ever
+    ///         sets the forwarder to zero (disabling the caller check in onReport), every
+    ///         subsequent report delivery is rejected here instead.
+    ///      2. Both workflow identity fields (workflowId and workflowOwner) must be
+    ///         configured. Either field alone leaves an attack surface: workflowId alone does
+    ///         not bind the report to a specific owner, and workflowOwner alone does not bind
+    ///         it to a specific workflow instance. Requiring both closes the cross-receiver
+    ///         replay vector described in audit finding M-02.
+    ///      Authorization failures (zero target, missing selector, not-allowlisted) revert
     ///      loudly — they indicate misconfiguration or a malformed report. Execution failures
     ///      (an allowed call that reverts) are swallowed: `CallFailed` is emitted and the
     ///      report is consumed, matching Chainlink Automation's fire-and-forget semantics
     ///      where the next trigger re-evaluates eligibility.
     function _processReport(bytes calldata report) internal override {
+        if (this.getForwarderAddress() == address(0)) {
+            revert InvalidForwarderAddress();
+        }
+        if (this.getExpectedWorkflowId() == bytes32(0) || this.getExpectedAuthor() == address(0)) {
+            revert WorkflowIdentityNotConfigured();
+        }
+
         (address target, bytes memory data) = abi.decode(report, (address, bytes));
 
         if (target == address(0)) {
