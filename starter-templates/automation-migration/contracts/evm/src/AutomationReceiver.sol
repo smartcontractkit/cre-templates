@@ -34,6 +34,8 @@ contract AutomationReceiver is ReceiverTemplate {
 
     /// @notice Thrown when the decoded target is the zero address.
     error InvalidTargetAddress();
+    /// @notice Thrown when the target address has no deployed code (EOA, mistyped address, or never-deployed contract).
+    error TargetHasNoCode(address target);
     /// @notice Thrown when the report carries fewer than 4 bytes of calldata (no selector).
     error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
@@ -45,12 +47,17 @@ contract AutomationReceiver is ReceiverTemplate {
     /// @dev Closed by default. Register every (target, selector) the migrated upkeep needs,
     ///      e.g. `performUpkeep(bytes)` for custom-logic/log upkeeps, or your specific
     ///      time-based function. Owner-only.
+    ///      Validates that `target` has deployed code at the time of registration; passing an EOA,
+    ///      a mistyped address, or a never-deployed address reverts with `TargetHasNoCode`.
     /// @param target The contract the receiver is permitted to call.
     /// @param selector The 4-byte function selector permitted on `target`.
     /// @param allowed True to permit, false to revoke.
     function setCallAllowed(address target, bytes4 selector, bool allowed) external onlyOwner {
         if (target == address(0)) {
             revert InvalidTargetAddress();
+        }
+        if (target.code.length == 0) {
+            revert TargetHasNoCode(target);
         }
         s_callAllowed[target][selector] = allowed;
         emit CallAllowedSet(target, selector, allowed);
