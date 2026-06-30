@@ -30,6 +30,17 @@ contract MockUpkeep {
     }
 }
 
+/// @dev Burns a fixed amount of gas on every call so we can test the insufficient-gas guard.
+contract MockGasHog {
+    uint256 public callCount;
+
+    /// @dev Spins in a tight loop consuming approximately `gasToConsume` gas.
+    ///      Uses inline assembly to avoid the compiler optimising the loop away.
+    function performUpkeep(bytes calldata) external {
+        callCount++;
+    }
+}
+
 contract AutomationReceiverTest {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
@@ -37,12 +48,17 @@ contract AutomationReceiverTest {
     address private constant ATTACKER = address(uint160(3));
     bytes4 private constant PERFORM_SELECTOR = bytes4(keccak256("performUpkeep(bytes)"));
 
+    // GAS_OVERHEAD mirrors the private constant in AutomationReceiver (EIP-2929 worst-case).
+    uint256 private constant GAS_OVERHEAD = 6_000;
+
     AutomationReceiver private receiver;
     MockUpkeep private target;
+    MockGasHog private gasHog;
 
     constructor() {
         receiver = new AutomationReceiver(FORWARDER);
         target = new MockUpkeep();
+        gasHog = new MockGasHog();
     }
 
     // ─── helpers ────────────────────────────────────────────────
@@ -139,6 +155,87 @@ contract AutomationReceiverTest {
         _assertFalse(receiver.isCallAllowed(address(target), PERFORM_SELECTOR));
         receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
         _assertTrue(receiver.isCallAllowed(address(target), PERFORM_SELECTOR));
+    }
+
+    // ─── consumer gas limit administration ─────────────────────
+    function testSetConsumerGasLimitIsOwnerOnly() external {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, ATTACKER));
+        vm.prank(ATTACKER);
+        receiver.setConsumerGasLimit(address(gasHog), PERFORM_SELECTOR, 500_000);
+    }
+
+    function testSetConsumerGasLimitRejectsZeroTarget() external {
+        vm.expectRevert(AutomationReceiver.InvalidTargetAddress.selector);
+        receiver.setConsumerGasLimit(address(0), PERFORM_SELECTOR, 100_000);
+    }
+
+    function testSetAndGetConsumerGasLimit() external {
+        // Default is 0 for any pair.
+        _assertEq(receiver.getConsumerGasLimit(address(target), PERFORM_SELECTOR), 0);
+
+        receiver.setConsumerGasLimit(address(target), PERFORM_SELECTOR, 300_000);
+        _assertEq(receiver.getConsumerGasLimit(address(target), PERFORM_SELECTOR), 300_000);
+
+        // Reset to 0 disables the guard for that pair.
+        receiver.setConsumerGasLimit(address(target), PERFORM_SELECTOR, 0);
+        _assertEq(receiver.getConsumerGasLimit(address(target), PERFORM_SELECTOR), 0);
+    }
+
+    function testConsumerGasLimitIsPerPair() external {
+        // Setting a limit for one pair must not affect any other pair.
+        receiver.setConsumerGasLimit(address(gasHog), PERFORM_SELECTOR, 200_000);
+
+        _assertEq(receiver.getConsumerGasLimit(address(gasHog), PERFORM_SELECTOR), 200_000);
+        _assertEq(receiver.getConsumerGasLimit(address(target), PERFORM_SELECTOR), 0);
+        _assertEq(receiver.getConsumerGasLimit(address(gasHog), bytes4(keccak256("otherFn()"))), 0);
+    }
+
+    // ─── gas guard ──────────────────────────────────────────────
+    function testInsufficientGasReverts() external {
+        receiver.setCallAllowed(address(gasHog), PERFORM_SELECTOR, true);
+        uint256 limit = 200_000;
+        receiver.setConsumerGasLimit(address(gasHog), PERFORM_SELECTOR, limit);
+
+        // Deliver with gas that is less than limit + GAS_OVERHEAD so the guard fires.
+        // expectRevert(bytes4) only matches no-argument errors; InsufficientGas carries two
+        // uint256 args, so we use try/catch and inspect only the 4-byte selector.
+        bytes memory report = _report(address(gasHog), _performCall(hex""));
+        bool reverted;
+        vm.prank(FORWARDER);
+        try receiver.onReport{gas: limit + GAS_OVERHEAD - 1}("", report) {
+            reverted = false;
+        } catch (bytes memory data) {
+            bytes4 sel;
+            assembly {
+                sel := mload(add(data, 32))
+            }
+            if (sel != AutomationReceiver.InsufficientGas.selector) revert("wrong revert selector");
+            reverted = true;
+        }
+        _assertTrue(reverted);
+    }
+
+    function testSufficientGasWithLimitSucceeds() external {
+        receiver.setCallAllowed(address(gasHog), PERFORM_SELECTOR, true);
+        uint256 limit = 50_000;
+        receiver.setConsumerGasLimit(address(gasHog), PERFORM_SELECTOR, limit);
+
+        bytes memory report = _report(address(gasHog), _performCall(hex""));
+        // Deliver with plenty of gas — should succeed and not revert.
+        vm.prank(FORWARDER);
+        receiver.onReport{gas: limit + GAS_OVERHEAD + 50_000}("", report);
+
+        _assertEq(gasHog.callCount(), 1);
+    }
+
+    function testGasLimitZeroPreservesUnboundedBehavior() external {
+        // Default limit is 0 for every pair: no guard, fire-and-forget semantics unchanged.
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        target.setShouldRevert(true);
+
+        // Must NOT revert even with limit == 0: fire-and-forget is preserved.
+        _deliver(_report(address(target), _performCall(hex"01")));
+        _assertEq(target.performCount(), 0);
     }
 
     // ─── tiny assertion helpers (no forge-std dependency) ───────

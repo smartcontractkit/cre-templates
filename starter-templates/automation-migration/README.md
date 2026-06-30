@@ -46,7 +46,7 @@ The `my-workflow/contracts/evm` directory ships a ready-to-use [Foundry](https:/
 ```bash
 cd my-workflow/contracts/evm
 forge build
-forge test          # 18 tests covering the receiver + permission template
+forge test          # 24 tests covering the receiver + permission template
 
 # Deploy, passing the CRE Forwarder address for your DON as the constructor arg
 forge create src/AutomationReceiver.sol:AutomationReceiver \
@@ -86,7 +86,34 @@ cast send "$RECEIVER_ADDRESS" \
 
 The selector must match the function the workflow encodes (`performUpkeep` for `CUSTOM`/`LOG`, or your `targetFunction` for `CRON`). A mismatch makes `onReport` revert with `CallNotAllowed`.
 
-#### 3b. Set Workflow Identity Checks (Optional but Recommended for Production)
+#### 3b. Configure the Consumer Gas Limit (Recommended)
+
+Set the minimum gas the receiver must have available before forwarding the call to your upkeep consumer contract. When configured, `_processReport` reverts with `InsufficientGas` — causing the CRE Forwarder to record the delivery as **failed and retryable** — if the incoming gas is below `consumerGasLimit + 6,000` (the on-chain overhead).
+
+The limit is configured **per `(target, selector)` pair** — each allowlisted call gets its own gas guard. Set it to the estimated gas limit for that specific function. Zero (the default for every pair) disables the guard and preserves fire-and-forget semantics.
+
+Note that this helps to mirror Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
+
+```bash
+# Custom-logic / log-trigger upkeeps: performUpkeep(bytes)
+cast send "$RECEIVER_ADDRESS" \
+  "setConsumerGasLimit(address,bytes4,uint256)" \
+  "$TARGET_ADDRESS" "$(cast sig 'performUpkeep(bytes)')" "$PERFORM_GAS_LIMIT" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Time-based upkeeps: your specific function, e.g. performAction(uint256)
+cast send "$RECEIVER_ADDRESS" \
+  "setConsumerGasLimit(address,bytes4,uint256)" \
+  "$TARGET_ADDRESS" "$(cast sig 'performAction(uint256)')" "$PERFORM_GAS_LIMIT" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+```
+
+**Parameters:**
+- `target`: The address of the upkeep contract the limit applies to.
+- `selector`: The 4-byte function selector the limit applies to (same value used in `setCallAllowed`).
+- `gasLimit`: The minimum gas required by that specific call. Set to `0` to disable the guard for that pair.
+
+#### 3c. Set Workflow Identity Checks (Optional but Recommended for Production)
 
 Once deployed, configure the receiver to accept reports only from your workflow. These checks are optional for development but strongly recommended for production:
 
@@ -163,8 +190,9 @@ The generated `checkUpkeep` / `checkLog` bindings read at the **last finalized b
 ### Execution
 The `AutomationReceiver` executes `target.call(data)`, so it can drive any function signature — `performUpkeep(bytes)` for custom-logic/log upkeeps, or a custom function like `performAction(uint256)` for time-based ones. Every call is gated by the closed-by-default `(target, selector)` allowlist (Step 3).
 
-The receiver distinguishes two failure modes:
+The receiver distinguishes three failure modes:
 - **Authorization failure** — a zero target, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
+- **Gas guard failure** — when `setConsumerGasLimit` has been configured for the specific `(target, selector)` pair and the incoming gas is below `consumerGasLimit + 6,000`, `_processReport` **reverts** with `InsufficientGas(available, required)`. The forwarder records the transmission as failed and it can be retried with higher gas. This closes a griefing attack where a report is delivered with just enough gas to pass the forwarder's minimum check but not enough for `performUpkeep` to execute, which would otherwise permanently consume the transmission ID. The 6,000-gas overhead covers the EIP-2929 cold storage read, call-opcode dispatch, post-call event emission, and bookkeeping. Each `(target, selector)` pair has its own independent limit; pairs with no configured limit retain fire-and-forget semantics.
 - **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
 
 ### Gas Limit

@@ -22,8 +22,20 @@ import "./ReceiverTemplate.sol";
  *      Migration rule of thumb: inbound authorizes the workflow; outbound authorizes the action.
  */
 contract AutomationReceiver is ReceiverTemplate {
+    // Sum of non-target gas costs inside _processReport (EIP-2929 cold-slot / cold-address):
+    //   SLOAD s_consumerGasLimit (cold slot)          2,100
+    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)        50
+    //   CALL opcode dispatch to target (cold addr)    2,600
+    //   Post-call (success flag, JUMPI, LOG2 min)     1,200
+    //   Misc stack / memory                              50
+    //                                        Total:   6,000
+    uint256 private constant GAS_OVERHEAD = 6_000;
+
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
     mapping(address target => mapping(bytes4 selector => bool allowed)) private s_callAllowed;
+
+    /// @notice Per-(target, selector) minimum gas the consumer needs to execute. 0 = no limit.
+    mapping(address target => mapping(bytes4 selector => uint256 gasLimit)) private s_consumerGasLimit;
 
     /// @notice Emitted when a target call succeeds.
     event CallExecuted(address indexed target, bytes4 indexed selector, bytes returnData);
@@ -31,6 +43,8 @@ contract AutomationReceiver is ReceiverTemplate {
     event CallFailed(address indexed target, bytes4 indexed selector, bytes reason);
     /// @notice Emitted when the owner updates the outbound allowlist.
     event CallAllowedSet(address indexed target, bytes4 indexed selector, bool allowed);
+    /// @notice Emitted when the owner updates the consumer gas limit for a (target, selector) pair.
+    event ConsumerGasLimitSet(address indexed target, bytes4 indexed selector, uint256 previousLimit, uint256 newLimit);
 
     /// @notice Thrown when the decoded target is the zero address.
     error InvalidTargetAddress();
@@ -38,6 +52,9 @@ contract AutomationReceiver is ReceiverTemplate {
     error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
     error CallNotAllowed(address target, bytes4 selector);
+    /// @notice Thrown when there is not enough gas to safely forward consumerGasLimit to the target.
+    ///         Causes the forwarder to record the transmission as failed so it can be retried.
+    error InsufficientGas(uint256 available, uint256 required);
 
     constructor(address _forwarder) ReceiverTemplate(_forwarder) {}
 
@@ -61,6 +78,28 @@ contract AutomationReceiver is ReceiverTemplate {
         return s_callAllowed[target][selector];
     }
 
+    /// @notice Set the minimum gas required to execute `selector` on `target`.
+    /// @dev When non-zero, `_processReport` will revert with `InsufficientGas` before calling the
+    ///      target if available gas is below `gasLimit + GAS_OVERHEAD`. This causes the CRE
+    ///      Forwarder to record the transmission as failed (retryable) rather than permanently
+    ///      consuming the report. Set this to the `performGasLimit` tuned in Automation for the
+    ///      specific function being migrated. Each (target, selector) pair has its own limit.
+    ///      Zero (the default) disables the guard for that pair and preserves fire-and-forget.
+    /// @param target  The contract the limit applies to. Must not be the zero address.
+    /// @param selector The 4-byte function selector the limit applies to.
+    /// @param gasLimit Minimum gas required by the consumer. 0 = no guard.
+    function setConsumerGasLimit(address target, bytes4 selector, uint256 gasLimit) external onlyOwner {
+        if (target == address(0)) revert InvalidTargetAddress();
+        uint256 previous = s_consumerGasLimit[target][selector];
+        s_consumerGasLimit[target][selector] = gasLimit;
+        emit ConsumerGasLimitSet(target, selector, previous, gasLimit);
+    }
+
+    /// @notice Returns the configured consumer gas limit for a (target, selector) pair (0 = no guard).
+    function getConsumerGasLimit(address target, bytes4 selector) external view returns (uint256) {
+        return s_consumerGasLimit[target][selector];
+    }
+
     /// @notice Decodes and executes the call on the target contract.
     /// @param report ABI-encoded (address target, bytes data), where `data` is a full
     ///        function call (4-byte selector followed by its arguments).
@@ -69,6 +108,11 @@ contract AutomationReceiver is ReceiverTemplate {
     ///      (an allowed call that reverts) are swallowed: `CallFailed` is emitted and the
     ///      report is consumed, matching Chainlink Automation's fire-and-forget semantics
     ///      where the next trigger re-evaluates eligibility.
+    ///      Gas-guard: when `s_consumerGasLimit[target][selector]` is non-zero, the function
+    ///      reverts with `InsufficientGas` before the target call if available gas is below
+    ///      `gasLimit + GAS_OVERHEAD`. This ensures a low-gas delivery is recorded as failed
+    ///      by the forwarder and can be retried, preventing griefing attacks. Each
+    ///      (target, selector) pair has its own configurable limit.
     function _processReport(bytes calldata report) internal override {
         (address target, bytes memory data) = abi.decode(report, (address, bytes));
 
@@ -89,7 +133,18 @@ contract AutomationReceiver is ReceiverTemplate {
             revert CallNotAllowed(target, selector);
         }
 
-        (bool success, bytes memory returnData) = target.call(data);
+        uint256 consumerGasLimit = s_consumerGasLimit[target][selector];
+        bool success;
+        bytes memory returnData;
+        if (consumerGasLimit > 0) {
+            uint256 required = consumerGasLimit + GAS_OVERHEAD;
+            if (gasleft() < required) {
+                revert InsufficientGas(gasleft(), required);
+            }
+            (success, returnData) = target.call{gas: consumerGasLimit}(data);
+        } else {
+            (success, returnData) = target.call(data);
+        }
 
         if (success) {
             emit CallExecuted(target, selector, returnData);

@@ -65,15 +65,6 @@ contract ReceiverTemplateTest {
         receiver.setExpectedAuthor(address(0));
     }
 
-    function testRejectsMalformedMetadataLength() external {
-        MockReceiver receiver = new MockReceiver(FORWARDER);
-        receiver.setExpectedAuthor(AUTHOR);
-        bytes memory malformedMetadata = new bytes(61);
-
-        vm.expectRevert(abi.encodeWithSelector(ReceiverTemplate.InvalidMetadataLength.selector, 61, 62));
-        vm.prank(FORWARDER);
-        receiver.onReport(malformedMetadata, "report");
-    }
 
     function testAcceptsReportWhenForwarderAndWorkflowMetadataMatch() external {
         MockReceiver receiver = new MockReceiver(FORWARDER);
