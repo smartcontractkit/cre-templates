@@ -80,7 +80,7 @@ cast send "$RECEIVER_ADDRESS" \
 ```
 
 **Parameters:**
-- `target`: The address of your existing upkeep contract.
+- `target`: The address of your existing upkeep contract. Must be a deployed contract — `setCallAllowed` reverts with `TargetHasNoCode` if the address has no code (EOA, mistyped address, or never-deployed contract).
 - `selector`: The 4-byte function selector (computed from the function signature via `cast sig`).
 - `allowed`: Set to `true` to allow, `false` to revoke.
 
@@ -164,7 +164,7 @@ The generated `checkUpkeep` / `checkLog` bindings read at the **last finalized b
 The `AutomationReceiver` executes `target.call(data)`, so it can drive any function signature — `performUpkeep(bytes)` for custom-logic/log upkeeps, or a custom function like `performAction(uint256)` for time-based ones. Every call is gated by the closed-by-default `(target, selector)` allowlist (Step 3).
 
 The receiver distinguishes two failure modes:
-- **Authorization failure** — a zero target, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
+- **Authorization failure** — a zero target, a target with no deployed code, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `TargetHasNoCode` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
 - **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
 
 ### Gas Limit

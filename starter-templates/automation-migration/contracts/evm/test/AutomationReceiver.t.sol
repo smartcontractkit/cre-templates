@@ -195,6 +195,15 @@ contract AutomationReceiverTest {
         receiver.setCallAllowed(address(0), PERFORM_SELECTOR, true);
     }
 
+    function testSetCallAllowedRejectsCodelessTarget() external {
+        // address(uint160(99)) is an EOA with no deployed code.
+        address eoa = address(uint160(99));
+        vm.expectRevert(
+            abi.encodeWithSelector(AutomationReceiver.TargetHasNoCode.selector, eoa)
+        );
+        receiver.setCallAllowed(eoa, PERFORM_SELECTOR, true);
+    }
+
     function testIsCallAllowedReflectsState() external {
         _assertFalse(receiver.isCallAllowed(address(target), PERFORM_SELECTOR));
         receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
