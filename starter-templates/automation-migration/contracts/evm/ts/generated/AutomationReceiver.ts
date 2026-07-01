@@ -88,6 +88,26 @@ export type CallFailedDecoded = {
 
 
 /**
+ * Filter params for ConsumerGasLimitSet. Only indexed fields can be used for filtering.
+ * Indexed string/bytes must be passed as keccak256 hash (Hex).
+ */
+export type ConsumerGasLimitSetTopics = {
+  target?: `0x${string}`
+  selector?: `0x${string}`
+}
+
+/**
+ * Decoded ConsumerGasLimitSet event data.
+ */
+export type ConsumerGasLimitSetDecoded = {
+  target: `0x${string}`
+  selector: `0x${string}`
+  previousLimit: bigint
+  newLimit: bigint
+}
+
+
+/**
  * Filter params for ExpectedAuthorUpdated. Only indexed fields can be used for filtering.
  * Indexed string/bytes must be passed as keccak256 hash (Hex).
  */
