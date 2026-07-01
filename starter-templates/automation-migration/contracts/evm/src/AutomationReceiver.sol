@@ -12,10 +12,11 @@ import "./ReceiverTemplate.sol";
  *      1. INBOUND — answers "who may deliver a report?":
  *         a) {ReceiverTemplate} enforces the CRE Forwarder address check and optional
  *            workflowId / workflowName / workflowOwner identity checks.
-         *         b) {_processReport} additionally requires that the forwarder is non-zero (closing
+ *         b) {_processReport} additionally requires that the forwarder is non-zero (closing
  *            the gap left by `ReceiverTemplate.setForwarderAddress` which permits address(0))
- *            and that both workflowId and workflowOwner are configured before any report is
- *            accepted. Either field alone does not fully bind the receiver to a single workflow.
+ *            and that at least one complete workflow identity option is configured before any
+ *            report is accepted: either (1) workflowId is set, or (2) both workflowOwner and
+ *            workflowName are set. Neither option alone is sufficient for option 2.
  *
  *      2. OUTBOUND (this contract) — answers "what may a report make this contract do?":
  *         a closed-by-default allowlist of (target, function-selector) pairs. The inbound checks
@@ -44,9 +45,11 @@ contract AutomationReceiver is ReceiverTemplate {
     error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
     error CallNotAllowed(address target, bytes4 selector);
-    /// @notice Thrown when onReport is called but neither workflowId nor workflowOwner has been
-    ///         configured. At least one must be set so the receiver is bound to a specific
-    ///         workflow and cannot be triggered by an arbitrary DON-signed report.
+    /// @notice Thrown when onReport is called without a complete workflow identity configuration.
+    ///         The receiver requires exactly one of the two valid options to be satisfied:
+    ///         (1) workflowId is set, or (2) both workflowOwner and workflowName are set.
+    ///         Without at least one complete option the receiver cannot be bound to a specific
+    ///         workflow and would accept reports from any DON-signed payload.
     error WorkflowIdentityNotConfigured();
 
     constructor(address _forwarder) ReceiverTemplate(_forwarder) {}
@@ -84,11 +87,12 @@ contract AutomationReceiver is ReceiverTemplate {
     ///         does not block address(0), so this guard closes that gap: if the owner ever
     ///         sets the forwarder to zero (disabling the caller check in onReport), every
     ///         subsequent report delivery is rejected here instead.
-    ///      2. Both workflow identity fields (workflowId and workflowOwner) must be
-    ///         configured. Either field alone leaves an attack surface: workflowId alone does
-    ///         not bind the report to a specific owner, and workflowOwner alone does not bind
-    ///         it to a specific workflow instance. Requiring both closes the cross-receiver
-    ///         replay vector described in audit finding M-02.
+    ///      2. A complete workflow identity option must be configured. Two options are accepted:
+    ///         (a) workflowId is set — binds the receiver to one specific workflow instance; or
+    ///         (b) both workflowOwner and workflowName are set — binds the receiver to a named
+    ///         workflow from a specific owner. Either piece of option (b) alone is insufficient:
+    ///         owner alone allows any workflow from that owner; name alone is globally ambiguous.
+    ///         Requiring a complete option closes the cross-receiver replay vector from audit M-02.
     ///      Authorization failures (zero target, missing selector, not-allowlisted) revert
     ///      loudly — they indicate misconfiguration or a malformed report. Execution failures
     ///      (an allowed call that reverts) are swallowed: `CallFailed` is emitted and the
@@ -98,7 +102,8 @@ contract AutomationReceiver is ReceiverTemplate {
         if (this.getForwarderAddress() == address(0)) {
             revert InvalidForwarderAddress();
         }
-        if (this.getExpectedWorkflowId() == bytes32(0) || this.getExpectedAuthor() == address(0)) {
+        if (this.getExpectedWorkflowId() == bytes32(0) &&
+            (this.getExpectedAuthor() == address(0) || this.getExpectedWorkflowName() == bytes10(0))) {
             revert WorkflowIdentityNotConfigured();
         }
 

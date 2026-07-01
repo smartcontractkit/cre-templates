@@ -39,8 +39,8 @@ contract AutomationReceiverTest {
     bytes4  private constant PERFORM_SELECTOR = bytes4(keccak256("performUpkeep(bytes)"));
 
     // Workflow identity used across all delivery tests.
-    // Both fields are required: workflowId alone does not bind to a specific owner, and
-    // workflowOwner alone does not bind to a specific workflow instance.
+    // The receiver accepts either (a) workflowId alone, or (b) workflowOwner + workflowName.
+    // Tests below exercise both valid options and the failure cases.
     bytes32 private constant WORKFLOW_ID    = bytes32(uint256(42));
     address private constant WORKFLOW_OWNER = address(uint160(5));
 
@@ -49,7 +49,7 @@ contract AutomationReceiverTest {
 
     constructor() {
         receiver = new AutomationReceiver(FORWARDER);
-        // Both identity fields must be set for _processReport's identity guard to pass.
+        // Use option (a): workflowId alone satisfies the identity guard.
         receiver.setExpectedWorkflowId(WORKFLOW_ID);
         receiver.setExpectedAuthor(WORKFLOW_OWNER);
         target = new MockUpkeep();
@@ -102,30 +102,60 @@ contract AutomationReceiverTest {
     }
 
     // ─── workflow identity guard ─────────────────────────────────
-    /// @dev workflowId is required. A receiver with only workflowOwner set must be rejected:
-    ///      without a workflowId binding any workflow from that owner could trigger it.
-    function testOnReportRevertsWhenWorkflowIdNotConfigured() external {
+    /// @dev Option (a): workflowId alone satisfies the identity guard. A receiver that has
+    ///      only workflowId configured (no owner, no name) must accept deliveries without
+    ///      reverting with WorkflowIdentityNotConfigured.
+    function testWorkflowIdAloneSuffices() external {
         AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
-        freshReceiver.setExpectedAuthor(WORKFLOW_OWNER); // owner set, id intentionally missing
+        freshReceiver.setExpectedWorkflowId(WORKFLOW_ID); // only workflowId — no owner, no name
+        freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        vm.prank(FORWARDER);
+        // ReceiverTemplate skips owner/name checks (none configured); identity guard passes.
+        freshReceiver.onReport(_metadata(WORKFLOW_ID, address(0)), _report(address(target), _performCall(hex"01")));
+
+        _assertEq(target.performCount(), 1);
+    }
+
+    /// @dev Option (b): workflowOwner + workflowName (no workflowId) satisfies the identity guard.
+    function testOwnerAndNameSufficeWithoutWorkflowId() external {
+        AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
+        freshReceiver.setExpectedAuthor(WORKFLOW_OWNER);
+        freshReceiver.setExpectedWorkflowName("my-workflow");
+        freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        // Read back the encoded bytes10 to pass the correct value in metadata.
+        bytes10 wfName = freshReceiver.getExpectedWorkflowName();
+
+        vm.prank(FORWARDER);
+        // workflowId in metadata is zero — ReceiverTemplate skips id check (none configured).
+        freshReceiver.onReport(
+            abi.encodePacked(bytes32(0), wfName, WORKFLOW_OWNER),
+            _report(address(target), _performCall(hex"01"))
+        );
+
+        _assertEq(target.performCount(), 1);
+    }
+
+    /// @dev Only workflowOwner set, no workflowId and no workflowName — neither option satisfied.
+    function testOnReportRevertsWhenOwnerSetButNameMissing() external {
+        AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
+        freshReceiver.setExpectedAuthor(WORKFLOW_OWNER); // owner set, name and id intentionally missing
         freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
 
         vm.expectRevert(AutomationReceiver.WorkflowIdentityNotConfigured.selector);
         vm.prank(FORWARDER);
-        // metadata carries zero workflowId — ReceiverTemplate skips id check (none configured)
         freshReceiver.onReport(_metadata(bytes32(0), WORKFLOW_OWNER), _report(address(target), _performCall(hex"01")));
     }
 
-    /// @dev workflowOwner is required. A receiver with only workflowId set must be rejected:
-    ///      without an owner binding any workflow sharing that id could trigger it.
-    function testOnReportRevertsWhenWorkflowOwnerNotConfigured() external {
+    /// @dev No identity fields at all — neither option satisfied.
+    function testOnReportRevertsWhenNeitherIdentityOptionConfigured() external {
         AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
-        freshReceiver.setExpectedWorkflowId(WORKFLOW_ID); // id set, owner intentionally missing
         freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
 
         vm.expectRevert(AutomationReceiver.WorkflowIdentityNotConfigured.selector);
         vm.prank(FORWARDER);
-        // metadata carries WORKFLOW_ID — ReceiverTemplate id check passes, owner unconfigured
-        freshReceiver.onReport(_metadata(WORKFLOW_ID, address(0)), _report(address(target), _performCall(hex"01")));
+        freshReceiver.onReport(_metadata(bytes32(0), address(0)), _report(address(target), _performCall(hex"01")));
     }
 
     // ─── outbound allowlist ─────────────────────────────────────
