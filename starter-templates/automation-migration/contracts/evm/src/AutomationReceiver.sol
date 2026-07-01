@@ -27,14 +27,29 @@ import "./ReceiverTemplate.sol";
  *      Migration rule of thumb: inbound authorizes the workflow; outbound authorizes the action.
  */
 contract AutomationReceiver is ReceiverTemplate {
-    // Sum of non-target gas costs inside _processReport (EIP-2929 cold-slot / cold-address):
-    //   SLOAD s_consumerGasLimit (cold slot)          2,100
-    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)        50
-    //   CALL opcode dispatch to target (cold addr)    2,600
-    //   Post-call (success flag, JUMPI, LOG2 min)     1,200
-    //   Misc stack / memory                              50
-    //                                        Total:   6,000
-    uint256 private constant GAS_OVERHEAD = 6_000;
+    // Gas reserved from the gasleft() check point to function exit (EIP-2929 worst-case).
+    // Covers every non-target cost incurred AFTER the guard fires:
+    //   SLOAD s_consumerGasLimit (cold mapping)         2,100
+    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          50
+    //   CALL opcode dispatch to target (cold addr)      2,600
+    //   Post-call (success flag, JUMPI, LOG3 min)       2,200
+    //     ├─ LOG3 base + 3 topics (375 + 3×375)         1,500
+    //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)    512
+    //     └─ misc (returnData mem, JUMPI, stack)          188
+    //   Misc stack / memory                                50
+    //                                          Total:   7,000
+    //
+    // EIP-150 (63/64 rule): a CALL can forward at most 63/64 of available gas.
+    // A fixed GAS_OVERHEAD buffer is only sufficient when consumerGasLimit ≤ 63 × GAS_OVERHEAD
+    // (~441,000). Above that threshold the 63/64 cap would deliver less than consumerGasLimit
+    // to the target. _processReport therefore adds consumerGasLimit / 63 to `required`
+    // dynamically, ensuring the available gas at the CALL satisfies:
+    //   63/64 × available  ≥  consumerGasLimit
+    //
+    // Note: the this.get*() calls at the top of _processReport (forwarder check, identity
+    // guard) are sunk costs that execute before this constant is evaluated; they add
+    // ~5,000–10,000 gas of pre-check overhead on top of consumerGasLimit + GAS_OVERHEAD.
+    uint256 private constant GAS_OVERHEAD = 7_000;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
     mapping(address target => mapping(bytes4 selector => bool allowed)) private s_callAllowed;
@@ -97,8 +112,11 @@ contract AutomationReceiver is ReceiverTemplate {
     }
 
     /// @notice Set the minimum gas required to execute `selector` on `target`.
-    /// @dev When non-zero, `_processReport` will revert with `InsufficientGas` before calling the
-    ///      target if available gas is below `gasLimit + GAS_OVERHEAD`. This causes the CRE
+    /// @dev When non-zero, `_processReport` will revert with `InsufficientGas` before calling
+    ///      the target if available gas is below `gasLimit + gasLimit / 63 + GAS_OVERHEAD`.
+    ///      The `gasLimit / 63` term compensates for the EIP-150 (63/64) rule: a CALL can
+    ///      forward at most 63/64 of the available gas, so without this buffer a high gas limit
+    ///      would cause the target to receive less than `gasLimit`. This causes the CRE
     ///      Forwarder to record the transmission as failed (retryable) rather than permanently
     ///      consuming the report. Set this to the `performGasLimit` tuned in Automation for the
     ///      specific function being migrated. Each (target, selector) pair has its own limit.
@@ -139,7 +157,10 @@ contract AutomationReceiver is ReceiverTemplate {
     ///      where the next trigger re-evaluates eligibility.
     ///      Gas-guard: when `s_consumerGasLimit[target][selector]` is non-zero, the function
     ///      reverts with `InsufficientGas` before the target call if available gas is below
-    ///      `gasLimit + GAS_OVERHEAD`. This ensures a low-gas delivery is recorded as failed
+    ///      `gasLimit + gasLimit / 63 + GAS_OVERHEAD`. The `gasLimit / 63` term accounts for
+    ///      the EIP-150 (63/64) rule: a CALL forwards at most 63/64 of available gas, so
+    ///      without this buffer a high gas limit (above ~441,000) would cause the target to
+    ///      receive less than configured. This ensures a low-gas delivery is recorded as failed
     ///      by the forwarder and can be retried, preventing griefing attacks. Each
     ///      (target, selector) pair has its own configurable limit.
     function _processReport(bytes calldata report) internal override {
@@ -174,7 +195,10 @@ contract AutomationReceiver is ReceiverTemplate {
         bool success;
         bytes memory returnData;
         if (consumerGasLimit > 0) {
-            uint256 required = consumerGasLimit + GAS_OVERHEAD;
+            // consumerGasLimit / 63 compensates for EIP-150: a CALL forwards at most
+            // 63/64 of available gas. Without this term, limits above ~441,000
+            // (63 × GAS_OVERHEAD) would cause the target to receive less than requested.
+            uint256 required = consumerGasLimit + consumerGasLimit / 63 + GAS_OVERHEAD;
             if (gasleft() < required) {
                 revert InsufficientGas(gasleft(), required);
             }

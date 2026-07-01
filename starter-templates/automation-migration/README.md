@@ -41,12 +41,12 @@ While working directly from this branch, copy or open `starter-templates/automat
 ### 2. Build and Deploy the Bridge
 Deploy `AutomationReceiver.sol` to your target chain. You only need to do this once to support multiple upkeeps.
 
-The `my-workflow/contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfoundry.sh/) project: a `foundry.toml` and a vendored copy of the only OpenZeppelin files used (`Ownable`, `Context`). No `forge install` or local node is required — just build and deploy:
+The `contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfoundry.sh/) project: a `foundry.toml` and a vendored copy of the only OpenZeppelin files used (`Ownable`, `Context`). No `forge install` or local node is required — just build and deploy:
 
 ```bash
-cd my-workflow/contracts/evm
+cd contracts/evm
 forge build
-forge test          # 24 tests covering the receiver + permission template
+forge test          # 33 tests covering the receiver + permission template
 
 # Deploy, passing the CRE Forwarder address for your DON as the constructor arg
 forge create src/AutomationReceiver.sol:AutomationReceiver \
@@ -88,7 +88,7 @@ The selector must match the function the workflow encodes (`performUpkeep` for `
 
 #### 3b. Configure the Consumer Gas Limit (Recommended)
 
-Set the minimum gas the receiver must have available before forwarding the call to your upkeep consumer contract. When configured, `_processReport` reverts with `InsufficientGas` — causing the CRE Forwarder to record the delivery as **failed and retryable** — if the incoming gas is below `consumerGasLimit + 6,000` (the on-chain overhead).
+Set the minimum gas the receiver must have available before forwarding the call to your upkeep consumer contract. When configured, `_processReport` reverts with `InsufficientGas` — causing the CRE Forwarder to record the delivery as **failed and retryable** — if the incoming gas is below `consumerGasLimit + consumerGasLimit / 63 + 7,000` (the on-chain overhead).
 
 The limit is configured **per `(target, selector)` pair** — each allowlisted call gets its own gas guard. Set it to the estimated gas limit for that specific function. Zero (the default for every pair) disables the guard and preserves fire-and-forget semantics.
 
@@ -204,7 +204,7 @@ The `AutomationReceiver` executes `target.call(data)`, so it can drive any funct
 
 The receiver distinguishes three failure modes:
 - **Authorization failure** — a zero target, a target with no deployed code, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `TargetHasNoCode` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
-- **Gas guard failure** — when `setConsumerGasLimit` has been configured for the specific `(target, selector)` pair and the incoming gas is below `consumerGasLimit + 6,000`, `_processReport` **reverts** with `InsufficientGas(available, required)`. The forwarder records the transmission as failed and it can be retried with higher gas. This closes a griefing attack where a report is delivered with just enough gas to pass the forwarder's minimum check but not enough for `performUpkeep` to execute, which would otherwise permanently consume the transmission ID. The 6,000-gas overhead covers the EIP-2929 cold storage read, call-opcode dispatch, post-call event emission, and bookkeeping. Each `(target, selector)` pair has its own independent limit; pairs with no configured limit retain fire-and-forget semantics.
+- **Gas guard failure** — when `setConsumerGasLimit` has been configured for the specific `(target, selector)` pair and the incoming gas is below `consumerGasLimit + consumerGasLimit / 63 + 7,000`, `_processReport` **reverts** with `InsufficientGas(available, required)`. The forwarder records the transmission as failed and it can be retried with higher gas. This closes a griefing attack where a report is delivered with just enough gas to pass the forwarder's minimum check but not enough for `performUpkeep` to execute, which would otherwise permanently consume the transmission ID. The 7,000-gas constant covers the EIP-2929 cold storage read, call-opcode dispatch, post-call LOG3 event emission (3 topics), and bookkeeping. The `consumerGasLimit / 63` term compensates for the EIP-150 (63/64) rule: a `CALL` can forward at most 63/64 of available gas, so without this buffer a high gas limit (above ~441,000) would cause the target to receive less than configured. Each `(target, selector)` pair has its own independent limit; pairs with no configured limit retain fire-and-forget semantics.
 - **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
 
 ### Gas Limit
@@ -224,7 +224,7 @@ After migration, the `msg.sender` your target sees is the `AutomationReceiver` a
 
 - **Off-chain `offchainConfig` / gas-price-threshold controls.** In CRE these are expressed in the workflow, not on the registry.
 
-> **Bindings note:** if you change `AutomationReceiver.sol`, regenerate the TypeScript bindings in `my-workflow/contracts/evm/ts/generated/` and the committed ABI in `my-workflow/contracts/evm/src/abi/`. The workflow itself only uses the generic `writeReport` entrypoint, so it is unaffected by the receiver's other ABI changes.
+> **Bindings note:** if you change `AutomationReceiver.sol`, regenerate the TypeScript bindings in `contracts/evm/ts/generated/` and the committed ABI in `contracts/evm/src/abi/`. The workflow itself only uses the generic `writeReport` entrypoint, so it is unaffected by the receiver's other ABI changes.
 
 ---
 
