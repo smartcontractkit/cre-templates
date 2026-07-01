@@ -208,7 +208,7 @@ The receiver distinguishes three failure modes:
 - **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
 
 ### Gas Limit
-`writeGasLimit` (default `"500000"`) caps the on-chain execution. Carry over the `performGasLimit` you tuned for your existing upkeep rather than relying on the default.
+`writeGasLimit` (default `"500000"`) caps the on-chain execution gas forwarded to `onReport`. The on-chain guard formula is `consumerGasLimit + consumerGasLimit/63 + 7,000`, but an additional ~14,000 gas is consumed before that check point by pre-guard operations — five cold `SLOAD`s in `ReceiverTemplate.onReport` (forwarder address, workflow ID ×2, owner, name: 5 × 2,100 = 10,500 gas), two `STATICCALL`s to `this` in `_processReport` (~1,000 gas), `abi.decode` of the report payload (~300 gas), and the cold `SLOAD` of `s_callAllowed` (~2,100 gas). Set `writeGasLimit` to at least your `performGasLimit` plus ~20,000 to ensure deliveries comfortably clear the guard. If deliveries still fail with `InsufficientGas`, increase `writeGasLimit` in 10,000-gas increments until they pass.
 
 ---
 

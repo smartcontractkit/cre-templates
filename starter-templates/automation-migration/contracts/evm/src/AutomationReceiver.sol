@@ -27,11 +27,16 @@ import "./ReceiverTemplate.sol";
  *      Migration rule of thumb: inbound authorizes the workflow; outbound authorizes the action.
  */
 contract AutomationReceiver is ReceiverTemplate {
-    // Gas reserved from the gasleft() check point to function exit (EIP-2929 worst-case).
-    // Covers every non-target cost incurred AFTER the guard fires:
+    // Non-target gas costs reserved by the guard (gasleft() < required).
+    // The SLOAD is the last cost incurred BEFORE the check; everything else is AFTER.
+    //
+    // [Pre-check — already spent at the guard point:]
     //   SLOAD s_consumerGasLimit (cold mapping)         2,100
+    //
+    // [Post-check — must complete with remaining gas:]
     //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          50
     //   CALL opcode dispatch to target (cold addr)      2,600
+    //     (EIP-2929 replaces the pre-Berlin 700 base; 2,600 is the full cold-access cost)
     //   Post-call (success flag, JUMPI, LOG3 min)       2,200
     //     ├─ LOG3 base + 3 topics (375 + 3×375)         1,500
     //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)    512
@@ -46,9 +51,12 @@ contract AutomationReceiver is ReceiverTemplate {
     // dynamically, ensuring the available gas at the CALL satisfies:
     //   63/64 × available  ≥  consumerGasLimit
     //
-    // Note: the this.get*() calls at the top of _processReport (forwarder check, identity
-    // guard) are sunk costs that execute before this constant is evaluated; they add
-    // ~5,000–10,000 gas of pre-check overhead on top of consumerGasLimit + GAS_OVERHEAD.
+    // Pre-guard overhead (excluded from GAS_OVERHEAD, paid before the check point):
+    // Five cold SLOADs in ReceiverTemplate.onReport (s_forwarderAddress, s_expectedWorkflowId ×2,
+    // s_expectedAuthor, s_expectedWorkflowName: 5 × 2,100 = 10,500 gas), two STATICCALL frames to
+    // this in _processReport (~1,000 gas), abi.decode of the report (~300 gas), and the cold SLOAD
+    // of s_callAllowed (~2,100 gas) add up to ~14,000 gas on top of consumerGasLimit + GAS_OVERHEAD.
+    // Callers must budget for this in writeGasLimit (see README Gas Limit section).
     uint256 private constant GAS_OVERHEAD = 7_000;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
@@ -121,6 +129,10 @@ contract AutomationReceiver is ReceiverTemplate {
     ///      consuming the report. Set this to the `performGasLimit` tuned in Automation for the
     ///      specific function being migrated. Each (target, selector) pair has its own limit.
     ///      Zero (the default) disables the guard for that pair and preserves fire-and-forget.
+    ///      Note: the on-chain formula only covers costs from the guard check onward. The
+    ///      workflow's writeGasLimit must also budget for ~14,000 gas of pre-guard overhead
+    ///      (five cold SLOADs in ReceiverTemplate, two STATICCALL frames, abi.decode, and
+    ///      the cold s_callAllowed SLOAD) on top of this limit.
     /// @param target  The contract the limit applies to. Must not be the zero address.
     /// @param selector The 4-byte function selector the limit applies to.
     /// @param gasLimit Minimum gas required by the consumer. 0 = no guard.
