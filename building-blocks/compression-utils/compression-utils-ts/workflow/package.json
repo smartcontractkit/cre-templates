@@ -8,7 +8,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@chainlink/cre-sdk": "^1.5.0",
+    "@chainlink/cre-sdk": "^1.11.0",
     "base64-js": "^1.5.1",
     "fflate": "^0.8.2"
   },
