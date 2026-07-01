@@ -12,7 +12,7 @@ This migration uses a "Bridge" pattern:
 
 ### Security Model
 The receiver authorizes reports on two separate layers, and **both** apply:
-- **Inbound — who may deliver a report** (`ReceiverTemplate`): the CRE Forwarder address (mandatory, cannot be disabled) plus optional `workflowId` / `workflowName` / `workflowOwner` identity checks.
+- **Inbound — who may deliver a report**: the CRE Forwarder address is set at construction and validated by `ReceiverTemplate`. `AutomationReceiver._processReport` adds two additional hard guards: (1) it rejects any delivery if the forwarder was ever set to `address(0)` post-deployment (closing the gap in `ReceiverTemplate.setForwarderAddress`), and (2) it requires at least one complete workflow identity option to be configured — an unconfigured receiver rejects all reports with `WorkflowIdentityNotConfigured`. Two options are accepted: **(a)** workflowId is set (binds the receiver to one specific workflow), or **(b)** both workflowOwner and workflowName are set (binds to a named workflow from a specific owner). Either piece of option (b) alone is insufficient.
 - **Outbound — what a report may make the receiver do** (`AutomationReceiver`): a **closed-by-default allowlist** of `(target, function-selector)` pairs. Inbound checks only prove a report came from your workflow; they do **not** constrain the `(target, data)` it carries. Until you allowlist a pair with `setCallAllowed`, the receiver will reject it.
 
 ---
@@ -55,7 +55,7 @@ forge create src/AutomationReceiver.sol:AutomationReceiver \
   --constructor-args "$FORWARDER_ADDRESS"
 ```
 
-- `FORWARDER_ADDRESS` is the CRE Forwarder for your target network — it is the **only** address allowed to call `onReport`. Look it up in the [CRE documentation](https://docs.chain.link/cre) for your network; do not guess it. A wrong value means the DON's reports are rejected, and it can never be set to `address(0)`.
+- `FORWARDER_ADDRESS` is the CRE Forwarder for your target network — it is the **only** address allowed to call `onReport`. Look it up in the [CRE documentation](https://docs.chain.link/cre) for your network; do not guess it. A wrong value means the DON's reports are rejected. The constructor blocks `address(0)`, and even if the owner ever sets the forwarder to `address(0)` post-deployment (via `setForwarderAddress`), `AutomationReceiver._processReport` will reject all subsequent deliveries with `InvalidForwarderAddress`.
 
 ### 3. Configure and Authorize the Receiver
 
@@ -80,7 +80,7 @@ cast send "$RECEIVER_ADDRESS" \
 ```
 
 **Parameters:**
-- `target`: The address of your existing upkeep contract.
+- `target`: The address of your existing upkeep contract. Must be a deployed contract — `setCallAllowed` reverts with `TargetHasNoCode` if the address has no code (EOA, mistyped address, or never-deployed contract).
 - `selector`: The 4-byte function selector (computed from the function signature via `cast sig`).
 - `allowed`: Set to `true` to allow, `false` to revoke.
 
@@ -115,32 +115,44 @@ cast send "$RECEIVER_ADDRESS" \
 
 #### 3c. Set Workflow Identity Checks (Optional but Recommended for Production)
 
-Once deployed, configure the receiver to accept reports only from your workflow. These checks are optional for development but strongly recommended for production:
+**At least one complete identity option must be configured before the receiver will accept any report.** Two options are supported:
+
+- **Option A — workflowId**: set the workflow ID; owner and name are not required.
+- **Option B — workflowOwner + workflowName**: set both the owner address and the workflow name together; either piece alone is insufficient, and workflowId is not required.
+
+Without a complete option, `_processReport` reverts with `WorkflowIdentityNotConfigured` on every delivery attempt.
+
+**Option A — identify by workflow ID:**
 
 ```bash
-# Set the workflow owner (required if using author or name checks)
+cast send "$RECEIVER_ADDRESS" \
+  "setExpectedWorkflowId(bytes32)" \
+  "$WORKFLOW_ID" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+```
+
+**Option B — identify by owner and name (both required):**
+
+```bash
+# Step 1: set the workflow owner
 cast send "$RECEIVER_ADDRESS" \
   "setExpectedAuthor(address)" \
   "$WORKFLOW_OWNER_ADDRESS" \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 
-# Set the workflow ID (optional, adds defense-in-depth)
-cast send "$RECEIVER_ADDRESS" \
-  "setExpectedWorkflowId(bytes32)" \
-  "$WORKFLOW_ID" \
-  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
-
-# Set the workflow name (optional, requires author to be set)
+# Step 2: set the workflow name (requires author to also be set)
 cast send "$RECEIVER_ADDRESS" \
   "setExpectedWorkflowName(string)" \
   "$WORKFLOW_NAME" \
   --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
 ```
 
+You may also combine both options for the strongest guarantee (e.g. set all three fields).
+
 **Parameters:**
-- `setExpectedAuthor(_author)`: The account that deploys or owns the workflow (ensures only that entity's workflows can trigger this receiver).
-- `setExpectedWorkflowId(_id)`: The exact workflow ID (available from `cre workflow info`).
-- `setExpectedWorkflowName(_name)`: The exact workflow name (requires author check to be set for this to work).
+- `setExpectedWorkflowId(_id)`: The exact workflow ID (available from `cre workflow info`). Satisfies option A on its own.
+- `setExpectedAuthor(_author)`: The account that deploys or owns the workflow. Required for option B; does not satisfy the guard alone.
+- `setExpectedWorkflowName(_name)`: The exact workflow name. Required for option B; must always be paired with `setExpectedAuthor` (workflow names are unique per owner, not globally).
 
 ### 4. Configure the Workflow
 Update `my-workflow/config.test.json`:
@@ -191,7 +203,7 @@ The generated `checkUpkeep` / `checkLog` bindings read at the **last finalized b
 The `AutomationReceiver` executes `target.call(data)`, so it can drive any function signature — `performUpkeep(bytes)` for custom-logic/log upkeeps, or a custom function like `performAction(uint256)` for time-based ones. Every call is gated by the closed-by-default `(target, selector)` allowlist (Step 3).
 
 The receiver distinguishes three failure modes:
-- **Authorization failure** — a zero target, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
+- **Authorization failure** — a zero target, a target with no deployed code, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `TargetHasNoCode` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
 - **Gas guard failure** — when `setConsumerGasLimit` has been configured for the specific `(target, selector)` pair and the incoming gas is below `consumerGasLimit + 6,000`, `_processReport` **reverts** with `InsufficientGas(available, required)`. The forwarder records the transmission as failed and it can be retried with higher gas. This closes a griefing attack where a report is delivered with just enough gas to pass the forwarder's minimum check but not enough for `performUpkeep` to execute, which would otherwise permanently consume the transmission ID. The 6,000-gas overhead covers the EIP-2929 cold storage read, call-opcode dispatch, post-call event emission, and bookkeeping. Each `(target, selector)` pair has its own independent limit; pairs with no configured limit retain fire-and-forget semantics.
 - **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
 

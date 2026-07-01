@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {AutomationReceiver} from "../src/AutomationReceiver.sol";
+import {ReceiverTemplate} from "../src/ReceiverTemplate.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface Vm {
@@ -45,8 +46,14 @@ contract AutomationReceiverTest {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     address private constant FORWARDER = address(uint160(1));
-    address private constant ATTACKER = address(uint160(3));
-    bytes4 private constant PERFORM_SELECTOR = bytes4(keccak256("performUpkeep(bytes)"));
+    address private constant ATTACKER  = address(uint160(3));
+    bytes4  private constant PERFORM_SELECTOR = bytes4(keccak256("performUpkeep(bytes)"));
+
+    // Workflow identity used across all delivery tests.
+    // The receiver accepts either (a) workflowId alone, or (b) workflowOwner + workflowName.
+    // Tests below exercise both valid options and the failure cases.
+    bytes32 private constant WORKFLOW_ID    = bytes32(uint256(42));
+    address private constant WORKFLOW_OWNER = address(uint160(5));
 
     // GAS_OVERHEAD mirrors the private constant in AutomationReceiver (EIP-2929 worst-case).
     uint256 private constant GAS_OVERHEAD = 6_000;
@@ -57,6 +64,9 @@ contract AutomationReceiverTest {
 
     constructor() {
         receiver = new AutomationReceiver(FORWARDER);
+        // Use option (a): workflowId alone satisfies the identity guard.
+        receiver.setExpectedWorkflowId(WORKFLOW_ID);
+        receiver.setExpectedAuthor(WORKFLOW_OWNER);
         target = new MockUpkeep();
         gasHog = new MockGasHog();
     }
@@ -70,9 +80,17 @@ contract AutomationReceiverTest {
         return abi.encode(tgt, callData);
     }
 
+    /// @dev Builds the 62-byte metadata expected by ReceiverTemplate._decodeMetadata:
+    ///      bytes 0-31  : workflowId (bytes32)
+    ///      bytes 32-41 : workflowName (bytes10, zero — not validated in these tests)
+    ///      bytes 42-61 : workflowOwner (address)
+    function _metadata(bytes32 wfId, address wfOwner) private pure returns (bytes memory) {
+        return abi.encodePacked(wfId, bytes10(0), wfOwner);
+    }
+
     function _deliver(bytes memory report) private {
         vm.prank(FORWARDER);
-        receiver.onReport("", report);
+        receiver.onReport(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), report);
     }
 
     // ─── inbound auth (delegated to ReceiverTemplate) ───────────
@@ -81,7 +99,79 @@ contract AutomationReceiverTest {
 
         vm.expectRevert(abi.encodeWithSelector(_invalidSenderSelector(), ATTACKER, FORWARDER));
         vm.prank(ATTACKER);
-        receiver.onReport("", report);
+        receiver.onReport(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), report);
+    }
+
+    // ─── forwarder-zero guard ────────────────────────────────────
+    /// @dev setForwarderAddress(address(0)) succeeds at the setter level (ReceiverTemplate
+    ///      does not block it), but _processReport must reject any subsequent delivery.
+    function testSetForwarderToZeroAllowedButDeliveryReverts() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        // Setter succeeds — this is expected ReceiverTemplate behaviour that we cannot change.
+        receiver.setForwarderAddress(address(0));
+
+        // Anyone can now reach onReport (no forwarder gate), but _processReport blocks them.
+        vm.expectRevert(ReceiverTemplate.InvalidForwarderAddress.selector);
+        // Call directly (no prank needed since forwarder check is bypassed by the zero address).
+        receiver.onReport(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), _report(address(target), _performCall(hex"01")));
+    }
+
+    // ─── workflow identity guard ─────────────────────────────────
+    /// @dev Option (a): workflowId alone satisfies the identity guard. A receiver that has
+    ///      only workflowId configured (no owner, no name) must accept deliveries without
+    ///      reverting with WorkflowIdentityNotConfigured.
+    function testWorkflowIdAloneSuffices() external {
+        AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
+        freshReceiver.setExpectedWorkflowId(WORKFLOW_ID); // only workflowId — no owner, no name
+        freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        vm.prank(FORWARDER);
+        // ReceiverTemplate skips owner/name checks (none configured); identity guard passes.
+        freshReceiver.onReport(_metadata(WORKFLOW_ID, address(0)), _report(address(target), _performCall(hex"01")));
+
+        _assertEq(target.performCount(), 1);
+    }
+
+    /// @dev Option (b): workflowOwner + workflowName (no workflowId) satisfies the identity guard.
+    function testOwnerAndNameSufficeWithoutWorkflowId() external {
+        AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
+        freshReceiver.setExpectedAuthor(WORKFLOW_OWNER);
+        freshReceiver.setExpectedWorkflowName("my-workflow");
+        freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        // Read back the encoded bytes10 to pass the correct value in metadata.
+        bytes10 wfName = freshReceiver.getExpectedWorkflowName();
+
+        vm.prank(FORWARDER);
+        // workflowId in metadata is zero — ReceiverTemplate skips id check (none configured).
+        freshReceiver.onReport(
+            abi.encodePacked(bytes32(0), wfName, WORKFLOW_OWNER),
+            _report(address(target), _performCall(hex"01"))
+        );
+
+        _assertEq(target.performCount(), 1);
+    }
+
+    /// @dev Only workflowOwner set, no workflowId and no workflowName — neither option satisfied.
+    function testOnReportRevertsWhenOwnerSetButNameMissing() external {
+        AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
+        freshReceiver.setExpectedAuthor(WORKFLOW_OWNER); // owner set, name and id intentionally missing
+        freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        vm.expectRevert(AutomationReceiver.WorkflowIdentityNotConfigured.selector);
+        vm.prank(FORWARDER);
+        freshReceiver.onReport(_metadata(bytes32(0), WORKFLOW_OWNER), _report(address(target), _performCall(hex"01")));
+    }
+
+    /// @dev No identity fields at all — neither option satisfied.
+    function testOnReportRevertsWhenNeitherIdentityOptionConfigured() external {
+        AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
+        freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        vm.expectRevert(AutomationReceiver.WorkflowIdentityNotConfigured.selector);
+        vm.prank(FORWARDER);
+        freshReceiver.onReport(_metadata(bytes32(0), address(0)), _report(address(target), _performCall(hex"01")));
     }
 
     // ─── outbound allowlist ─────────────────────────────────────
@@ -149,6 +239,15 @@ contract AutomationReceiverTest {
     function testSetCallAllowedRejectsZeroTarget() external {
         vm.expectRevert(AutomationReceiver.InvalidTargetAddress.selector);
         receiver.setCallAllowed(address(0), PERFORM_SELECTOR, true);
+    }
+
+    function testSetCallAllowedRejectsCodelessTarget() external {
+        // address(uint160(99)) is an EOA with no deployed code.
+        address eoa = address(uint160(99));
+        vm.expectRevert(
+            abi.encodeWithSelector(AutomationReceiver.TargetHasNoCode.selector, eoa)
+        );
+        receiver.setCallAllowed(eoa, PERFORM_SELECTOR, true);
     }
 
     function testIsCallAllowedReflectsState() external {
