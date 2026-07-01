@@ -27,8 +27,43 @@ import "./ReceiverTemplate.sol";
  *      Migration rule of thumb: inbound authorizes the workflow; outbound authorizes the action.
  */
 contract AutomationReceiver is ReceiverTemplate {
+    // Non-target gas costs reserved by the guard (gasleft() < required).
+    // The SLOAD is the last cost incurred BEFORE the check; everything else is AFTER.
+    //
+    // [Pre-check — already spent at the guard point:]
+    //   SLOAD s_consumerGasLimit (cold mapping)         2,100
+    //
+    // [Post-check — must complete with remaining gas:]
+    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          50
+    //   CALL opcode dispatch to target (cold addr)      2,600
+    //     (EIP-2929 replaces the pre-Berlin 700 base; 2,600 is the full cold-access cost)
+    //   Post-call (success flag, JUMPI, LOG3 min)       2,200
+    //     ├─ LOG3 base + 3 topics (375 + 3×375)         1,500
+    //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)    512
+    //     └─ misc (returnData mem, JUMPI, stack)          188
+    //   Misc stack / memory                                50
+    //                                          Total:   7,000
+    //
+    // EIP-150 (63/64 rule): a CALL can forward at most 63/64 of available gas.
+    // A fixed GAS_OVERHEAD buffer is only sufficient when consumerGasLimit ≤ 63 × GAS_OVERHEAD
+    // (~441,000). Above that threshold the 63/64 cap would deliver less than consumerGasLimit
+    // to the target. _processReport therefore adds consumerGasLimit / 63 to `required`
+    // dynamically, ensuring the available gas at the CALL satisfies:
+    //   63/64 × available  ≥  consumerGasLimit
+    //
+    // Pre-guard overhead (excluded from GAS_OVERHEAD, paid before the check point):
+    // Five cold SLOADs in ReceiverTemplate.onReport (s_forwarderAddress, s_expectedWorkflowId ×2,
+    // s_expectedAuthor, s_expectedWorkflowName: 5 × 2,100 = 10,500 gas), two STATICCALL frames to
+    // this in _processReport (~1,000 gas), abi.decode of the report (~300 gas), and the cold SLOAD
+    // of s_callAllowed (~2,100 gas) add up to ~14,000 gas on top of consumerGasLimit + GAS_OVERHEAD.
+    // Callers must budget for this in writeGasLimit (see README Gas Limit section).
+    uint256 private constant GAS_OVERHEAD = 7_000;
+
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
     mapping(address target => mapping(bytes4 selector => bool allowed)) private s_callAllowed;
+
+    /// @notice Per-(target, selector) minimum gas the consumer needs to execute. 0 = no limit.
+    mapping(address target => mapping(bytes4 selector => uint256 gasLimit)) private s_consumerGasLimit;
 
     /// @notice Emitted when a target call succeeds.
     event CallExecuted(address indexed target, bytes4 indexed selector, bytes returnData);
@@ -36,6 +71,8 @@ contract AutomationReceiver is ReceiverTemplate {
     event CallFailed(address indexed target, bytes4 indexed selector, bytes reason);
     /// @notice Emitted when the owner updates the outbound allowlist.
     event CallAllowedSet(address indexed target, bytes4 indexed selector, bool allowed);
+    /// @notice Emitted when the owner updates the consumer gas limit for a (target, selector) pair.
+    event ConsumerGasLimitSet(address indexed target, bytes4 indexed selector, uint256 previousLimit, uint256 newLimit);
 
     /// @notice Thrown when the decoded target is the zero address.
     error InvalidTargetAddress();
@@ -45,6 +82,9 @@ contract AutomationReceiver is ReceiverTemplate {
     error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
     error CallNotAllowed(address target, bytes4 selector);
+    /// @notice Thrown when there is not enough gas to safely forward consumerGasLimit to the target.
+    ///         Causes the forwarder to record the transmission as failed so it can be retried.
+    error InsufficientGas(uint256 available, uint256 required);
     /// @notice Thrown when onReport is called without a complete workflow identity configuration.
     ///         The receiver requires exactly one of the two valid options to be satisfied:
     ///         (1) workflowId is set, or (2) both workflowOwner and workflowName are set.
@@ -79,6 +119,35 @@ contract AutomationReceiver is ReceiverTemplate {
         return s_callAllowed[target][selector];
     }
 
+    /// @notice Set the minimum gas required to execute `selector` on `target`.
+    /// @dev When non-zero, `_processReport` will revert with `InsufficientGas` before calling
+    ///      the target if available gas is below `gasLimit + gasLimit / 63 + GAS_OVERHEAD`.
+    ///      The `gasLimit / 63` term compensates for the EIP-150 (63/64) rule: a CALL can
+    ///      forward at most 63/64 of the available gas, so without this buffer a high gas limit
+    ///      would cause the target to receive less than `gasLimit`. This causes the CRE
+    ///      Forwarder to record the transmission as failed (retryable) rather than permanently
+    ///      consuming the report. Set this to the `performGasLimit` tuned in Automation for the
+    ///      specific function being migrated. Each (target, selector) pair has its own limit.
+    ///      Zero (the default) disables the guard for that pair and preserves fire-and-forget.
+    ///      Note: the on-chain formula only covers costs from the guard check onward. The
+    ///      workflow's writeGasLimit must also budget for ~14,000 gas of pre-guard overhead
+    ///      (five cold SLOADs in ReceiverTemplate, two STATICCALL frames, abi.decode, and
+    ///      the cold s_callAllowed SLOAD) on top of this limit.
+    /// @param target  The contract the limit applies to. Must not be the zero address.
+    /// @param selector The 4-byte function selector the limit applies to.
+    /// @param gasLimit Minimum gas required by the consumer. 0 = no guard.
+    function setConsumerGasLimit(address target, bytes4 selector, uint256 gasLimit) external onlyOwner {
+        if (target == address(0)) revert InvalidTargetAddress();
+        uint256 previous = s_consumerGasLimit[target][selector];
+        s_consumerGasLimit[target][selector] = gasLimit;
+        emit ConsumerGasLimitSet(target, selector, previous, gasLimit);
+    }
+
+    /// @notice Returns the configured consumer gas limit for a (target, selector) pair (0 = no guard).
+    function getConsumerGasLimit(address target, bytes4 selector) external view returns (uint256) {
+        return s_consumerGasLimit[target][selector];
+    }
+
     /// @notice Decodes and executes the call on the target contract.
     /// @param report ABI-encoded (address target, bytes data), where `data` is a full
     ///        function call (4-byte selector followed by its arguments).
@@ -98,6 +167,14 @@ contract AutomationReceiver is ReceiverTemplate {
     ///      (an allowed call that reverts) are swallowed: `CallFailed` is emitted and the
     ///      report is consumed, matching Chainlink Automation's fire-and-forget semantics
     ///      where the next trigger re-evaluates eligibility.
+    ///      Gas-guard: when `s_consumerGasLimit[target][selector]` is non-zero, the function
+    ///      reverts with `InsufficientGas` before the target call if available gas is below
+    ///      `gasLimit + gasLimit / 63 + GAS_OVERHEAD`. The `gasLimit / 63` term accounts for
+    ///      the EIP-150 (63/64) rule: a CALL forwards at most 63/64 of available gas, so
+    ///      without this buffer a high gas limit (above ~441,000) would cause the target to
+    ///      receive less than configured. This ensures a low-gas delivery is recorded as failed
+    ///      by the forwarder and can be retried, preventing griefing attacks. Each
+    ///      (target, selector) pair has its own configurable limit.
     function _processReport(bytes calldata report) internal override {
         if (this.getForwarderAddress() == address(0)) {
             revert InvalidForwarderAddress();
@@ -126,7 +203,21 @@ contract AutomationReceiver is ReceiverTemplate {
             revert CallNotAllowed(target, selector);
         }
 
-        (bool success, bytes memory returnData) = target.call(data);
+        uint256 consumerGasLimit = s_consumerGasLimit[target][selector];
+        bool success;
+        bytes memory returnData;
+        if (consumerGasLimit > 0) {
+            // consumerGasLimit / 63 compensates for EIP-150: a CALL forwards at most
+            // 63/64 of available gas. Without this term, limits above ~441,000
+            // (63 × GAS_OVERHEAD) would cause the target to receive less than requested.
+            uint256 required = consumerGasLimit + consumerGasLimit / 63 + GAS_OVERHEAD;
+            if (gasleft() < required) {
+                revert InsufficientGas(gasleft(), required);
+            }
+            (success, returnData) = target.call{gas: consumerGasLimit}(data);
+        } else {
+            (success, returnData) = target.call(data);
+        }
 
         if (success) {
             emit CallExecuted(target, selector, returnData);
