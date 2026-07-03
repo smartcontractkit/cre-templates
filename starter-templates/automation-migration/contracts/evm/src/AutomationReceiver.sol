@@ -86,7 +86,8 @@ contract AutomationReceiver is ReceiverTemplate {
     ///         Causes the forwarder to record the transmission as failed so it can be retried.
     error InsufficientGas(uint256 available, uint256 required);
     /// @notice Thrown when onReport is called without a complete workflow identity configuration.
-    ///         The receiver requires exactly one of the two valid options to be satisfied:
+    ///         The receiver requires at least one of the two valid options to be satisfied
+    ///         (satisfying both is also fine):
     ///         (1) workflowId is set, or (2) both workflowOwner and workflowName are set.
     ///         Without at least one complete option the receiver cannot be bound to a specific
     ///         workflow and would accept reports from any DON-signed payload.
