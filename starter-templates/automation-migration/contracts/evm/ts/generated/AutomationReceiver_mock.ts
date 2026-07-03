@@ -12,6 +12,8 @@ export type AutomationReceiverMock = {
   getForwarderAddress?: () => `0x${string}`
   isCallAllowed?: (target: `0x${string}`, selector: `0x${string}`) => boolean
   owner?: () => `0x${string}`
+  paused?: () => boolean
+  retryableWhilePaused?: () => boolean
   supportsInterface?: (interfaceId: `0x${string}`) => boolean
 } & Pick<ContractMock<typeof AutomationReceiverABI>, 'writeReport'>
 
