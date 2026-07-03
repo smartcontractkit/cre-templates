@@ -263,6 +263,13 @@ contract AutomationReceiverTest {
         receiver.setCallAllowed(eoa, PERFORM_SELECTOR, true);
     }
 
+    function testSetCallAllowedRevocationSkipsCodeCheck() external {
+        // A codeless target (e.g. a self-destructed contract) must still be revocable.
+        address eoa = address(uint160(99));
+        receiver.setCallAllowed(eoa, PERFORM_SELECTOR, false);
+        _assertFalse(receiver.isCallAllowed(eoa, PERFORM_SELECTOR));
+    }
+
     function testIsCallAllowedReflectsState() external {
         _assertFalse(receiver.isCallAllowed(address(target), PERFORM_SELECTOR));
         receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);

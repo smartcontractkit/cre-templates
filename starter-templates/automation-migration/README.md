@@ -80,7 +80,7 @@ cast send "$RECEIVER_ADDRESS" \
 ```
 
 **Parameters:**
-- `target`: The address of your existing upkeep contract. Must be a deployed contract — `setCallAllowed` reverts with `TargetHasNoCode` if the address has no code (EOA, mistyped address, or never-deployed contract).
+- `target`: The address of your existing upkeep contract. When allowing (`allowed = true`) it must be a deployed contract — `setCallAllowed` reverts with `TargetHasNoCode` if the address has no code (EOA, mistyped address, or never-deployed contract). The code check is skipped when revoking (`allowed = false`) so an entry can always be removed, even if the target has since self-destructed.
 - `selector`: The 4-byte function selector (computed from the function signature via `cast sig`).
 - `allowed`: Set to `true` to allow, `false` to revoke.
 
