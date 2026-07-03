@@ -201,20 +201,15 @@ const runMigration = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => 
     reportBlockNumber = header.header?.blockNumber ? protoBigIntToBigint(header.header.blockNumber) : 0n;
   }
 
-  // Split the selector out of the calldata; the receiver reconstructs the call as
-  // bytes.concat(selector, data), so `data` carries only the ABI-encoded arguments.
-  const selector = finalCallData.slice(0, 10) as Hex; // "0x" + 4 bytes
-  const argsData = (finalCallData.length > 10 ? "0x" + finalCallData.slice(10) : "0x") as Hex;
-
-  // Encode the payload for the generic AutomationReceiver
+  // Encode the payload for the generic AutomationReceiver. `data` is the full function call
+  // (selector + arguments); the receiver decodes and executes it directly via target.call(data).
   const reportPayload = encodeAbiParameters(
     [
       { name: "target", type: "address" },
-      { name: "selector", type: "bytes4" },
       { name: "blockNumber", type: "uint256" },
       { name: "data", type: "bytes" },
     ],
-    [config.targetAddress as Address, selector, reportBlockNumber, argsData]
+    [config.targetAddress as Address, reportBlockNumber, finalCallData]
   );
 
   // Write the report to the Receiver

@@ -51,15 +51,22 @@ contract AutomationReceiver is ReceiverTemplate {
     // dynamically, ensuring the available gas at the CALL satisfies:
     //   63/64 × available  ≥  consumerGasLimit
     //
-    // Pre-guard overhead (excluded from GAS_OVERHEAD, paid before the check point):
+    // Pre-guard overhead (paid BEFORE the check point, so NOT part of `required`):
     // Five cold SLOADs in ReceiverTemplate.onReport (s_forwarderAddress, s_expectedWorkflowId ×2,
     // s_expectedAuthor, s_expectedWorkflowName: 5 × 2,100 = 10,500 gas), two STATICCALL frames to
     // this in _processReport (~1,000 gas), abi.decode of the report (~300 gas), and the cold SLOAD
-    // of s_callAllowed (~2,100 gas) add up to ~14,000 gas on top of consumerGasLimit + GAS_OVERHEAD.
-    // When the block-number monotonicity check is enabled for a (target, selector) pair, two extra
-    // cold SLOADs (s_blockNumberCheckEnabled, s_lastReportBlock) plus one SSTORE add a further
-    // ~10,000 gas before the guard. Callers must budget for this in writeGasLimit (see README Gas
-    // Limit section).
+    // of s_callAllowed (~2,100 gas) add up to ~14,000 gas. When the block-number monotonicity check
+    // is enabled for a (target, selector) pair, two extra cold SLOADs (s_blockNumberCheckEnabled,
+    // s_lastReportBlock) plus one SSTORE add a further ~10,000 gas to this bucket.
+    //
+    // This pre-guard gas is intentionally NOT added to `required` and needs no per-feature constant:
+    // it is spent before `gasleft()` is read, so the guard already sees it (it observes the reduced
+    // remaining gas) and cannot manufacture it. Adding it to `required` would double-count and cause
+    // spurious InsufficientGas reverts. The only caller-side action is to size writeGasLimit to cover
+    // this pre-guard overhead on top of consumerGasLimit + GAS_OVERHEAD (see README Gas Limit
+    // section). Under-budgeting fails cleanly (InsufficientGas if the guard is reached, otherwise
+    // OOG) — both are recorded by the Forwarder as retryable, so this is a tuning, not a safety,
+    // concern.
     uint256 private constant GAS_OVERHEAD = 7_000;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
@@ -95,6 +102,8 @@ contract AutomationReceiver is ReceiverTemplate {
     error InvalidTargetAddress();
     /// @notice Thrown when the target address has no deployed code (EOA, mistyped address, or never-deployed contract).
     error TargetHasNoCode(address target);
+    /// @notice Thrown when the report carries fewer than 4 bytes of calldata (no selector).
+    error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
     error CallNotAllowed(address target, bytes4 selector);
     /// @notice Thrown when there is not enough gas to safely forward consumerGasLimit to the target.
@@ -211,11 +220,10 @@ contract AutomationReceiver is ReceiverTemplate {
     }
 
     /// @notice Decodes and executes the call on the target contract.
-    /// @param report ABI-encoded (address target, bytes4 selector, uint256 blockNumber, bytes data),
-    ///        where `selector` is the 4-byte function selector, `blockNumber` is the block the report
-    ///        was produced for (used only by the opt-in monotonicity check), and `data` is the
-    ///        ABI-encoded function arguments (without the selector). The call executed on `target` is
-    ///        `bytes.concat(selector, data)`.
+    /// @param report ABI-encoded (address target, uint256 blockNumber, bytes data), where
+    ///        `blockNumber` is the block the report was produced for (used only by the opt-in
+    ///        monotonicity check) and `data` is a full function call (4-byte selector followed by its
+    ///        arguments) executed as `target.call(data)`.
     /// @dev Two pre-conditions are enforced before any decoding:
     ///      1. The forwarder address must not be zero. `ReceiverTemplate.setForwarderAddress`
     ///         does not block address(0), so this guard closes that gap: if the owner ever
@@ -227,8 +235,8 @@ contract AutomationReceiver is ReceiverTemplate {
     ///         workflow from a specific owner. Either piece of option (b) alone is insufficient:
     ///         owner alone allows any workflow from that owner; name alone is globally ambiguous.
     ///         Requiring a complete option closes the cross-receiver replay vector from audit M-02.
-    ///      Authorization failures (zero target, not-allowlisted) revert loudly — they indicate
-    ///      misconfiguration or a malformed report. Execution failures (an allowed call that
+    ///      Authorization failures (zero target, missing selector, not-allowlisted) revert loudly —
+    ///      they indicate misconfiguration or a malformed report. Execution failures (an allowed call that
     ///      reverts) are swallowed: `CallFailed` is emitted and the report is consumed, matching
     ///      Chainlink Automation's fire-and-forget semantics where the next trigger re-evaluates
     ///      eligibility.
@@ -253,11 +261,21 @@ contract AutomationReceiver is ReceiverTemplate {
             revert WorkflowIdentityNotConfigured();
         }
 
-        (address target, bytes4 selector, uint256 reportBlockNumber, bytes memory data) =
-            abi.decode(report, (address, bytes4, uint256, bytes));
+        (address target, uint256 reportBlockNumber, bytes memory data) =
+            abi.decode(report, (address, uint256, bytes));
 
         if (target == address(0)) {
             revert InvalidTargetAddress();
+        }
+        if (data.length < 4) {
+            revert MissingSelector();
+        }
+
+        // Read the leading 4-byte selector from the in-memory `data`. Safe: length >= 4 is
+        // checked above, and a 32-byte mload assigned to bytes4 keeps the high (first) 4 bytes.
+        bytes4 selector;
+        assembly {
+            selector := mload(add(data, 0x20))
         }
         if (!s_callAllowed[target][selector]) {
             revert CallNotAllowed(target, selector);
@@ -276,8 +294,6 @@ contract AutomationReceiver is ReceiverTemplate {
             s_lastReportBlock[target][selector] = reportBlockNumber;
         }
 
-        bytes memory callData = bytes.concat(selector, data);
-
         uint256 consumerGasLimit = s_consumerGasLimit[target][selector];
         bool success;
         bytes memory returnData;
@@ -289,9 +305,9 @@ contract AutomationReceiver is ReceiverTemplate {
             if (gasleft() < required) {
                 revert InsufficientGas(gasleft(), required);
             }
-            (success, returnData) = target.call{gas: consumerGasLimit}(callData);
+            (success, returnData) = target.call{gas: consumerGasLimit}(data);
         } else {
-            (success, returnData) = target.call(callData);
+            (success, returnData) = target.call(data);
         }
 
         if (success) {
