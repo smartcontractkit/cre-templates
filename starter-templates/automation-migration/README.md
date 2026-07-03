@@ -46,7 +46,7 @@ The `contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfou
 ```bash
 cd contracts/evm
 forge build
-forge test          # 33 tests covering the receiver + permission template
+forge test          # 41 tests covering the receiver + permission template
 
 # Deploy, passing the CRE Forwarder address for your DON as the constructor arg
 forge create src/AutomationReceiver.sol:AutomationReceiver \
@@ -154,6 +154,41 @@ You may also combine both options for the strongest guarantee (e.g. set all thre
 - `setExpectedAuthor(_author)`: The account that deploys or owns the workflow. Required for option B; does not satisfy the guard alone.
 - `setExpectedWorkflowName(_name)`: The exact workflow name. Required for option B; must always be paired with `setExpectedAuthor` (workflow names are unique per owner, not globally).
 
+#### 3d. Configure Block Number Monotonicity / Staleness Protection (Optional)
+
+Under Chainlink Automation the registry rejected any report whose trigger block preceded the last performed block, which prevented an older report from executing after a newer one. The CRE delivery path does **not** preserve this ordering: the Forwarder deduplicates only exact retransmissions of the same report and enforces no ordering across separate executions.
+
+If your upkeep relied on that implicit ordering (typical for conditional-trigger and log-trigger upkeeps), enable the opt-in monotonicity check. The workflow **always** stamps a block number into the report payload (the triggering log's block for `LOG`, the last finalized block for `CRON`/`CUSTOM`), so you can turn this on later without any workflow change. When enabled for a `(target, selector)` pair, `_processReport` rejects any report whose block number is **older** than the last accepted one (CLA-parity: a report at the same block is still accepted). A stale report is **consumed and skipped** — the receiver emits `StaleReportSkipped` and returns without executing the call or reverting, so the forwarder does not pointlessly retry an always-stale delivery.
+
+Like `setConsumerGasLimit`, this is configured **per `(target, selector)` pair** and is **off by default**.
+
+```bash
+# Enable the check and snapshot the current block as the floor (initialBlockNumber = 0)
+cast send "$RECEIVER_ADDRESS" \
+  "setBlockNumberCheck(address,bytes4,bool,uint256)" \
+  "$TARGET_ADDRESS" "$(cast sig 'performUpkeep(bytes)')" true 0 \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Or enable with an explicit floor (recommended): the first accepted report must be >= this block
+cast send "$RECEIVER_ADDRESS" \
+  "setBlockNumberCheck(address,bytes4,bool,uint256)" \
+  "$TARGET_ADDRESS" "$(cast sig 'performUpkeep(bytes)')" true "$INITIAL_BLOCK" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Disable the check (also clears the stored floor)
+cast send "$RECEIVER_ADDRESS" \
+  "setBlockNumberCheck(address,bytes4,bool,uint256)" \
+  "$TARGET_ADDRESS" "$(cast sig 'performUpkeep(bytes)')" false 0 \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+```
+
+**Parameters:**
+- `target` / `selector`: The pair the check applies to (same values used in `setCallAllowed`).
+- `enabled`: `true` to enforce monotonicity, `false` to disable and clear the stored floor.
+- `initialBlockNumber`: The floor the first report must meet or exceed. `0` snapshots the current `block.number`; any non-zero value is used as-is.
+
+> **Security note:** prefer an explicit `initialBlockNumber` over the `0` snapshot. Snapshotting only records the block at the moment you enable the check, so a report generated between deployment/configuration and that moment could still carry a higher block number and would not be rejected. Because the floor is per `(target, selector)`, set an appropriate value for each pair. Use `getBlockNumberCheck(target, selector)` to read the current `(enabled, lastReportBlock)` state.
+
 ### 4. Configure the Workflow
 Update `my-workflow/config.test.json`:
 - `receiverAddress`: Your deployed `AutomationReceiver`.
@@ -200,15 +235,16 @@ Legacy Automation contracts expect a specific `Log` struct in `checkLog`. This t
 The generated `checkUpkeep` / `checkLog` bindings read at the **last finalized block** so every DON node observes the same state and reaches consensus deterministically. This differs from Automation, which simulates against the chain head. On Ethereum mainnet finality lags the head by ~13 minutes; on most L2s it is seconds. Account for this latency when migrating time-sensitive interval checks.
 
 ### Execution
-The `AutomationReceiver` executes `target.call(data)`, so it can drive any function signature — `performUpkeep(bytes)` for custom-logic/log upkeeps, or a custom function like `performAction(uint256)` for time-based ones. Every call is gated by the closed-by-default `(target, selector)` allowlist (Step 3).
+The report payload is ABI-encoded as `(address target, bytes4 selector, uint256 blockNumber, bytes data)`, where `data` holds the ABI-encoded function arguments **without** the selector. The `AutomationReceiver` reconstructs and executes `target.call(bytes.concat(selector, data))`, so it can drive any function signature — `performUpkeep(bytes)` for custom-logic/log upkeeps, or a custom function like `performAction(uint256)` for time-based ones. The `blockNumber` field feeds the optional monotonicity check (Step 3d) and is otherwise ignored. Every call is gated by the closed-by-default `(target, selector)` allowlist (Step 3).
 
-The receiver distinguishes three failure modes:
-- **Authorization failure** — a zero target, a target with no deployed code, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `TargetHasNoCode` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
+The receiver distinguishes four outcomes:
+- **Authorization failure** — a zero target, a target with no deployed code, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `TargetHasNoCode` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
+- **Stale report** — when the block-number monotonicity check is enabled for the pair (Step 3d) and the report's block number is older than the last accepted one — does **not** revert. The receiver emits `StaleReportSkipped(target, selector, reportBlockNumber, lastReportBlock)` and consumes the report without executing the call. Retrying would not help (the report is permanently stale), so it is skipped rather than marked retryable.
 - **Gas guard failure** — when `setConsumerGasLimit` has been configured for the specific `(target, selector)` pair and the incoming gas is below `consumerGasLimit + consumerGasLimit / 63 + 7,000`, `_processReport` **reverts** with `InsufficientGas(available, required)`. The forwarder records the transmission as failed and it can be retried with higher gas. This closes a griefing attack where a report is delivered with just enough gas to pass the forwarder's minimum check but not enough for `performUpkeep` to execute, which would otherwise permanently consume the transmission ID. The 7,000-gas constant covers the EIP-2929 cold storage read, call-opcode dispatch, post-call LOG3 event emission (3 topics), and bookkeeping. The `consumerGasLimit / 63` term compensates for the EIP-150 (63/64) rule: a `CALL` can forward at most 63/64 of available gas, so without this buffer a high gas limit (above ~441,000) would cause the target to receive less than configured. Each `(target, selector)` pair has its own independent limit; pairs with no configured limit retain fire-and-forget semantics.
 - **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
 
 ### Gas Limit
-`writeGasLimit` (default `"500000"`) caps the on-chain execution gas forwarded to `onReport`. The on-chain guard formula is `consumerGasLimit + consumerGasLimit/63 + 7,000`, but an additional ~14,000 gas is consumed before that check point by pre-guard operations — five cold `SLOAD`s in `ReceiverTemplate.onReport` (forwarder address, workflow ID ×2, owner, name: 5 × 2,100 = 10,500 gas), two `STATICCALL`s to `this` in `_processReport` (~1,000 gas), `abi.decode` of the report payload (~300 gas), and the cold `SLOAD` of `s_callAllowed` (~2,100 gas). Set `writeGasLimit` to at least your `performGasLimit` plus ~20,000 to ensure deliveries comfortably clear the guard. If deliveries still fail with `InsufficientGas`, increase `writeGasLimit` in 10,000-gas increments until they pass.
+`writeGasLimit` (default `"500000"`) caps the on-chain execution gas forwarded to `onReport`. The on-chain guard formula is `consumerGasLimit + consumerGasLimit/63 + 7,000`, but an additional ~14,000 gas is consumed before that check point by pre-guard operations — five cold `SLOAD`s in `ReceiverTemplate.onReport` (forwarder address, workflow ID ×2, owner, name: 5 × 2,100 = 10,500 gas), two `STATICCALL`s to `this` in `_processReport` (~1,000 gas), `abi.decode` of the report payload (~300 gas), and the cold `SLOAD` of `s_callAllowed` (~2,100 gas). When the block-number monotonicity check is enabled for a pair (Step 3d), budget a further ~10,000 gas for its two cold `SLOAD`s and the `SSTORE` that advances the stored block. Set `writeGasLimit` to at least your `performGasLimit` plus ~20,000 (or ~30,000 with the monotonicity check enabled) to ensure deliveries comfortably clear the guard. If deliveries still fail with `InsufficientGas`, increase `writeGasLimit` in 10,000-gas increments until they pass.
 
 ---
 

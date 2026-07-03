@@ -56,7 +56,10 @@ contract AutomationReceiver is ReceiverTemplate {
     // s_expectedAuthor, s_expectedWorkflowName: 5 × 2,100 = 10,500 gas), two STATICCALL frames to
     // this in _processReport (~1,000 gas), abi.decode of the report (~300 gas), and the cold SLOAD
     // of s_callAllowed (~2,100 gas) add up to ~14,000 gas on top of consumerGasLimit + GAS_OVERHEAD.
-    // Callers must budget for this in writeGasLimit (see README Gas Limit section).
+    // When the block-number monotonicity check is enabled for a (target, selector) pair, two extra
+    // cold SLOADs (s_blockNumberCheckEnabled, s_lastReportBlock) plus one SSTORE add a further
+    // ~10,000 gas before the guard. Callers must budget for this in writeGasLimit (see README Gas
+    // Limit section).
     uint256 private constant GAS_OVERHEAD = 7_000;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
@@ -64,6 +67,13 @@ contract AutomationReceiver is ReceiverTemplate {
 
     /// @notice Per-(target, selector) minimum gas the consumer needs to execute. 0 = no limit.
     mapping(address target => mapping(bytes4 selector => uint256 gasLimit)) private s_consumerGasLimit;
+
+    /// @notice Opt-in per-(target, selector) block-number monotonicity switch. Closed by default.
+    mapping(address target => mapping(bytes4 selector => bool enabled)) private s_blockNumberCheckEnabled;
+
+    /// @notice Highest report block number accepted so far for a (target, selector) pair. Doubles as
+    ///         the configurable initial floor set by {setBlockNumberCheck}.
+    mapping(address target => mapping(bytes4 selector => uint256 blockNumber)) private s_lastReportBlock;
 
     /// @notice Emitted when a target call succeeds.
     event CallExecuted(address indexed target, bytes4 indexed selector, bytes returnData);
@@ -73,13 +83,18 @@ contract AutomationReceiver is ReceiverTemplate {
     event CallAllowedSet(address indexed target, bytes4 indexed selector, bool allowed);
     /// @notice Emitted when the owner updates the consumer gas limit for a (target, selector) pair.
     event ConsumerGasLimitSet(address indexed target, bytes4 indexed selector, uint256 previousLimit, uint256 newLimit);
+    /// @notice Emitted when the owner enables/disables the block-number monotonicity check for a pair.
+    ///         When enabled, `initialBlockNumber` is the floor the next report must meet or exceed.
+    event BlockNumberCheckSet(address indexed target, bytes4 indexed selector, bool enabled, uint256 initialBlockNumber);
+    /// @notice Emitted when a report is skipped because its block number is older than the last
+    ///         accepted one for the pair. The report is consumed (not reverted), mirroring
+    ///         Chainlink Automation's fire-and-forget semantics.
+    event StaleReportSkipped(address indexed target, bytes4 indexed selector, uint256 reportBlockNumber, uint256 lastReportBlock);
 
     /// @notice Thrown when the decoded target is the zero address.
     error InvalidTargetAddress();
     /// @notice Thrown when the target address has no deployed code (EOA, mistyped address, or never-deployed contract).
     error TargetHasNoCode(address target);
-    /// @notice Thrown when the report carries fewer than 4 bytes of calldata (no selector).
-    error MissingSelector();
     /// @notice Thrown when (target, selector) is not on the outbound allowlist.
     error CallNotAllowed(address target, bytes4 selector);
     /// @notice Thrown when there is not enough gas to safely forward consumerGasLimit to the target.
@@ -148,9 +163,59 @@ contract AutomationReceiver is ReceiverTemplate {
         return s_consumerGasLimit[target][selector];
     }
 
+    /// @notice Enable or disable the block-number monotonicity (staleness) check for a (target, selector).
+    /// @dev Closed by default. When enabled, `_processReport` rejects any report whose encoded block
+    ///      number is strictly less than the last accepted one for the pair (CLA-parity: a report at
+    ///      the same block is still accepted). Stale reports are consumed, not reverted, so the
+    ///      forwarder does not pointlessly retry an always-stale delivery.
+    ///
+    ///      Under Chainlink Automation the registry rejected any report whose trigger block preceded
+    ///      the last performed block. The CRE delivery path does not preserve this ordering, so this
+    ///      opt-in check restores it for conditional-trigger / log upkeeps that relied on it. The
+    ///      workflow always encodes a block number in the report payload, so this can be turned on
+    ///      later without any workflow change.
+    ///
+    ///      When enabling, the initial floor is configurable:
+    ///        - `initialBlockNumber == 0`: snapshot the current `block.number` as the floor. Note this
+    ///          does NOT reject reports minted between deployment/config and the moment this check is
+    ///          enabled if they carry a block number above the snapshot; prefer an explicit floor when
+    ///          that matters.
+    ///        - `initialBlockNumber != 0`: use the provided value as the floor.
+    ///      The very first accepted report must have a block number >= this floor.
+    ///      Each (target, selector) pair is configured independently. Owner-only.
+    /// @param target The contract the check applies to. Must not be the zero address.
+    /// @param selector The 4-byte function selector the check applies to.
+    /// @param enabled True to enable the check, false to disable it (and clear the stored floor).
+    /// @param initialBlockNumber Floor for the first report when enabling; 0 snapshots `block.number`.
+    function setBlockNumberCheck(address target, bytes4 selector, bool enabled, uint256 initialBlockNumber)
+        external
+        onlyOwner
+    {
+        if (target == address(0)) revert InvalidTargetAddress();
+        s_blockNumberCheckEnabled[target][selector] = enabled;
+        uint256 floor = enabled ? (initialBlockNumber == 0 ? block.number : initialBlockNumber) : 0;
+        s_lastReportBlock[target][selector] = floor;
+        emit BlockNumberCheckSet(target, selector, enabled, floor);
+    }
+
+    /// @notice Returns the block-number monotonicity configuration for a (target, selector) pair.
+    /// @return enabled Whether the check is active.
+    /// @return lastReportBlock The highest report block number accepted so far (or the floor set when
+    ///         the check was enabled, if no report has been accepted since).
+    function getBlockNumberCheck(address target, bytes4 selector)
+        external
+        view
+        returns (bool enabled, uint256 lastReportBlock)
+    {
+        return (s_blockNumberCheckEnabled[target][selector], s_lastReportBlock[target][selector]);
+    }
+
     /// @notice Decodes and executes the call on the target contract.
-    /// @param report ABI-encoded (address target, bytes data), where `data` is a full
-    ///        function call (4-byte selector followed by its arguments).
+    /// @param report ABI-encoded (address target, bytes4 selector, uint256 blockNumber, bytes data),
+    ///        where `selector` is the 4-byte function selector, `blockNumber` is the block the report
+    ///        was produced for (used only by the opt-in monotonicity check), and `data` is the
+    ///        ABI-encoded function arguments (without the selector). The call executed on `target` is
+    ///        `bytes.concat(selector, data)`.
     /// @dev Two pre-conditions are enforced before any decoding:
     ///      1. The forwarder address must not be zero. `ReceiverTemplate.setForwarderAddress`
     ///         does not block address(0), so this guard closes that gap: if the owner ever
@@ -162,11 +227,15 @@ contract AutomationReceiver is ReceiverTemplate {
     ///         workflow from a specific owner. Either piece of option (b) alone is insufficient:
     ///         owner alone allows any workflow from that owner; name alone is globally ambiguous.
     ///         Requiring a complete option closes the cross-receiver replay vector from audit M-02.
-    ///      Authorization failures (zero target, missing selector, not-allowlisted) revert
-    ///      loudly — they indicate misconfiguration or a malformed report. Execution failures
-    ///      (an allowed call that reverts) are swallowed: `CallFailed` is emitted and the
-    ///      report is consumed, matching Chainlink Automation's fire-and-forget semantics
-    ///      where the next trigger re-evaluates eligibility.
+    ///      Authorization failures (zero target, not-allowlisted) revert loudly — they indicate
+    ///      misconfiguration or a malformed report. Execution failures (an allowed call that
+    ///      reverts) are swallowed: `CallFailed` is emitted and the report is consumed, matching
+    ///      Chainlink Automation's fire-and-forget semantics where the next trigger re-evaluates
+    ///      eligibility.
+    ///      Staleness: when the block-number monotonicity check is enabled for the pair (see
+    ///      {setBlockNumberCheck}), a report whose block number is older than the last accepted one
+    ///      is skipped — `StaleReportSkipped` is emitted and the report is consumed without executing
+    ///      the target call or reverting.
     ///      Gas-guard: when `s_consumerGasLimit[target][selector]` is non-zero, the function
     ///      reverts with `InsufficientGas` before the target call if available gas is below
     ///      `gasLimit + gasLimit / 63 + GAS_OVERHEAD`. The `gasLimit / 63` term accounts for
@@ -184,24 +253,30 @@ contract AutomationReceiver is ReceiverTemplate {
             revert WorkflowIdentityNotConfigured();
         }
 
-        (address target, bytes memory data) = abi.decode(report, (address, bytes));
+        (address target, bytes4 selector, uint256 reportBlockNumber, bytes memory data) =
+            abi.decode(report, (address, bytes4, uint256, bytes));
 
         if (target == address(0)) {
             revert InvalidTargetAddress();
         }
-        if (data.length < 4) {
-            revert MissingSelector();
-        }
-
-        // Read the leading 4-byte selector from the in-memory `data`. Safe: length >= 4 is
-        // checked above, and a 32-byte mload assigned to bytes4 keeps the high (first) 4 bytes.
-        bytes4 selector;
-        assembly {
-            selector := mload(add(data, 0x20))
-        }
         if (!s_callAllowed[target][selector]) {
             revert CallNotAllowed(target, selector);
         }
+
+        // Opt-in staleness protection: reject reports older than the last accepted one for this pair.
+        // CLA-parity comparison (>=): a report at the same block is still accepted. The stored block
+        // is updated before the gas guard, but an InsufficientGas revert rolls it back so a retry at
+        // the same block stays valid.
+        if (s_blockNumberCheckEnabled[target][selector]) {
+            uint256 lastReportBlock = s_lastReportBlock[target][selector];
+            if (reportBlockNumber < lastReportBlock) {
+                emit StaleReportSkipped(target, selector, reportBlockNumber, lastReportBlock);
+                return;
+            }
+            s_lastReportBlock[target][selector] = reportBlockNumber;
+        }
+
+        bytes memory callData = bytes.concat(selector, data);
 
         uint256 consumerGasLimit = s_consumerGasLimit[target][selector];
         bool success;
@@ -214,9 +289,9 @@ contract AutomationReceiver is ReceiverTemplate {
             if (gasleft() < required) {
                 revert InsufficientGas(gasleft(), required);
             }
-            (success, returnData) = target.call{gas: consumerGasLimit}(data);
+            (success, returnData) = target.call{gas: consumerGasLimit}(callData);
         } else {
-            (success, returnData) = target.call(data);
+            (success, returnData) = target.call(callData);
         }
 
         if (success) {

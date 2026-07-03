@@ -16,6 +16,7 @@ interface Vm {
 contract MockUpkeep {
     bool public shouldRevert;
     uint256 public performCount;
+    uint256 public pingCount;
     bytes public lastPerformData;
 
     function setShouldRevert(bool value) external {
@@ -28,6 +29,11 @@ contract MockUpkeep {
         }
         performCount++;
         lastPerformData = performData;
+    }
+
+    /// @dev No-argument function used to exercise a selector-only call (empty args).
+    function ping() external {
+        pingCount++;
     }
 }
 
@@ -85,12 +91,25 @@ contract AutomationReceiverTest {
     }
 
     // ─── helpers ────────────────────────────────────────────────
-    function _performCall(bytes memory performData) private pure returns (bytes memory) {
-        return abi.encodeWithSignature("performUpkeep(bytes)", performData);
+    /// @dev ABI-encoded arguments for performUpkeep(bytes) WITHOUT the leading selector.
+    ///      The receiver reconstructs the call as bytes.concat(selector, args).
+    function _performArgs(bytes memory performData) private pure returns (bytes memory) {
+        return abi.encode(performData);
     }
 
-    function _report(address tgt, bytes memory callData) private pure returns (bytes memory) {
-        return abi.encode(tgt, callData);
+    /// @dev Builds a report in the new payload layout with block number 0 (ignored unless the
+    ///      monotonicity check is enabled for the pair).
+    function _report(address tgt, bytes4 selector, bytes memory args) private pure returns (bytes memory) {
+        return abi.encode(tgt, selector, uint256(0), args);
+    }
+
+    /// @dev Builds a report with an explicit block number for the monotonicity check.
+    function _reportAtBlock(address tgt, bytes4 selector, uint256 blockNumber, bytes memory args)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return abi.encode(tgt, selector, blockNumber, args);
     }
 
     /// @dev Builds the 62-byte metadata expected by ReceiverTemplate._decodeMetadata:
@@ -108,7 +127,7 @@ contract AutomationReceiverTest {
 
     // ─── inbound auth (delegated to ReceiverTemplate) ───────────
     function testOnlyForwarderCanDeliver() external {
-        bytes memory report = _report(address(target), _performCall(hex"01"));
+        bytes memory report = _report(address(target), PERFORM_SELECTOR, _performArgs(hex"01"));
 
         vm.expectRevert(abi.encodeWithSelector(_invalidSenderSelector(), ATTACKER, FORWARDER));
         vm.prank(ATTACKER);
@@ -127,7 +146,7 @@ contract AutomationReceiverTest {
         // Anyone can now reach onReport (no forwarder gate), but _processReport blocks them.
         vm.expectRevert(ReceiverTemplate.InvalidForwarderAddress.selector);
         // Call directly (no prank needed since forwarder check is bypassed by the zero address).
-        receiver.onReport(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), _report(address(target), _performCall(hex"01")));
+        receiver.onReport(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), _report(address(target), PERFORM_SELECTOR, _performArgs(hex"01")));
     }
 
     // ─── workflow identity guard ─────────────────────────────────
@@ -141,7 +160,7 @@ contract AutomationReceiverTest {
 
         vm.prank(FORWARDER);
         // ReceiverTemplate skips owner/name checks (none configured); identity guard passes.
-        freshReceiver.onReport(_metadata(WORKFLOW_ID, address(0)), _report(address(target), _performCall(hex"01")));
+        freshReceiver.onReport(_metadata(WORKFLOW_ID, address(0)), _report(address(target), PERFORM_SELECTOR, _performArgs(hex"01")));
 
         _assertEq(target.performCount(), 1);
     }
@@ -160,7 +179,7 @@ contract AutomationReceiverTest {
         // workflowId in metadata is zero — ReceiverTemplate skips id check (none configured).
         freshReceiver.onReport(
             abi.encodePacked(bytes32(0), wfName, WORKFLOW_OWNER),
-            _report(address(target), _performCall(hex"01"))
+            _report(address(target), PERFORM_SELECTOR, _performArgs(hex"01"))
         );
 
         _assertEq(target.performCount(), 1);
@@ -174,7 +193,7 @@ contract AutomationReceiverTest {
 
         vm.expectRevert(AutomationReceiver.WorkflowIdentityNotConfigured.selector);
         vm.prank(FORWARDER);
-        freshReceiver.onReport(_metadata(bytes32(0), WORKFLOW_OWNER), _report(address(target), _performCall(hex"01")));
+        freshReceiver.onReport(_metadata(bytes32(0), WORKFLOW_OWNER), _report(address(target), PERFORM_SELECTOR, _performArgs(hex"01")));
     }
 
     /// @dev No identity fields at all — neither option satisfied.
@@ -184,13 +203,13 @@ contract AutomationReceiverTest {
 
         vm.expectRevert(AutomationReceiver.WorkflowIdentityNotConfigured.selector);
         vm.prank(FORWARDER);
-        freshReceiver.onReport(_metadata(bytes32(0), address(0)), _report(address(target), _performCall(hex"01")));
+        freshReceiver.onReport(_metadata(bytes32(0), address(0)), _report(address(target), PERFORM_SELECTOR, _performArgs(hex"01")));
     }
 
     // ─── outbound allowlist ─────────────────────────────────────
     function testUnauthorizedTargetSelectorReverts() external {
         // Not allowlisted → must revert loudly.
-        bytes memory report = _report(address(target), _performCall(hex"01"));
+        bytes memory report = _report(address(target), PERFORM_SELECTOR, _performArgs(hex"01"));
 
         vm.expectRevert(
             abi.encodeWithSelector(AutomationReceiver.CallNotAllowed.selector, address(target), PERFORM_SELECTOR)
@@ -202,7 +221,7 @@ contract AutomationReceiverTest {
         receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
 
         bytes memory performData = hex"deadbeef";
-        _deliver(_report(address(target), _performCall(performData)));
+        _deliver(_report(address(target), PERFORM_SELECTOR, _performArgs(performData)));
 
         _assertEq(target.performCount(), 1);
         _assertEq(keccak256(target.lastPerformData()), keccak256(performData));
@@ -215,7 +234,7 @@ contract AutomationReceiverTest {
         vm.expectRevert(
             abi.encodeWithSelector(AutomationReceiver.CallNotAllowed.selector, address(target), PERFORM_SELECTOR)
         );
-        _deliver(_report(address(target), _performCall(hex"01")));
+        _deliver(_report(address(target), PERFORM_SELECTOR, _performArgs(hex"01")));
     }
 
     // ─── execution failure is swallowed (Automation parity) ─────
@@ -224,7 +243,7 @@ contract AutomationReceiverTest {
         target.setShouldRevert(true);
 
         // Must NOT revert: the report is consumed and CallFailed is emitted.
-        _deliver(_report(address(target), _performCall(hex"01")));
+        _deliver(_report(address(target), PERFORM_SELECTOR, _performArgs(hex"01")));
 
         // The reverting upkeep changed no state.
         _assertEq(target.performCount(), 0);
@@ -233,13 +252,17 @@ contract AutomationReceiverTest {
     // ─── malformed reports ──────────────────────────────────────
     function testZeroTargetReverts() external {
         vm.expectRevert(AutomationReceiver.InvalidTargetAddress.selector);
-        _deliver(_report(address(0), _performCall(hex"01")));
+        _deliver(_report(address(0), PERFORM_SELECTOR, _performArgs(hex"01")));
     }
 
-    function testMissingSelectorReverts() external {
-        // 3 bytes of calldata → no full selector.
-        vm.expectRevert(AutomationReceiver.MissingSelector.selector);
-        _deliver(_report(address(target), hex"010203"));
+    function testEmptyArgsCallExecutes() external {
+        // A selector with no arguments: the receiver reconstructs calldata = selector only.
+        bytes4 pingSelector = bytes4(keccak256("ping()"));
+        receiver.setCallAllowed(address(target), pingSelector, true);
+
+        _deliver(_report(address(target), pingSelector, ""));
+
+        _assertEq(target.pingCount(), 1);
     }
 
     // ─── allowlist administration ───────────────────────────────
@@ -311,7 +334,7 @@ contract AutomationReceiverTest {
         // Deliver with gas that is less than limit + limit/63 + GAS_OVERHEAD so the guard fires.
         // expectRevert(bytes4) only matches no-argument errors; InsufficientGas carries two
         // uint256 args, so we use try/catch and inspect only the 4-byte selector.
-        bytes memory report = _report(address(gasHog), _performCall(hex""));
+        bytes memory report = _report(address(gasHog), PERFORM_SELECTOR, _performArgs(hex""));
         bool reverted;
         vm.prank(FORWARDER);
         try receiver.onReport{gas: limit + limit / 63 + GAS_OVERHEAD - 1}(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), report) {
@@ -332,7 +355,7 @@ contract AutomationReceiverTest {
         uint256 limit = 50_000;
         receiver.setConsumerGasLimit(address(gasHog), PERFORM_SELECTOR, limit);
 
-        bytes memory report = _report(address(gasHog), _performCall(hex""));
+        bytes memory report = _report(address(gasHog), PERFORM_SELECTOR, _performArgs(hex""));
         // Deliver with plenty of gas — should succeed and not revert.
         vm.prank(FORWARDER);
         receiver.onReport{gas: limit + limit / 63 + GAS_OVERHEAD + 50_000}(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), report);
@@ -346,7 +369,7 @@ contract AutomationReceiverTest {
         target.setShouldRevert(true);
 
         // Must NOT revert even with limit == 0: fire-and-forget is preserved.
-        _deliver(_report(address(target), _performCall(hex"01")));
+        _deliver(_report(address(target), PERFORM_SELECTOR, _performArgs(hex"01")));
         _assertEq(target.performCount(), 0);
     }
 
@@ -360,7 +383,7 @@ contract AutomationReceiverTest {
         uint256 limit = 200_000;
         receiver.setConsumerGasLimit(address(gasHog), PERFORM_SELECTOR, limit);
 
-        bytes memory report = _report(address(gasHog), _performCall(hex""));
+        bytes memory report = _report(address(gasHog), PERFORM_SELECTOR, _performArgs(hex""));
         bool reverted;
         uint256 emittedRequired;
         vm.prank(FORWARDER);
@@ -401,7 +424,7 @@ contract AutomationReceiverTest {
         uint256 limit = 600_000; // above 63 × GAS_OVERHEAD = 441,000
         receiver.setConsumerGasLimit(address(gasRecorder), PERFORM_SELECTOR, limit);
 
-        bytes memory report = _report(address(gasRecorder), _performCall(hex""));
+        bytes memory report = _report(address(gasRecorder), PERFORM_SELECTOR, _performArgs(hex""));
         vm.prank(FORWARDER);
         receiver.onReport{gas: limit + limit / 63 + GAS_OVERHEAD + 60_000}(
             _metadata(WORKFLOW_ID, WORKFLOW_OWNER), report
@@ -431,7 +454,7 @@ contract AutomationReceiverTest {
         uint256 limit = 30_000;
         receiver.setConsumerGasLimit(address(gasRecorder), PERFORM_SELECTOR, limit);
 
-        bytes memory report = _report(address(gasRecorder), _performCall(hex""));
+        bytes memory report = _report(address(gasRecorder), PERFORM_SELECTOR, _performArgs(hex""));
         vm.prank(FORWARDER);
         receiver.onReport{gas: limit + limit / 63 + GAS_OVERHEAD + 60_000}(
             _metadata(WORKFLOW_ID, WORKFLOW_OWNER), report
@@ -445,6 +468,118 @@ contract AutomationReceiverTest {
         uint256 gasReceived = gasRecorder.gasOnEntry();
         _assertTrue(gasReceived >= limit - 500); // 500 gas tolerance for call-frame setup
         _assertTrue(gasReceived <= limit);
+    }
+
+    // ─── block-number monotonicity (staleness protection) ───────
+    /// @dev Disabled by default: an older report still executes (no ordering enforced).
+    function testBlockNumberCheckDisabledAllowsOutOfOrder() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 100, _performArgs(hex"01")));
+        // Older block — still executes because the check is off.
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 50, _performArgs(hex"01")));
+
+        _assertEq(target.performCount(), 2);
+    }
+
+    /// @dev With an explicit floor: below-floor is skipped, at-floor and above execute, and a
+    ///      report older than the last accepted one is skipped. Stale reports never revert.
+    function testBlockNumberCheckWithExplicitFloor() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        receiver.setBlockNumberCheck(address(target), PERFORM_SELECTOR, true, 100);
+
+        // Below floor → skipped (consumed, no revert).
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 99, _performArgs(hex"01")));
+        _assertEq(target.performCount(), 0);
+
+        // At floor (>=) → accepted.
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 100, _performArgs(hex"01")));
+        _assertEq(target.performCount(), 1);
+
+        // Higher → accepted, advances the stored block.
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 101, _performArgs(hex"01")));
+        _assertEq(target.performCount(), 2);
+
+        // Older than last accepted (101) → skipped.
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 100, _performArgs(hex"01")));
+        _assertEq(target.performCount(), 2);
+    }
+
+    /// @dev CLA-parity: a report at the same block as the last accepted one is still accepted (>=).
+    function testBlockNumberCheckEqualBlockAccepted() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        receiver.setBlockNumberCheck(address(target), PERFORM_SELECTOR, true, 100);
+
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 100, _performArgs(hex"01")));
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 100, _performArgs(hex"01")));
+
+        _assertEq(target.performCount(), 2);
+    }
+
+    /// @dev initialBlockNumber == 0 snapshots the current block.number as the floor.
+    function testBlockNumberCheckSnapshotUsesCurrentBlock() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        receiver.setBlockNumberCheck(address(target), PERFORM_SELECTOR, true, 0);
+
+        (bool enabled, uint256 floor) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertTrue(enabled);
+        _assertEq(floor, block.number);
+
+        // Below the snapshot → skipped.
+        if (block.number > 0) {
+            _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, block.number - 1, _performArgs(hex"01")));
+            _assertEq(target.performCount(), 0);
+        }
+
+        // At the snapshot → accepted.
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, block.number, _performArgs(hex"01")));
+        _assertEq(target.performCount(), 1);
+    }
+
+    /// @dev Getter reflects state, the stored block advances on accepted reports, and disabling clears it.
+    function testGetBlockNumberCheckReflectsState() external {
+        (bool enabled, uint256 last) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertFalse(enabled);
+        _assertEq(last, 0);
+
+        receiver.setBlockNumberCheck(address(target), PERFORM_SELECTOR, true, 500);
+        (enabled, last) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertTrue(enabled);
+        _assertEq(last, 500);
+
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        _deliver(_reportAtBlock(address(target), PERFORM_SELECTOR, 600, _performArgs(hex"01")));
+        (, last) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertEq(last, 600);
+
+        receiver.setBlockNumberCheck(address(target), PERFORM_SELECTOR, false, 0);
+        (enabled, last) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertFalse(enabled);
+        _assertEq(last, 0);
+    }
+
+    /// @dev Enabling the check for one pair does not affect another pair.
+    function testBlockNumberCheckIsPerPair() external {
+        receiver.setBlockNumberCheck(address(gasHog), PERFORM_SELECTOR, true, 300);
+
+        (bool enabledHog, uint256 lastHog) = receiver.getBlockNumberCheck(address(gasHog), PERFORM_SELECTOR);
+        _assertTrue(enabledHog);
+        _assertEq(lastHog, 300);
+
+        (bool enabledTarget, uint256 lastTarget) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertFalse(enabledTarget);
+        _assertEq(lastTarget, 0);
+    }
+
+    function testSetBlockNumberCheckIsOwnerOnly() external {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, ATTACKER));
+        vm.prank(ATTACKER);
+        receiver.setBlockNumberCheck(address(target), PERFORM_SELECTOR, true, 0);
+    }
+
+    function testSetBlockNumberCheckRejectsZeroTarget() external {
+        vm.expectRevert(AutomationReceiver.InvalidTargetAddress.selector);
+        receiver.setBlockNumberCheck(address(0), PERFORM_SELECTOR, true, 0);
     }
 
     // ─── tiny assertion helpers (no forge-std dependency) ───────
