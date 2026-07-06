@@ -29,36 +29,38 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  */
 contract AutomationReceiver is ReceiverTemplate, Pausable {
     // Non-target gas costs reserved by the guard (gasleft() < required).
-    // The SLOAD is the last cost incurred BEFORE the check; everything else is AFTER.
+    // GAS_OVERHEAD covers only the post-check path: everything from the gasleft()
+    // comparison through function return. The s_consumerGasLimit SLOAD immediately
+    // preceding the check is NOT included — it is already reflected in the lower
+    // gasleft() value at the check point and must not be double-counted.
     //
-    // [Pre-check — already spent at the guard point:]
-    //   SLOAD s_consumerGasLimit (cold mapping)         2,100
-    //
-    // [Post-check — must complete with remaining gas:]
-    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          50
-    //   CALL opcode dispatch to target (cold addr)      2,600
-    //     (EIP-2929 replaces the pre-Berlin 700 base; 2,600 is the full cold-access cost)
-    //   Post-call (success flag, JUMPI, LOG3 min)       2,200
-    //     ├─ LOG3 base + 3 topics (375 + 3×375)         1,500
-    //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)    512
-    //     └─ misc (returnData mem, JUMPI, stack)          188
-    //   Misc stack / memory                                50
-    //                                          Total:   7,000
+    // [Post-check — must complete with remaining gas at the guard point:]
+    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          ~50
+    //   CALL to target (warm account; setCallAllowed reads   ~900
+    //     target.code.length via EXTCODESIZE first)
+    //   Post-call (success flag, JUMPI, LOG3)              ~2,200
+    //     ├─ LOG3 base + 3 topics (375 + 3×375)          1,500
+    //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)     512
+    //     └─ misc (returnData mem, JUMPI, stack)           188
+    //   Misc stack / memory                                ~50
+    //                                          Total:    ~3,500
     //
     // EIP-150 (63/64 rule): a CALL can forward at most 63/64 of available gas.
-    // A fixed GAS_OVERHEAD buffer is only sufficient when consumerGasLimit ≤ 63 × GAS_OVERHEAD
-    // (~441,000). Above that threshold the 63/64 cap would deliver less than consumerGasLimit
-    // to the target. _processReport therefore adds consumerGasLimit / 63 to `required`
-    // dynamically, ensuring the available gas at the CALL satisfies:
+    // Without the `consumerGasLimit / 63` term, the guard under-provisions whenever
+    // consumerGasLimit > 63 × GAS_OVERHEAD (~220,500). _processReport therefore adds
+    // consumerGasLimit / 63 to `required` dynamically so that:
     //   63/64 × available  ≥  consumerGasLimit
     //
     // Pre-guard overhead (paid BEFORE the check point, so NOT part of `required`):
-    // Five cold SLOADs in ReceiverTemplate.onReport (s_forwarderAddress, s_expectedWorkflowId ×2,
-    // s_expectedAuthor, s_expectedWorkflowName: 5 × 2,100 = 10,500 gas), two STATICCALL frames to
-    // this in _processReport (~1,000 gas), abi.decode of the report (~300 gas), and the cold SLOAD
-    // of s_callAllowed (~2,100 gas) add up to ~14,000 gas. When the block-number monotonicity check
-    // is enabled for a (target, selector) pair, two extra cold SLOADs (s_blockNumberCheckEnabled,
-    // s_lastReportBlock) plus one SSTORE add a further ~10,000 gas to this bucket.
+    // Up to four cold SLOADs in ReceiverTemplate.onReport when identity checks are
+    // active (s_forwarderAddress, s_expectedWorkflowId, s_expectedAuthor,
+    // s_expectedWorkflowName: 4 × 2,100 = 8,400 gas), warm re-reads of those slots
+    // in _processReport (~400 gas), abi.decode of the report (~300 gas), the cold
+    // nested-mapping read of s_callAllowed (~4,200 gas on first access), a cold
+    // s_consumerGasLimit SLOAD (~2,100 gas), and paused() (~2,100 gas cold) add up to
+    // ~17,500 gas on the first delivery to a pair. After slots warm, pre-guard drops to
+    // ~5,500 gas. When the block-number monotonicity check is enabled for a pair, budget
+    // a further ~10,000 gas for its two cold SLOADs and the advancing SSTORE.
     //
     // This pre-guard gas is intentionally NOT added to `required` and needs no per-feature constant:
     // it is spent before `gasleft()` is read, so the guard already sees it (it observes the reduced
@@ -68,7 +70,7 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     // section). Under-budgeting fails cleanly (InsufficientGas if the guard is reached, otherwise
     // OOG) — both are recorded by the Forwarder as retryable, so this is a tuning, not a safety,
     // concern.
-    uint256 private constant GAS_OVERHEAD = 7_000;
+    uint256 private constant GAS_OVERHEAD = 3500;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
     mapping(address target => mapping(bytes4 selector => bool allowed)) private s_callAllowed;
@@ -196,9 +198,8 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     ///      specific function being migrated. Each (target, selector) pair has its own limit.
     ///      Zero (the default) disables the guard for that pair and preserves fire-and-forget.
     ///      Note: the on-chain formula only covers costs from the guard check onward. The
-    ///      workflow's writeGasLimit must also budget for ~11,000 gas of pre-guard overhead
-    ///      (four cold SLOADs in ReceiverTemplate plus warm re-reads in _processReport,
-    ///      abi.decode, and the cold s_callAllowed SLOAD) on top of this limit.
+    ///      workflow's writeGasLimit must also budget for pre-guard overhead (~17,500 gas
+    ///      on the first delivery to a pair, ~5,500 gas thereafter) on top of this limit.
     /// @param target  The contract the limit applies to. Must not be the zero address.
     /// @param selector The 4-byte function selector the limit applies to.
     /// @param gasLimit Minimum gas required by the consumer. 0 = no guard.
@@ -290,7 +291,7 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     ///      reverts with `InsufficientGas` before the target call if available gas is below
     ///      `gasLimit + gasLimit / 63 + GAS_OVERHEAD`. The `gasLimit / 63` term accounts for
     ///      the EIP-150 (63/64) rule: a CALL forwards at most 63/64 of available gas, so
-    ///      without this buffer a high gas limit (above ~441,000) would cause the target to
+    ///      without this buffer a high gas limit (above ~220,500) would cause the target to
     ///      receive less than configured. This ensures a low-gas delivery is recorded as failed
     ///      by the forwarder and can be retried, preventing griefing attacks. Each
     ///      (target, selector) pair has its own configurable limit.
@@ -357,8 +358,8 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
         bytes memory returnData;
         if (consumerGasLimit > 0) {
             // consumerGasLimit / 63 compensates for EIP-150: a CALL forwards at most
-            // 63/64 of available gas. Without this term, limits above ~441,000
-            // (63 × GAS_OVERHEAD) would cause the target to receive less than requested.
+            // 63/64 of available gas. Without this term, limits above ~220,500
+            // (63 × GAS_OVERHEAD, ~220,500) would cause the target to receive less than requested.
             uint256 required = consumerGasLimit + consumerGasLimit / 63 + GAS_OVERHEAD;
             if (gasleft() < required) {
                 revert InsufficientGas(gasleft(), required);

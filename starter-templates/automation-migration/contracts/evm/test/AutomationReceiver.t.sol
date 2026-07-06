@@ -54,6 +54,17 @@ contract MockGasRecorder {
     }
 }
 
+/// @dev Worst case for GAS_OVERHEAD: consumes every unit of forwarded gas and reverts (OOG).
+///      After the failing CALL the receiver must still have enough gas left to emit the
+///      CallFailed LOG3 event. Used to prove GAS_OVERHEAD covers the post-guard path even
+///      when the target burns 100% of consumerGasLimit.
+contract MockGasBurner {
+    function performUpkeep(bytes calldata) external pure {
+        // Infinite loop: burns all forwarded gas, then the frame reverts with out-of-gas.
+        while (true) {}
+    }
+}
+
 contract AutomationReceiverTest {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
@@ -68,21 +79,24 @@ contract AutomationReceiverTest {
     address private constant WORKFLOW_OWNER = address(uint160(5));
 
     // GAS_OVERHEAD mirrors the private constant in AutomationReceiver (EIP-2929 worst-case).
-    uint256 private constant GAS_OVERHEAD = 7_000;
+    uint256 private constant GAS_OVERHEAD = 3500;
 
     AutomationReceiver private receiver;
     MockUpkeep private target;
     MockGasHog private gasHog;
     MockGasRecorder private gasRecorder;
+    MockGasBurner private gasBurner;
 
     constructor() {
         receiver = new AutomationReceiver(FORWARDER);
-        // Use option (a): workflowId alone satisfies the identity guard.
+        // Use option (a): workflowId alone satisfies the identity guard. The author is also
+        // set so ReceiverTemplate additionally validates it against the delivered metadata.
         receiver.setExpectedWorkflowId(WORKFLOW_ID);
         receiver.setExpectedAuthor(WORKFLOW_OWNER);
         target = new MockUpkeep();
         gasHog = new MockGasHog();
         gasRecorder = new MockGasRecorder();
+        gasBurner = new MockGasBurner();
     }
 
     // ─── helpers ────────────────────────────────────────────────
@@ -116,6 +130,25 @@ contract AutomationReceiverTest {
     function _deliver(bytes memory report) private {
         vm.prank(FORWARDER);
         receiver.onReport(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), report);
+    }
+
+    /// @dev Delivers a report with a bounded gas budget and classifies the outcome:
+    ///      0 = onReport returned (success, including the swallowed CallFailed path),
+    ///      1 = reverted with InsufficientGas (the gas guard fired),
+    ///      2 = any other revert (e.g. the receiver itself ran out of gas post-guard).
+    function _deliverOutcome(uint256 gasAmount, bytes memory report) private returns (uint8) {
+        vm.prank(FORWARDER);
+        try receiver.onReport{gas: gasAmount}(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), report) {
+            return 0;
+        } catch (bytes memory data) {
+            bytes4 sel;
+            if (data.length >= 4) {
+                assembly {
+                    sel := mload(add(data, 32))
+                }
+            }
+            return sel == AutomationReceiver.InsufficientGas.selector ? 1 : 2;
+        }
     }
 
     // ─── inbound auth (delegated to ReceiverTemplate) ───────────
@@ -491,15 +524,15 @@ contract AutomationReceiverTest {
         _assertEq(emittedRequired, limit + limit / 63 + GAS_OVERHEAD);
     }
 
-    /// @dev Verifies that at a consumerGasLimit above the 63 × GAS_OVERHEAD threshold (~441,000)
+    /// @dev Verifies that at a consumerGasLimit above the 63 × GAS_OVERHEAD threshold (~220,500)
     ///      the target still receives its full configured gas. Without the EIP-150 buffer in
     ///      `required`, the CALL would deliver less than consumerGasLimit due to the 63/64 cap.
     ///      For example, at limit = 600,000 without the fix:
-    ///        available ≈ limit + GAS_OVERHEAD → 63/64 × 607,000 ≈ 597,562 < 600,000.
+    ///        available ≈ limit + GAS_OVERHEAD → 63/64 × 603,500 ≈ 594,070 < 600,000.
     ///      With the fix (required includes limit/63), the CALL always has enough headroom.
     function testEIP150TermEnsuresFullGasForwardedAtHighLimit() external {
         receiver.setCallAllowed(address(gasRecorder), PERFORM_SELECTOR, true);
-        uint256 limit = 600_000; // above 63 × GAS_OVERHEAD = 441,000
+        uint256 limit = 600_000; // above 63 × GAS_OVERHEAD = 220,500
         receiver.setConsumerGasLimit(address(gasRecorder), PERFORM_SELECTOR, limit);
 
         bytes memory report = _report(address(gasRecorder), _performCall(hex""));
@@ -517,7 +550,7 @@ contract AutomationReceiverTest {
 
     // ─── GAS_OVERHEAD accuracy ──────────────────────────────────
     /// @dev Validates that GAS_OVERHEAD is large enough to cover all post-guard overhead
-    ///      (CALL opcode cold dispatch 2,600 + returnData handling + LOG3 emission 2,012).
+    ///      (warm CALL dispatch ~900 + returnData handling + LOG3 emission ~2,200).
     ///      A no-op consumer is used as the worst case: the target records gasleft() via
     ///      a single cold SSTORE (≈ 22,100 gas) and returns — no business logic.
     ///      If GAS_OVERHEAD were severely underestimated (e.g. 1,000) the function would
@@ -546,6 +579,47 @@ contract AutomationReceiverTest {
         uint256 gasReceived = gasRecorder.gasOnEntry();
         _assertTrue(gasReceived >= limit - 500); // 500 gas tolerance for call-frame setup
         _assertTrue(gasReceived <= limit);
+    }
+
+    /// @dev Worst-case proof that GAS_OVERHEAD is sufficient. The consumer burns 100% of the
+    ///      forwarded gas and reverts (OOG), which is the most expensive post-guard path: the
+    ///      receiver must still emit CallFailed (LOG3) out of the GAS_OVERHEAD headroom.
+    ///
+    ///      A deliberately small consumerGasLimit is the true worst case for a fixed overhead: the
+    ///      `consumerGasLimit / 63` term (which doubles as post-call headroom, see the constant's
+    ///      docstring) shrinks toward zero, so GAS_OVERHEAD alone must cover the cold CALL dispatch
+    ///      plus the LOG3 emission.
+    ///
+    ///      onReport's success is monotonic in the gas budget (more gas never turns a success into a
+    ///      failure). We binary-search the smallest budget that succeeds, then assert that ONE unit
+    ///      below it the call reverted with InsufficientGas — i.e. the guard was still firing. If
+    ///      GAS_OVERHEAD were undersized, there would instead be an out-of-gas "dead zone" just above
+    ///      the guard threshold, so the budget one unit below the first success would revert for a
+    ///      different reason (outcome 2) and this assertion would fail.
+    function testGasOverheadCoversWorstCaseGasBurningConsumer() external {
+        receiver.setCallAllowed(address(gasBurner), PERFORM_SELECTOR, true);
+        uint256 limit = 1_000;
+        receiver.setConsumerGasLimit(address(gasBurner), PERFORM_SELECTOR, limit);
+        bytes memory report = _report(address(gasBurner), _performCall(hex""));
+
+        uint256 lo = 0; // no gas: reverts (outcome != 0)
+        uint256 hi = 500_000; // ample: onReport runs to completion (outcome 0)
+        _assertEq(_deliverOutcome(hi, report), 0);
+
+        // Binary-search the smallest budget at which onReport succeeds.
+        while (hi - lo > 1) {
+            uint256 mid = (lo + hi) / 2;
+            if (_deliverOutcome(mid, report) == 0) {
+                hi = mid;
+            } else {
+                lo = mid;
+            }
+        }
+
+        // `lo` is the largest budget that does NOT succeed. It must revert with InsufficientGas
+        // (the guard firing), proving there is no out-of-gas dead zone above the guard threshold:
+        // the moment the guard is satisfied, GAS_OVERHEAD is enough to finish (CALL + LOG3).
+        _assertEq(_deliverOutcome(lo, report), 1);
     }
 
     // ─── block-number monotonicity (staleness protection) ───────
@@ -658,6 +732,63 @@ contract AutomationReceiverTest {
     function testSetBlockNumberCheckRejectsZeroTarget() external {
         vm.expectRevert(AutomationReceiver.InvalidTargetAddress.selector);
         receiver.setBlockNumberCheck(address(0), PERFORM_SELECTOR, true, 0);
+    }
+
+    /// @dev An InsufficientGas revert must roll back the block-number advance so a retry at the
+    ///      same block remains valid (see _processReport staleness comment).
+    function testInsufficientGasDoesNotAdvanceBlockNumber() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        receiver.setBlockNumberCheck(address(target), PERFORM_SELECTOR, true, 100);
+        uint256 limit = 200_000;
+        receiver.setConsumerGasLimit(address(target), PERFORM_SELECTOR, limit);
+
+        bytes memory report = _reportAtBlock(address(target), 100, _performCall(hex"01"));
+
+        bool reverted;
+        vm.prank(FORWARDER);
+        try receiver.onReport{gas: limit + limit / 63 + GAS_OVERHEAD - 1}(
+            _metadata(WORKFLOW_ID, WORKFLOW_OWNER), report
+        ) {
+            reverted = false;
+        } catch (bytes memory data) {
+            bytes4 sel;
+            assembly {
+                sel := mload(add(data, 32))
+            }
+            if (sel != AutomationReceiver.InsufficientGas.selector) revert("wrong revert selector");
+            reverted = true;
+        }
+        _assertTrue(reverted);
+
+        (, uint256 lastBlock) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertEq(lastBlock, 100);
+        _assertEq(target.performCount(), 0);
+
+        vm.prank(FORWARDER);
+        receiver.onReport{gas: limit + limit / 63 + GAS_OVERHEAD + 100_000}(
+            _metadata(WORKFLOW_ID, WORKFLOW_OWNER), report
+        );
+        _assertEq(target.performCount(), 1);
+        (, lastBlock) = receiver.getBlockNumberCheck(address(target), PERFORM_SELECTOR);
+        _assertEq(lastBlock, 100);
+    }
+
+    /// @dev All three identity fields may be configured together for the strongest binding.
+    function testCombinedIdentityOptionsAccepted() external {
+        AutomationReceiver freshReceiver = new AutomationReceiver(FORWARDER);
+        freshReceiver.setExpectedWorkflowId(WORKFLOW_ID);
+        freshReceiver.setExpectedAuthor(WORKFLOW_OWNER);
+        freshReceiver.setExpectedWorkflowName("my-workflow");
+        freshReceiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        bytes10 wfName = freshReceiver.getExpectedWorkflowName();
+        vm.prank(FORWARDER);
+        freshReceiver.onReport(
+            abi.encodePacked(WORKFLOW_ID, wfName, WORKFLOW_OWNER),
+            _report(address(target), _performCall(hex"01"))
+        );
+
+        _assertEq(target.performCount(), 1);
     }
 
     // ─── tiny assertion helpers (no forge-std dependency) ───────
