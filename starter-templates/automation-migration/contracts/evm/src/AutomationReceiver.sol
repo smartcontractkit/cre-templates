@@ -53,11 +53,13 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     //   63/64 × available  ≥  consumerGasLimit
     //
     // Pre-guard overhead (excluded from GAS_OVERHEAD, paid before the check point):
-    // Five cold SLOADs in ReceiverTemplate.onReport (s_forwarderAddress, s_expectedWorkflowId ×2,
-    // s_expectedAuthor, s_expectedWorkflowName: 5 × 2,100 = 10,500 gas), two STATICCALL frames to
-    // this in _processReport (~1,000 gas), abi.decode of the report (~300 gas), and the cold SLOAD
-    // of s_callAllowed (~2,100 gas) add up to ~14,000 gas on top of consumerGasLimit + GAS_OVERHEAD.
-    // Callers must budget for this in writeGasLimit (see README Gas Limit section).
+    // Four cold SLOADs in ReceiverTemplate.onReport (s_forwarderAddress, s_expectedWorkflowId,
+    // s_expectedAuthor, s_expectedWorkflowName: 4 × 2,100 = 8,400 gas), four warm re-reads of the
+    // same slots in _processReport (the identity guard now reads the inherited fields directly
+    // rather than via self-STATICCALLs: ~4 × 100 = 400 gas), abi.decode of the report (~300 gas),
+    // and the cold SLOAD of s_callAllowed (~2,100 gas) add up to ~11,000 gas on top of
+    // consumerGasLimit + GAS_OVERHEAD. Callers must budget for this in writeGasLimit
+    // (see README Gas Limit section).
     uint256 private constant GAS_OVERHEAD = 7_000;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
@@ -173,9 +175,9 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     ///      specific function being migrated. Each (target, selector) pair has its own limit.
     ///      Zero (the default) disables the guard for that pair and preserves fire-and-forget.
     ///      Note: the on-chain formula only covers costs from the guard check onward. The
-    ///      workflow's writeGasLimit must also budget for ~14,000 gas of pre-guard overhead
-    ///      (five cold SLOADs in ReceiverTemplate, two STATICCALL frames, abi.decode, and
-    ///      the cold s_callAllowed SLOAD) on top of this limit.
+    ///      workflow's writeGasLimit must also budget for ~11,000 gas of pre-guard overhead
+    ///      (four cold SLOADs in ReceiverTemplate plus warm re-reads in _processReport,
+    ///      abi.decode, and the cold s_callAllowed SLOAD) on top of this limit.
     /// @param target  The contract the limit applies to. Must not be the zero address.
     /// @param selector The 4-byte function selector the limit applies to.
     /// @param gasLimit Minimum gas required by the consumer. 0 = no guard.
@@ -232,11 +234,14 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
             emit ReportSkippedWhilePaused();
             return;
         }
-        if (this.getForwarderAddress() == address(0)) {
+        // Read the inherited permission fields directly (warm SLOADs). ReceiverTemplate.onReport
+        // already loaded all four slots before dispatching here, so these reads cost ~100 gas
+        // each — far cheaper than a self-STATICCALL to the external getters.
+        if (s_forwarderAddress == address(0)) {
             revert InvalidForwarderAddress();
         }
-        if (this.getExpectedWorkflowId() == bytes32(0) &&
-            (this.getExpectedAuthor() == address(0) || this.getExpectedWorkflowName() == bytes10(0))) {
+        if (s_expectedWorkflowId == bytes32(0) &&
+            (s_expectedAuthor == address(0) || s_expectedWorkflowName == bytes10(0))) {
             revert WorkflowIdentityNotConfigured();
         }
 

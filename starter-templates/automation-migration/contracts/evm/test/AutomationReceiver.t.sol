@@ -512,8 +512,8 @@ contract AutomationReceiverTest {
     ///      If GAS_OVERHEAD were severely underestimated (e.g. 1,000) the function would
     ///      OOG during LOG3 emission and this test would fail.
     ///      The 60,000 pre-check allowance covers ReceiverTemplate metadata validation,
-    ///      identity checks in _processReport (this.get*() calls), report decoding, and
-    ///      all cold/warm slot accesses before the gasleft() guard.
+    ///      identity checks in _processReport (direct reads of the inherited permission
+    ///      fields), report decoding, and all cold/warm slot accesses before the gasleft() guard.
     function testGasOverheadCorrectlyCoversNoOpConsumer() external {
         receiver.setCallAllowed(address(gasRecorder), PERFORM_SELECTOR, true);
         // consumerGasLimit must cover the cold SSTORE inside performUpkeep (~22,100),

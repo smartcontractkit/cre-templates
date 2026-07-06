@@ -44,8 +44,8 @@ contract ReceiverTemplateTest {
 
     /// @dev setForwarderAddress(address(0)) is permitted at the ReceiverTemplate level —
     ///      it emits a SecurityWarning but does not revert. Concrete contracts such as
-    ///      AutomationReceiver close this gap by checking getForwarderAddress() inside
-    ///      _processReport and reverting with InvalidForwarderAddress when it is zero.
+    ///      AutomationReceiver close this gap by reading the inherited s_forwarderAddress
+    ///      field inside _processReport and reverting with InvalidForwarderAddress when it is zero.
     function testSetForwarderToZeroSucceedsAtTemplateLevel() external {
         MockReceiver receiver = new MockReceiver(FORWARDER);
 
