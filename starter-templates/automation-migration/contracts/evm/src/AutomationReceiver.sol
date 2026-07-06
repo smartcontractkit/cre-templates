@@ -138,8 +138,11 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     /// @dev Closed by default. Register every (target, selector) the migrated upkeep needs,
     ///      e.g. `performUpkeep(bytes)` for custom-logic/log upkeeps, or your specific
     ///      time-based function. Owner-only.
-    ///      Validates that `target` has deployed code at the time of registration; passing an EOA,
-    ///      a mistyped address, or a never-deployed address reverts with `TargetHasNoCode`.
+    ///      When `allowed` is true, validates that `target` has deployed code at the time of
+    ///      registration; passing an EOA, a mistyped address, or a never-deployed address reverts
+    ///      with `TargetHasNoCode`. The check is skipped when `allowed` is false so that an
+    ///      allowlist entry can always be revoked, even if the target has since self-destructed
+    ///      and its code has become empty.
     /// @param target The contract the receiver is permitted to call.
     /// @param selector The 4-byte function selector permitted on `target`.
     /// @param allowed True to permit, false to revoke.
@@ -147,7 +150,7 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
         if (target == address(0)) {
             revert InvalidTargetAddress();
         }
-        if (target.code.length == 0) {
+        if (allowed && target.code.length == 0) {
             revert TargetHasNoCode(target);
         }
         s_callAllowed[target][selector] = allowed;
