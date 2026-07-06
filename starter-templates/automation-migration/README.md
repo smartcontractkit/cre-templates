@@ -48,7 +48,7 @@ The `contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfou
 ```bash
 cd contracts/evm
 forge build
-forge test          # 42 tests covering the receiver + permission template
+forge test          # 43 tests covering the receiver + permission template
 
 # Deploy, passing the CRE Forwarder address for your DON as the constructor arg
 forge create src/AutomationReceiver.sol:AutomationReceiver \
