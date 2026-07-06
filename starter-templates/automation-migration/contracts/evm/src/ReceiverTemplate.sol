@@ -10,13 +10,16 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @dev The forwarder address is required at construction time for security.
 ///      Additional permission fields can be configured using setter functions.
 abstract contract ReceiverTemplate is IReceiver, Ownable {
-  // Required permission field at deployment, configurable after
-  address private s_forwarderAddress; // If set, only this address can call onReport
+  // Required permission field at deployment, configurable after.
+  // `internal` (not `private`) so concrete receivers can read it directly with a warm SLOAD
+  // instead of paying for a self-STATICCALL to the external getter.
+  address internal s_forwarderAddress; // If set, only this address can call onReport
 
-  // Optional permission fields (all default to zero = disabled)
-  address private s_expectedAuthor; // If set, only reports from this workflow owner are accepted
-  bytes10 private s_expectedWorkflowName; // Only validated when s_expectedAuthor is also set
-  bytes32 private s_expectedWorkflowId; // If set, only reports from this specific workflow ID are accepted
+  // Optional permission fields (all default to zero = disabled).
+  // `internal` for the same reason as s_forwarderAddress above.
+  address internal s_expectedAuthor; // If set, only reports from this workflow owner are accepted
+  bytes10 internal s_expectedWorkflowName; // Only validated when s_expectedAuthor is also set
+  bytes32 internal s_expectedWorkflowId; // If set, only reports from this specific workflow ID are accepted
 
   // Hex character lookup table for bytes-to-hex conversion
   bytes private constant HEX_CHARS = "0123456789abcdef";

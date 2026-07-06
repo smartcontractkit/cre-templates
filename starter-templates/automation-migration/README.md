@@ -15,6 +15,8 @@ The receiver authorizes reports on two separate layers, and **both** apply:
 - **Inbound — who may deliver a report**: the CRE Forwarder address is set at construction and validated by `ReceiverTemplate`. `AutomationReceiver._processReport` adds two additional hard guards: (1) it rejects any delivery if the forwarder was ever set to `address(0)` post-deployment (closing the gap in `ReceiverTemplate.setForwarderAddress`), and (2) it requires at least one complete workflow identity option to be configured — an unconfigured receiver rejects all reports with `WorkflowIdentityNotConfigured`. Two options are accepted: **(a)** workflowId is set (binds the receiver to one specific workflow), or **(b)** both workflowOwner and workflowName are set (binds to a named workflow from a specific owner). Either piece of option (b) alone is insufficient.
 - **Outbound — what a report may make the receiver do** (`AutomationReceiver`): a **closed-by-default allowlist** of `(target, function-selector)` pairs. Inbound checks only prove a report came from your workflow; they do **not** constrain the `(target, data)` it carries. Until you allowlist a pair with `setCallAllowed`, the receiver will reject it.
 
+On top of these layers, the owner can trigger a global **emergency pause** (OpenZeppelin `Pausable`) via `pause(bool retryable)`. While paused, all deliveries are rejected; the `retryable` flag chosen at pause time decides whether they stay retryable (revert) or are dropped (consumed). See [Emergency Pause](#3d-emergency-pause-optional).
+
 ---
 
 ## Migration Path Mapping
@@ -41,12 +43,12 @@ While working directly from this branch, copy or open `starter-templates/automat
 ### 2. Build and Deploy the Bridge
 Deploy `AutomationReceiver.sol` to your target chain. You only need to do this once to support multiple upkeeps.
 
-The `contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfoundry.sh/) project: a `foundry.toml` and a vendored copy of the only OpenZeppelin files used (`Ownable`, `Context`). No `forge install` or local node is required — just build and deploy:
+The `contracts/evm` directory ships a ready-to-use [Foundry](https://book.getfoundry.sh/) project: a `foundry.toml` and a vendored copy of the only OpenZeppelin files used (`Ownable`, `Pausable`, `Context`). No `forge install` or local node is required — just build and deploy:
 
 ```bash
 cd contracts/evm
 forge build
-forge test          # 41 tests covering the receiver + permission template
+forge test          # 51 tests covering the receiver + permission template
 
 # Deploy, passing the CRE Forwarder address for your DON as the constructor arg
 forge create src/AutomationReceiver.sol:AutomationReceiver \
@@ -80,7 +82,7 @@ cast send "$RECEIVER_ADDRESS" \
 ```
 
 **Parameters:**
-- `target`: The address of your existing upkeep contract. Must be a deployed contract — `setCallAllowed` reverts with `TargetHasNoCode` if the address has no code (EOA, mistyped address, or never-deployed contract).
+- `target`: The address of your existing upkeep contract. When allowing (`allowed = true`) it must be a deployed contract — `setCallAllowed` reverts with `TargetHasNoCode` if the address has no code (EOA, mistyped address, or never-deployed contract). The code check is skipped when revoking (`allowed = false`) so an entry can always be removed, even if the target has since self-destructed.
 - `selector`: The 4-byte function selector (computed from the function signature via `cast sig`).
 - `allowed`: Set to `true` to allow, `false` to revoke.
 
@@ -154,7 +156,36 @@ You may also combine both options for the strongest guarantee (e.g. set all thre
 - `setExpectedAuthor(_author)`: The account that deploys or owns the workflow. Required for option B; does not satisfy the guard alone.
 - `setExpectedWorkflowName(_name)`: The exact workflow name. Required for option B; must always be paired with `setExpectedAuthor` (workflow names are unique per owner, not globally).
 
-#### 3d. Configure Block Number Monotonicity / Staleness Protection (Optional)
+#### 3e. Emergency Pause (Optional but Recommended for Production)
+
+The receiver includes an owner-only global emergency stop built on OpenZeppelin's [`Pausable`](https://docs.openzeppelin.com/contracts/5.x/api/utils#Pausable). This is the CRE equivalent of Chainlink Automation's registry-wide pause: it halts report processing across the whole receiver (there is no per-upkeep `pauseUpkeep` equivalent — pausing stops every allowlisted `(target, selector)` at once).
+
+`pause(bool retryable)` takes a flag that lets **you decide, per pause, what happens to reports delivered while paused**:
+
+- **`pause(true)` — retryable:** `_processReport` reverts with `EnforcedPause`. The revert propagates through `onReport`, so the CRE Forwarder records the transmission as **failed and retryable** rather than consuming it. Reports that were already signed while paused (or that arrive during the pause) are **not lost** and resume delivery once you `unpause()`.
+- **`pause(false)` — drop:** `_processReport` emits `ReportSkippedWhilePaused` and returns, **consuming (dropping)** the report. Dropped reports are **not** redelivered after `unpause()`. Use this when you don't want a backlog of retried reports to flush the moment you unpause.
+
+```bash
+# Halt processing, keeping reports retryable (they resume after unpause)
+cast send "$RECEIVER_ADDRESS" "pause(bool)" true \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Halt processing, dropping reports delivered while paused
+cast send "$RECEIVER_ADDRESS" "pause(bool)" false \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Resume report processing
+cast send "$RECEIVER_ADDRESS" "unpause()" \
+  --rpc-url "$RPC_URL" --private-key "$PRIVATE_KEY"
+
+# Read the current pause state and the selected mode
+cast call "$RECEIVER_ADDRESS" "paused()(bool)" --rpc-url "$RPC_URL"
+cast call "$RECEIVER_ADDRESS" "retryableWhilePaused()(bool)" --rpc-url "$RPC_URL"
+```
+
+> **Why on-chain pause?** Pausing or deleting a workflow stops the DON from producing *new* reports, but reports that were already signed remain permissionlessly deliverable afterward. The on-chain `pause()` closes that gap by rejecting those in-flight reports at the receiver. Use `pause(true)` to keep them retryable until you unpause, or `pause(false)` to drop them.
+
+#### 3e. Configure Block Number Monotonicity / Staleness Protection (Optional)
 
 Under Chainlink Automation the registry rejected any report whose trigger block preceded the last performed block, which prevented an older report from executing after a newer one. The CRE delivery path does **not** preserve this ordering: the Forwarder deduplicates only exact retransmissions of the same report and enforces no ordering across separate executions.
 
@@ -241,10 +272,11 @@ The receiver distinguishes four outcomes:
 - **Authorization failure** — a zero target, a target with no deployed code, calldata shorter than a 4-byte selector, or a `(target, selector)` that is not allowlisted — **reverts** (`InvalidTargetAddress` / `TargetHasNoCode` / `MissingSelector` / `CallNotAllowed`). These indicate misconfiguration or a malformed report and must surface loudly.
 - **Stale report** — when the block-number monotonicity check is enabled for the pair (Step 3d) and the report's block number is older than the last accepted one — does **not** revert. The receiver emits `StaleReportSkipped(target, selector, reportBlockNumber, lastReportBlock)` and consumes the report without executing the call. Retrying would not help (the report is permanently stale), so it is skipped rather than marked retryable.
 - **Gas guard failure** — when `setConsumerGasLimit` has been configured for the specific `(target, selector)` pair and the incoming gas is below `consumerGasLimit + consumerGasLimit / 63 + 7,000`, `_processReport` **reverts** with `InsufficientGas(available, required)`. The forwarder records the transmission as failed and it can be retried with higher gas. This closes a griefing attack where a report is delivered with just enough gas to pass the forwarder's minimum check but not enough for `performUpkeep` to execute, which would otherwise permanently consume the transmission ID. The 7,000-gas constant covers the EIP-2929 cold storage read, call-opcode dispatch, post-call LOG3 event emission (3 topics), and bookkeeping. The `consumerGasLimit / 63` term compensates for the EIP-150 (63/64) rule: a `CALL` can forward at most 63/64 of available gas, so without this buffer a high gas limit (above ~441,000) would cause the target to receive less than configured. Each `(target, selector)` pair has its own independent limit; pairs with no configured limit retain fire-and-forget semantics.
+- **Paused** — when the owner has called `pause(bool retryable)`, `_processReport` short-circuits before any decoding or execution. With `pause(true)` it **reverts** with `EnforcedPause` (the forwarder records the transmission as failed and retryable, so reports resume after `unpause()`); with `pause(false)` it emits `ReportSkippedWhilePaused` and **consumes** the report (dropped, not redelivered). See [Emergency Pause](#3d-emergency-pause-optional).
 - **Execution failure** — an allowed call that itself reverts — does **not** revert `onReport`. The receiver emits `CallFailed(target, selector, reason)` and the report is consumed. This mirrors Chainlink Automation's fire-and-forget behavior, where a failed `performUpkeep` simply ends that round and the next trigger re-evaluates eligibility.
 
 ### Gas Limit
-`writeGasLimit` (default `"500000"`) caps the on-chain execution gas forwarded to `onReport`. The on-chain guard formula is `consumerGasLimit + consumerGasLimit/63 + 7,000`, but an additional ~14,000 gas is consumed before that check point by pre-guard operations — five cold `SLOAD`s in `ReceiverTemplate.onReport` (forwarder address, workflow ID ×2, owner, name: 5 × 2,100 = 10,500 gas), two `STATICCALL`s to `this` in `_processReport` (~1,000 gas), `abi.decode` of the report payload (~300 gas), and the cold `SLOAD` of `s_callAllowed` (~2,100 gas). When the block-number monotonicity check is enabled for a pair (Step 3d), budget a further ~10,000 gas for its two cold `SLOAD`s and the `SSTORE` that advances the stored block. Set `writeGasLimit` to at least your `performGasLimit` plus ~20,000 (or ~30,000 with the monotonicity check enabled) to ensure deliveries comfortably clear the guard. If deliveries still fail with `InsufficientGas`, increase `writeGasLimit` in 10,000-gas increments until they pass.
+`writeGasLimit` (default `"500000"`) caps the on-chain execution gas forwarded to `onReport`. The on-chain guard formula is `consumerGasLimit + consumerGasLimit/63 + 7,000`, but an additional ~11,000 gas is consumed before that check point by pre-guard operations — four cold `SLOAD`s in `ReceiverTemplate.onReport` (forwarder address, workflow ID, owner, name: 4 × 2,100 = 8,400 gas), four warm re-reads of those same slots in `_processReport` (the identity guard reads the inherited permission fields directly rather than via self-`STATICCALL`s: ~400 gas), `abi.decode` of the report payload (~300 gas), and the cold `SLOAD` of `s_callAllowed` (~2,100 gas). When the block-number monotonicity check is enabled for a pair (Step 3d), budget a further ~10,000 gas for its two cold `SLOAD`s and the `SSTORE` that advances the stored block. Set `writeGasLimit` to at least your `performGasLimit` plus ~20,000 (or ~30,000 with the monotonicity check enabled) to ensure deliveries comfortably clear the guard. If deliveries still fail with `InsufficientGas`, increase `writeGasLimit` in 10,000-gas increments until they pass.
 
 ---
 

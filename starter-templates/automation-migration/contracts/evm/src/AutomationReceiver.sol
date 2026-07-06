@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import "./ReceiverTemplate.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title AutomationReceiver
@@ -26,7 +27,7 @@ import "./ReceiverTemplate.sol";
  *
  *      Migration rule of thumb: inbound authorizes the workflow; outbound authorizes the action.
  */
-contract AutomationReceiver is ReceiverTemplate {
+contract AutomationReceiver is ReceiverTemplate, Pausable {
     // Non-target gas costs reserved by the guard (gasleft() < required).
     // The SLOAD is the last cost incurred BEFORE the check; everything else is AFTER.
     //
@@ -81,6 +82,11 @@ contract AutomationReceiver is ReceiverTemplate {
     /// @notice Highest report block number accepted so far for a (target, selector) pair. Doubles as
     ///         the configurable initial floor set by {setBlockNumberCheck}.
     mapping(address target => mapping(bytes4 selector => uint256 blockNumber)) private s_lastReportBlock;
+    /// @notice While paused, controls how incoming reports are handled. The owner picks the mode
+    ///         at {pause} time: true = reverts (reports stay unconsumed and retryable, resuming
+    ///         after {unpause}); false = the report is consumed (dropped, not retried). Only
+    ///         meaningful while {paused} is true.
+    bool private s_retryableWhilePaused;
 
     /// @notice Emitted when a target call succeeds.
     event CallExecuted(address indexed target, bytes4 indexed selector, bytes returnData);
@@ -97,6 +103,9 @@ contract AutomationReceiver is ReceiverTemplate {
     ///         accepted one for the pair. The report is consumed (not reverted), mirroring
     ///         Chainlink Automation's fire-and-forget semantics.
     event StaleReportSkipped(address indexed target, bytes4 indexed selector, uint256 reportBlockNumber, uint256 lastReportBlock);
+    /// @notice Emitted when a report is dropped (consumed, not retried) because the receiver is
+    ///         paused in non-retryable mode (see {pause}).
+    event ReportSkippedWhilePaused();
 
     /// @notice Thrown when the decoded target is the zero address.
     error InvalidTargetAddress();
@@ -110,7 +119,8 @@ contract AutomationReceiver is ReceiverTemplate {
     ///         Causes the forwarder to record the transmission as failed so it can be retried.
     error InsufficientGas(uint256 available, uint256 required);
     /// @notice Thrown when onReport is called without a complete workflow identity configuration.
-    ///         The receiver requires exactly one of the two valid options to be satisfied:
+    ///         The receiver requires at least one of the two valid options to be satisfied
+    ///         (satisfying both is also fine):
     ///         (1) workflowId is set, or (2) both workflowOwner and workflowName are set.
     ///         Without at least one complete option the receiver cannot be bound to a specific
     ///         workflow and would accept reports from any DON-signed payload.
@@ -118,12 +128,44 @@ contract AutomationReceiver is ReceiverTemplate {
 
     constructor(address _forwarder) ReceiverTemplate(_forwarder) {}
 
+    /// @notice Emergency stop: halt all report processing until {unpause} is called. Owner-only.
+    /// @dev Global equivalent of Chainlink Automation's registry-wide pause. DON pause/delete only
+    ///      stops NEW reports; already-signed reports remain permissionlessly deliverable, and this
+    ///      on-chain switch also rejects those in-flight reports. The owner chooses, per pause, how
+    ///      reports that arrive while paused are handled via `retryable`:
+    ///      - `retryable = true`: `_processReport` reverts with `EnforcedPause`. The revert bubbles
+    ///        up through `onReport`, so the CRE Forwarder records the transmission as failed and it
+    ///        stays retryable — pending reports resume delivery once {unpause} is called.
+    ///      - `retryable = false`: `_processReport` emits `ReportSkippedWhilePaused` and returns,
+    ///        consuming the report. Such reports are dropped and will NOT be redelivered after
+    ///        {unpause}. Use this when a backlog of retried reports would be undesirable.
+    /// @param retryable Whether reports delivered while paused should remain retryable (true) or be
+    ///        dropped (false). The chosen mode applies until the next {pause} or {unpause}.
+    function pause(bool retryable) external onlyOwner {
+        s_retryableWhilePaused = retryable;
+        _pause();
+    }
+
+    /// @notice Resume report processing after a {pause}. Owner-only.
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /// @notice Returns the pause mode selected at the last {pause}: true if reports delivered while
+    ///         paused revert (retryable), false if they are dropped. Only meaningful while paused.
+    function retryableWhilePaused() external view returns (bool) {
+        return s_retryableWhilePaused;
+    }
+
     /// @notice Allow or disallow the receiver to call `selector` on `target`.
     /// @dev Closed by default. Register every (target, selector) the migrated upkeep needs,
     ///      e.g. `performUpkeep(bytes)` for custom-logic/log upkeeps, or your specific
     ///      time-based function. Owner-only.
-    ///      Validates that `target` has deployed code at the time of registration; passing an EOA,
-    ///      a mistyped address, or a never-deployed address reverts with `TargetHasNoCode`.
+    ///      When `allowed` is true, validates that `target` has deployed code at the time of
+    ///      registration; passing an EOA, a mistyped address, or a never-deployed address reverts
+    ///      with `TargetHasNoCode`. The check is skipped when `allowed` is false so that an
+    ///      allowlist entry can always be revoked, even if the target has since self-destructed
+    ///      and its code has become empty.
     /// @param target The contract the receiver is permitted to call.
     /// @param selector The 4-byte function selector permitted on `target`.
     /// @param allowed True to permit, false to revoke.
@@ -131,7 +173,7 @@ contract AutomationReceiver is ReceiverTemplate {
         if (target == address(0)) {
             revert InvalidTargetAddress();
         }
-        if (target.code.length == 0) {
+        if (allowed && target.code.length == 0) {
             revert TargetHasNoCode(target);
         }
         s_callAllowed[target][selector] = allowed;
@@ -154,9 +196,9 @@ contract AutomationReceiver is ReceiverTemplate {
     ///      specific function being migrated. Each (target, selector) pair has its own limit.
     ///      Zero (the default) disables the guard for that pair and preserves fire-and-forget.
     ///      Note: the on-chain formula only covers costs from the guard check onward. The
-    ///      workflow's writeGasLimit must also budget for ~14,000 gas of pre-guard overhead
-    ///      (five cold SLOADs in ReceiverTemplate, two STATICCALL frames, abi.decode, and
-    ///      the cold s_callAllowed SLOAD) on top of this limit.
+    ///      workflow's writeGasLimit must also budget for ~11,000 gas of pre-guard overhead
+    ///      (four cold SLOADs in ReceiverTemplate plus warm re-reads in _processReport,
+    ///      abi.decode, and the cold s_callAllowed SLOAD) on top of this limit.
     /// @param target  The contract the limit applies to. Must not be the zero address.
     /// @param selector The 4-byte function selector the limit applies to.
     /// @param gasLimit Minimum gas required by the consumer. 0 = no guard.
@@ -252,12 +294,28 @@ contract AutomationReceiver is ReceiverTemplate {
     ///      receive less than configured. This ensures a low-gas delivery is recorded as failed
     ///      by the forwarder and can be retried, preventing griefing attacks. Each
     ///      (target, selector) pair has its own configurable limit.
+    ///      Pause guard: when the contract is paused (see {pause}), this function short-circuits
+    ///      before any decoding or execution, and its behavior depends on the mode the owner
+    ///      selected at pause time. In retryable mode it reverts with `EnforcedPause` (the revert
+    ///      propagates through `onReport`, so the forwarder records the transmission as failed and
+    ///      it resumes after {unpause}). In non-retryable mode it emits `ReportSkippedWhilePaused`
+    ///      and returns, consuming (dropping) the report so it is not redelivered.
     function _processReport(bytes calldata report) internal override {
-        if (this.getForwarderAddress() == address(0)) {
+        if (paused()) {
+            if (s_retryableWhilePaused) {
+                revert EnforcedPause();
+            }
+            emit ReportSkippedWhilePaused();
+            return;
+        }
+        // Read the inherited permission fields directly (warm SLOADs). ReceiverTemplate.onReport
+        // already loaded all four slots before dispatching here, so these reads cost ~100 gas
+        // each — far cheaper than a self-STATICCALL to the external getters.
+        if (s_forwarderAddress == address(0)) {
             revert InvalidForwarderAddress();
         }
-        if (this.getExpectedWorkflowId() == bytes32(0) &&
-            (this.getExpectedAuthor() == address(0) || this.getExpectedWorkflowName() == bytes10(0))) {
+        if (s_expectedWorkflowId == bytes32(0) &&
+            (s_expectedAuthor == address(0) || s_expectedWorkflowName == bytes10(0))) {
             revert WorkflowIdentityNotConfigured();
         }
 

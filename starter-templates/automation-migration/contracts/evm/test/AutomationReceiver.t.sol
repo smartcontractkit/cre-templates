@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import {AutomationReceiver} from "../src/AutomationReceiver.sol";
 import {ReceiverTemplate} from "../src/ReceiverTemplate.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 interface Vm {
     function prank(address msgSender) external;
@@ -274,10 +275,99 @@ contract AutomationReceiverTest {
         receiver.setCallAllowed(eoa, PERFORM_SELECTOR, true);
     }
 
+    function testSetCallAllowedRevocationSkipsCodeCheck() external {
+        // A codeless target (e.g. a self-destructed contract) must still be revocable.
+        address eoa = address(uint160(99));
+        receiver.setCallAllowed(eoa, PERFORM_SELECTOR, false);
+        _assertFalse(receiver.isCallAllowed(eoa, PERFORM_SELECTOR));
+    }
+
     function testIsCallAllowedReflectsState() external {
         _assertFalse(receiver.isCallAllowed(address(target), PERFORM_SELECTOR));
         receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
         _assertTrue(receiver.isCallAllowed(address(target), PERFORM_SELECTOR));
+    }
+
+    // ─── emergency pause (OpenZeppelin Pausable) ────────────────
+    function testPauseIsOwnerOnly() external {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, ATTACKER));
+        vm.prank(ATTACKER);
+        receiver.pause(true);
+    }
+
+    function testUnpauseIsOwnerOnly() external {
+        receiver.pause(true);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, ATTACKER));
+        vm.prank(ATTACKER);
+        receiver.unpause();
+    }
+
+    /// @dev Retryable mode (pause(true)): an otherwise-valid delivery must revert with EnforcedPause
+    ///      and the target must not be called (the report stays unconsumed and is retryable).
+    function testPausedRetryableDeliveryReverts() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        receiver.pause(true);
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        _deliver(_report(address(target), _performCall(hex"01")));
+
+        _assertEq(target.performCount(), 0);
+    }
+
+    /// @dev Non-retryable mode (pause(false)): a delivery must NOT revert — the report is consumed
+    ///      (dropped) and the target is not called.
+    function testPausedNonRetryableDeliveryConsumesReport() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+        receiver.pause(false);
+
+        // Must not revert: the report is swallowed while paused in drop mode.
+        _deliver(_report(address(target), _performCall(hex"01")));
+
+        _assertEq(target.performCount(), 0);
+    }
+
+    /// @dev After unpause the same delivery succeeds — demonstrates a retryable-mode paused report
+    ///      is retryable rather than permanently consumed.
+    function testUnpauseResumesDelivery() external {
+        receiver.setCallAllowed(address(target), PERFORM_SELECTOR, true);
+
+        receiver.pause(true);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        _deliver(_report(address(target), _performCall(hex"01")));
+
+        receiver.unpause();
+        _deliver(_report(address(target), _performCall(hex"01")));
+
+        _assertEq(target.performCount(), 1);
+    }
+
+    function testPausedReflectsState() external {
+        _assertFalse(receiver.paused());
+        receiver.pause(true);
+        _assertTrue(receiver.paused());
+        receiver.unpause();
+        _assertFalse(receiver.paused());
+    }
+
+    /// @dev The retryable mode chosen at pause time is reflected by retryableWhilePaused().
+    function testRetryableWhilePausedReflectsMode() external {
+        receiver.pause(true);
+        _assertTrue(receiver.retryableWhilePaused());
+        receiver.unpause();
+
+        receiver.pause(false);
+        _assertFalse(receiver.retryableWhilePaused());
+    }
+
+    function testDoublePauseReverts() external {
+        receiver.pause(true);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        receiver.pause(true);
+    }
+
+    function testUnpauseWhenNotPausedReverts() external {
+        vm.expectRevert(Pausable.ExpectedPause.selector);
+        receiver.unpause();
     }
 
     // ─── consumer gas limit administration ─────────────────────
@@ -433,8 +523,8 @@ contract AutomationReceiverTest {
     ///      If GAS_OVERHEAD were severely underestimated (e.g. 1,000) the function would
     ///      OOG during LOG3 emission and this test would fail.
     ///      The 60,000 pre-check allowance covers ReceiverTemplate metadata validation,
-    ///      identity checks in _processReport (this.get*() calls), report decoding, and
-    ///      all cold/warm slot accesses before the gasleft() guard.
+    ///      identity checks in _processReport (direct reads of the inherited permission
+    ///      fields), report decoding, and all cold/warm slot accesses before the gasleft() guard.
     function testGasOverheadCorrectlyCoversNoOpConsumer() external {
         receiver.setCallAllowed(address(gasRecorder), PERFORM_SELECTOR, true);
         // consumerGasLimit must cover the cold SSTORE inside performUpkeep (~22,100),

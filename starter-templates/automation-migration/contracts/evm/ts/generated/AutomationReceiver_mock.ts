@@ -5,6 +5,7 @@ import { addContractMock, type ContractMock, type EvmMock } from '@chainlink/cre
 import { AutomationReceiverABI } from './AutomationReceiver'
 
 export type AutomationReceiverMock = {
+  getBlockNumberCheck?: (target: `0x${string}`, selector: `0x${string}`) => readonly [boolean, bigint]
   getConsumerGasLimit?: (target: `0x${string}`, selector: `0x${string}`) => bigint
   getExpectedAuthor?: () => `0x${string}`
   getExpectedWorkflowId?: () => `0x${string}`
@@ -12,6 +13,8 @@ export type AutomationReceiverMock = {
   getForwarderAddress?: () => `0x${string}`
   isCallAllowed?: (target: `0x${string}`, selector: `0x${string}`) => boolean
   owner?: () => `0x${string}`
+  paused?: () => boolean
+  retryableWhilePaused?: () => boolean
   supportsInterface?: (interfaceId: `0x${string}`) => boolean
 } & Pick<ContractMock<typeof AutomationReceiverABI>, 'writeReport'>
 
