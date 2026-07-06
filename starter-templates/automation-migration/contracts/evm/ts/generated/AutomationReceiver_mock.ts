@@ -5,6 +5,7 @@ import { addContractMock, type ContractMock, type EvmMock } from '@chainlink/cre
 import { AutomationReceiverABI } from './AutomationReceiver'
 
 export type AutomationReceiverMock = {
+  getBlockNumberCheck?: (target: `0x${string}`, selector: `0x${string}`) => readonly [boolean, bigint]
   getConsumerGasLimit?: (target: `0x${string}`, selector: `0x${string}`) => bigint
   getExpectedAuthor?: () => `0x${string}`
   getExpectedWorkflowId?: () => `0x${string}`

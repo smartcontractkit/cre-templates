@@ -29,38 +29,48 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
  */
 contract AutomationReceiver is ReceiverTemplate, Pausable {
     // Non-target gas costs reserved by the guard (gasleft() < required).
-    // The SLOAD is the last cost incurred BEFORE the check; everything else is AFTER.
+    // GAS_OVERHEAD covers only the post-check path: everything from the gasleft()
+    // comparison through function return. The s_consumerGasLimit SLOAD immediately
+    // preceding the check is NOT included — it is already reflected in the lower
+    // gasleft() value at the check point and must not be double-counted.
     //
-    // [Pre-check — already spent at the guard point:]
-    //   SLOAD s_consumerGasLimit (cold mapping)         2,100
-    //
-    // [Post-check — must complete with remaining gas:]
-    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          50
-    //   CALL opcode dispatch to target (cold addr)      2,600
-    //     (EIP-2929 replaces the pre-Berlin 700 base; 2,600 is the full cold-access cost)
-    //   Post-call (success flag, JUMPI, LOG3 min)       2,200
-    //     ├─ LOG3 base + 3 topics (375 + 3×375)         1,500
-    //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)    512
-    //     └─ misc (returnData mem, JUMPI, stack)          188
-    //   Misc stack / memory                                50
-    //                                          Total:   7,000
+    // [Post-check — must complete with remaining gas at the guard point:]
+    //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          ~50
+    //   CALL to target (warm account; setCallAllowed reads   ~900
+    //     target.code.length via EXTCODESIZE first)
+    //   Post-call (success flag, JUMPI, LOG3)              ~2,200
+    //     ├─ LOG3 base + 3 topics (375 + 3×375)          1,500
+    //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)     512
+    //     └─ misc (returnData mem, JUMPI, stack)           188
+    //   Misc stack / memory                                ~50
+    //                                          Total:    ~3,500
     //
     // EIP-150 (63/64 rule): a CALL can forward at most 63/64 of available gas.
-    // A fixed GAS_OVERHEAD buffer is only sufficient when consumerGasLimit ≤ 63 × GAS_OVERHEAD
-    // (~441,000). Above that threshold the 63/64 cap would deliver less than consumerGasLimit
-    // to the target. _processReport therefore adds consumerGasLimit / 63 to `required`
-    // dynamically, ensuring the available gas at the CALL satisfies:
+    // Without the `consumerGasLimit / 63` term, the guard under-provisions whenever
+    // consumerGasLimit > 63 × GAS_OVERHEAD (~220,500). _processReport therefore adds
+    // consumerGasLimit / 63 to `required` dynamically so that:
     //   63/64 × available  ≥  consumerGasLimit
     //
-    // Pre-guard overhead (excluded from GAS_OVERHEAD, paid before the check point):
-    // Four cold SLOADs in ReceiverTemplate.onReport (s_forwarderAddress, s_expectedWorkflowId,
-    // s_expectedAuthor, s_expectedWorkflowName: 4 × 2,100 = 8,400 gas), four warm re-reads of the
-    // same slots in _processReport (the identity guard now reads the inherited fields directly
-    // rather than via self-STATICCALLs: ~4 × 100 = 400 gas), abi.decode of the report (~300 gas),
-    // and the cold SLOAD of s_callAllowed (~2,100 gas) add up to ~11,000 gas on top of
-    // consumerGasLimit + GAS_OVERHEAD. Callers must budget for this in writeGasLimit
-    // (see README Gas Limit section).
-    uint256 private constant GAS_OVERHEAD = 7_000;
+    // Pre-guard overhead (paid BEFORE the check point, so NOT part of `required`):
+    // Up to four cold SLOADs in ReceiverTemplate.onReport when identity checks are
+    // active (s_forwarderAddress, s_expectedWorkflowId, s_expectedAuthor,
+    // s_expectedWorkflowName: 4 × 2,100 = 8,400 gas), warm re-reads of those slots
+    // in _processReport (~400 gas), abi.decode of the report (~300 gas), the cold
+    // nested-mapping read of s_callAllowed (~4,200 gas on first access), a cold
+    // s_consumerGasLimit SLOAD (~2,100 gas), and paused() (~2,100 gas cold) add up to
+    // ~17,500 gas on the first delivery to a pair. After slots warm, pre-guard drops to
+    // ~5,500 gas. When the block-number monotonicity check is enabled for a pair, budget
+    // a further ~10,000 gas for its two cold SLOADs and the advancing SSTORE.
+    //
+    // This pre-guard gas is intentionally NOT added to `required` and needs no per-feature constant:
+    // it is spent before `gasleft()` is read, so the guard already sees it (it observes the reduced
+    // remaining gas) and cannot manufacture it. Adding it to `required` would double-count and cause
+    // spurious InsufficientGas reverts. The only caller-side action is to size writeGasLimit to cover
+    // this pre-guard overhead on top of consumerGasLimit + GAS_OVERHEAD (see README Gas Limit
+    // section). Under-budgeting fails cleanly (InsufficientGas if the guard is reached, otherwise
+    // OOG) — both are recorded by the Forwarder as retryable, so this is a tuning, not a safety,
+    // concern.
+    uint256 private constant GAS_OVERHEAD = 3500;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
     mapping(address target => mapping(bytes4 selector => bool allowed)) private s_callAllowed;
@@ -68,6 +78,12 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     /// @notice Per-(target, selector) minimum gas the consumer needs to execute. 0 = no limit.
     mapping(address target => mapping(bytes4 selector => uint256 gasLimit)) private s_consumerGasLimit;
 
+    /// @notice Opt-in per-(target, selector) block-number monotonicity switch. Closed by default.
+    mapping(address target => mapping(bytes4 selector => bool enabled)) private s_blockNumberCheckEnabled;
+
+    /// @notice Highest report block number accepted so far for a (target, selector) pair. Doubles as
+    ///         the configurable initial floor set by {setBlockNumberCheck}.
+    mapping(address target => mapping(bytes4 selector => uint256 blockNumber)) private s_lastReportBlock;
     /// @notice While paused, controls how incoming reports are handled. The owner picks the mode
     ///         at {pause} time: true = reverts (reports stay unconsumed and retryable, resuming
     ///         after {unpause}); false = the report is consumed (dropped, not retried). Only
@@ -82,6 +98,13 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     event CallAllowedSet(address indexed target, bytes4 indexed selector, bool allowed);
     /// @notice Emitted when the owner updates the consumer gas limit for a (target, selector) pair.
     event ConsumerGasLimitSet(address indexed target, bytes4 indexed selector, uint256 previousLimit, uint256 newLimit);
+    /// @notice Emitted when the owner enables/disables the block-number monotonicity check for a pair.
+    ///         When enabled, `initialBlockNumber` is the floor the next report must meet or exceed.
+    event BlockNumberCheckSet(address indexed target, bytes4 indexed selector, bool enabled, uint256 initialBlockNumber);
+    /// @notice Emitted when a report is skipped because its block number is older than the last
+    ///         accepted one for the pair. The report is consumed (not reverted), mirroring
+    ///         Chainlink Automation's fire-and-forget semantics.
+    event StaleReportSkipped(address indexed target, bytes4 indexed selector, uint256 reportBlockNumber, uint256 lastReportBlock);
     /// @notice Emitted when a report is dropped (consumed, not retried) because the receiver is
     ///         paused in non-retryable mode (see {pause}).
     event ReportSkippedWhilePaused();
@@ -175,9 +198,8 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     ///      specific function being migrated. Each (target, selector) pair has its own limit.
     ///      Zero (the default) disables the guard for that pair and preserves fire-and-forget.
     ///      Note: the on-chain formula only covers costs from the guard check onward. The
-    ///      workflow's writeGasLimit must also budget for ~11,000 gas of pre-guard overhead
-    ///      (four cold SLOADs in ReceiverTemplate plus warm re-reads in _processReport,
-    ///      abi.decode, and the cold s_callAllowed SLOAD) on top of this limit.
+    ///      workflow's writeGasLimit must also budget for pre-guard overhead (~17,500 gas
+    ///      on the first delivery to a pair, ~5,500 gas thereafter) on top of this limit.
     /// @param target  The contract the limit applies to. Must not be the zero address.
     /// @param selector The 4-byte function selector the limit applies to.
     /// @param gasLimit Minimum gas required by the consumer. 0 = no guard.
@@ -193,9 +215,58 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
         return s_consumerGasLimit[target][selector];
     }
 
+    /// @notice Enable or disable the block-number monotonicity (staleness) check for a (target, selector).
+    /// @dev Closed by default. When enabled, `_processReport` rejects any report whose encoded block
+    ///      number is strictly less than the last accepted one for the pair (CLA-parity: a report at
+    ///      the same block is still accepted). Stale reports are consumed, not reverted, so the
+    ///      forwarder does not pointlessly retry an always-stale delivery.
+    ///
+    ///      Under Chainlink Automation the registry rejected any report whose trigger block preceded
+    ///      the last performed block. The CRE delivery path does not preserve this ordering, so this
+    ///      opt-in check restores it for conditional-trigger / log upkeeps that relied on it. The
+    ///      workflow always encodes a block number in the report payload, so this can be turned on
+    ///      later without any workflow change.
+    ///
+    ///      When enabling, the initial floor is configurable:
+    ///        - `initialBlockNumber == 0`: snapshot the current `block.number` as the floor. Note this
+    ///          does NOT reject reports minted between deployment/config and the moment this check is
+    ///          enabled if they carry a block number above the snapshot; prefer an explicit floor when
+    ///          that matters.
+    ///        - `initialBlockNumber != 0`: use the provided value as the floor.
+    ///      The very first accepted report must have a block number >= this floor.
+    ///      Each (target, selector) pair is configured independently. Owner-only.
+    /// @param target The contract the check applies to. Must not be the zero address.
+    /// @param selector The 4-byte function selector the check applies to.
+    /// @param enabled True to enable the check, false to disable it (and clear the stored floor).
+    /// @param initialBlockNumber Floor for the first report when enabling; 0 snapshots `block.number`.
+    function setBlockNumberCheck(address target, bytes4 selector, bool enabled, uint256 initialBlockNumber)
+        external
+        onlyOwner
+    {
+        if (target == address(0)) revert InvalidTargetAddress();
+        s_blockNumberCheckEnabled[target][selector] = enabled;
+        uint256 floor = enabled ? (initialBlockNumber == 0 ? block.number : initialBlockNumber) : 0;
+        s_lastReportBlock[target][selector] = floor;
+        emit BlockNumberCheckSet(target, selector, enabled, floor);
+    }
+
+    /// @notice Returns the block-number monotonicity configuration for a (target, selector) pair.
+    /// @return enabled Whether the check is active.
+    /// @return lastReportBlock The highest report block number accepted so far (or the floor set when
+    ///         the check was enabled, if no report has been accepted since).
+    function getBlockNumberCheck(address target, bytes4 selector)
+        external
+        view
+        returns (bool enabled, uint256 lastReportBlock)
+    {
+        return (s_blockNumberCheckEnabled[target][selector], s_lastReportBlock[target][selector]);
+    }
+
     /// @notice Decodes and executes the call on the target contract.
-    /// @param report ABI-encoded (address target, bytes data), where `data` is a full
-    ///        function call (4-byte selector followed by its arguments).
+    /// @param report ABI-encoded (address target, uint256 blockNumber, bytes data), where
+    ///        `blockNumber` is the block the report was produced for (used only by the opt-in
+    ///        monotonicity check) and `data` is a full function call (4-byte selector followed by its
+    ///        arguments) executed as `target.call(data)`.
     /// @dev Two pre-conditions are enforced before any decoding:
     ///      1. The forwarder address must not be zero. `ReceiverTemplate.setForwarderAddress`
     ///         does not block address(0), so this guard closes that gap: if the owner ever
@@ -207,16 +278,20 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     ///         workflow from a specific owner. Either piece of option (b) alone is insufficient:
     ///         owner alone allows any workflow from that owner; name alone is globally ambiguous.
     ///         Requiring a complete option closes the cross-receiver replay vector from audit M-02.
-    ///      Authorization failures (zero target, missing selector, not-allowlisted) revert
-    ///      loudly — they indicate misconfiguration or a malformed report. Execution failures
-    ///      (an allowed call that reverts) are swallowed: `CallFailed` is emitted and the
-    ///      report is consumed, matching Chainlink Automation's fire-and-forget semantics
-    ///      where the next trigger re-evaluates eligibility.
+    ///      Authorization failures (zero target, missing selector, not-allowlisted) revert loudly —
+    ///      they indicate misconfiguration or a malformed report. Execution failures (an allowed call that
+    ///      reverts) are swallowed: `CallFailed` is emitted and the report is consumed, matching
+    ///      Chainlink Automation's fire-and-forget semantics where the next trigger re-evaluates
+    ///      eligibility.
+    ///      Staleness: when the block-number monotonicity check is enabled for the pair (see
+    ///      {setBlockNumberCheck}), a report whose block number is older than the last accepted one
+    ///      is skipped — `StaleReportSkipped` is emitted and the report is consumed without executing
+    ///      the target call or reverting.
     ///      Gas-guard: when `s_consumerGasLimit[target][selector]` is non-zero, the function
     ///      reverts with `InsufficientGas` before the target call if available gas is below
     ///      `gasLimit + gasLimit / 63 + GAS_OVERHEAD`. The `gasLimit / 63` term accounts for
     ///      the EIP-150 (63/64) rule: a CALL forwards at most 63/64 of available gas, so
-    ///      without this buffer a high gas limit (above ~441,000) would cause the target to
+    ///      without this buffer a high gas limit (above ~220,500) would cause the target to
     ///      receive less than configured. This ensures a low-gas delivery is recorded as failed
     ///      by the forwarder and can be retried, preventing griefing attacks. Each
     ///      (target, selector) pair has its own configurable limit.
@@ -245,7 +320,8 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
             revert WorkflowIdentityNotConfigured();
         }
 
-        (address target, bytes memory data) = abi.decode(report, (address, bytes));
+        (address target, uint256 reportBlockNumber, bytes memory data) =
+            abi.decode(report, (address, uint256, bytes));
 
         if (target == address(0)) {
             revert InvalidTargetAddress();
@@ -264,13 +340,26 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
             revert CallNotAllowed(target, selector);
         }
 
+        // Opt-in staleness protection: reject reports older than the last accepted one for this pair.
+        // CLA-parity comparison (>=): a report at the same block is still accepted. The stored block
+        // is updated before the gas guard, but an InsufficientGas revert rolls it back so a retry at
+        // the same block stays valid.
+        if (s_blockNumberCheckEnabled[target][selector]) {
+            uint256 lastReportBlock = s_lastReportBlock[target][selector];
+            if (reportBlockNumber < lastReportBlock) {
+                emit StaleReportSkipped(target, selector, reportBlockNumber, lastReportBlock);
+                return;
+            }
+            s_lastReportBlock[target][selector] = reportBlockNumber;
+        }
+
         uint256 consumerGasLimit = s_consumerGasLimit[target][selector];
         bool success;
         bytes memory returnData;
         if (consumerGasLimit > 0) {
             // consumerGasLimit / 63 compensates for EIP-150: a CALL forwards at most
-            // 63/64 of available gas. Without this term, limits above ~441,000
-            // (63 × GAS_OVERHEAD) would cause the target to receive less than requested.
+            // 63/64 of available gas. Without this term, limits above ~220,500
+            // (63 × GAS_OVERHEAD, ~220,500) would cause the target to receive less than requested.
             uint256 required = consumerGasLimit + consumerGasLimit / 63 + GAS_OVERHEAD;
             if (gasleft() < required) {
                 revert InsufficientGas(gasleft(), required);

@@ -9,7 +9,12 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "types": []
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@chainlink/cre-sdk": ["./node_modules/@chainlink/cre-sdk"],
+      "@chainlink/cre-sdk/*": ["./node_modules/@chainlink/cre-sdk/*"]
+    }
   },
   "include": ["main.ts"]
 }

@@ -15,5 +15,8 @@
   },
   "devDependencies": {
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "ws": "^8.21.0"
   }
 }

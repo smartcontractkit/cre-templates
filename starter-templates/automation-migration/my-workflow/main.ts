@@ -5,6 +5,8 @@ import {
   hexToBase64,
   bytesToHex,
   bytesToBigint,
+  protoBigIntToBigint,
+  LAST_FINALIZED_BLOCK_NUMBER,
   TxStatus,
   type Runtime,
   Runner,
@@ -182,10 +184,32 @@ const runMigration = (runtime: Runtime<Config>, triggerLog?: EVMLog): string => 
 
   runtime.log(`Upkeep needed! Target: ${config.targetAddress}`);
 
-  // Encode the payload for the generic AutomationReceiver
+  // Determine the block number to stamp into the report. The receiver can enforce an opt-in
+  // monotonicity check keyed off this value to reject stale / out-of-order deliveries
+  // (see AutomationReceiver.setBlockNumberCheck). The value is always encoded so consumers can
+  // enable the check later without changing the workflow.
+  let reportBlockNumber: bigint;
+  if (config.migrationType === "LOG" && triggerLog) {
+    // Use the triggering log's block — the closest analog to CLA's trigger block.
+    reportBlockNumber = triggerLog.blockNumber ? bytesToBigint(triggerLog.blockNumber.absVal) : 0n;
+  } else {
+    // CRON / CUSTOM: use the last finalized block. CUSTOM's checkUpkeep is read at the same tag,
+    // so the encoded block is consistent with the state that was evaluated.
+    const header = evmClient
+      .headerByNumber(runtime, { blockNumber: LAST_FINALIZED_BLOCK_NUMBER })
+      .result();
+    reportBlockNumber = header.header?.blockNumber ? protoBigIntToBigint(header.header.blockNumber) : 0n;
+  }
+
+  // Encode the payload for the generic AutomationReceiver. `data` is the full function call
+  // (selector + arguments); the receiver decodes and executes it directly via target.call(data).
   const reportPayload = encodeAbiParameters(
-    [{ name: "target", type: "address" }, { name: "data", type: "bytes" }],
-    [config.targetAddress as Address, finalCallData]
+    [
+      { name: "target", type: "address" },
+      { name: "blockNumber", type: "uint256" },
+      { name: "data", type: "bytes" },
+    ],
+    [config.targetAddress as Address, reportBlockNumber, finalCallData]
   );
 
   // Write the report to the Receiver
