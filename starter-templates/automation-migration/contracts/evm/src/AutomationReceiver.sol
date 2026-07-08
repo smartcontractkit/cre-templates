@@ -36,18 +36,24 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     //
     // [Post-check — must complete with remaining gas at the guard point:]
     //   Pre-call ops (GAS, ADD, LT, JUMPI, stack)          ~50
-    //   CALL to target (warm account; setCallAllowed reads   ~900
-    //     target.code.length via EXTCODESIZE first)
+    //   CALL to target (cold account access — in production  ~2,600
+    //     setCallAllowed runs in an earlier transaction, so
+    //     the target account has not yet been touched in the
+    //     delivery transaction and the CALL pays the full
+    //     EIP-2929 cold-access surcharge, not the ~100 warm rate)
     //   Post-call (success flag, JUMPI, LOG3)              ~2,200
     //     ├─ LOG3 base + 3 topics (375 + 3×375)          1,500
     //     ├─ LOG3 data  (64 B ABI-encoded empty bytes)     512
     //     └─ misc (returnData mem, JUMPI, stack)           188
     //   Misc stack / memory                                ~50
-    //                                          Total:    ~3,500
+    //                                          Subtotal:  ~4,900
+    //   Conservative headroom (future opcode repricing,     ~2,100
+    //     estimation error)
+    //                                          Total:      ~7,000
     //
     // EIP-150 (63/64 rule): a CALL can forward at most 63/64 of available gas.
     // Without the `consumerGasLimit / 63` term, the guard under-provisions whenever
-    // consumerGasLimit > 63 × GAS_OVERHEAD (~220,500). _processReport therefore adds
+    // consumerGasLimit > 63 × GAS_OVERHEAD (~441,000). _processReport therefore adds
     // consumerGasLimit / 63 to `required` dynamically so that:
     //   63/64 × available  ≥  consumerGasLimit
     //
@@ -70,7 +76,7 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     // section). Under-budgeting fails cleanly (InsufficientGas if the guard is reached, otherwise
     // OOG) — both are recorded by the Forwarder as retryable, so this is a tuning, not a safety,
     // concern.
-    uint256 private constant GAS_OVERHEAD = 3500;
+    uint256 private constant GAS_OVERHEAD = 7000;
 
     /// @notice Closed-by-default allowlist of callable (target, selector) pairs.
     mapping(address target => mapping(bytes4 selector => bool allowed)) private s_callAllowed;
@@ -234,6 +240,12 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     ///          that matters.
     ///        - `initialBlockNumber != 0`: use the provided value as the floor.
     ///      The very first accepted report must have a block number >= this floor.
+    ///
+    ///      Disabling (enabled = false) resets the floor to 0, so out-of-order reports execute
+    ///      again going forward. This is NOT retroactive: a report already rejected as stale while
+    ///      the check was enabled was consumed at that moment (see `StaleReportSkipped`) and is gone
+    ///      — the CRE Forwarder does not hold it for redelivery. Turning the check off cannot revive
+    ///      it; only reports the workflow re-submits after disabling will be considered.
     ///      Each (target, selector) pair is configured independently. Owner-only.
     /// @param target The contract the check applies to. Must not be the zero address.
     /// @param selector The 4-byte function selector the check applies to.
@@ -291,7 +303,7 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
     ///      reverts with `InsufficientGas` before the target call if available gas is below
     ///      `gasLimit + gasLimit / 63 + GAS_OVERHEAD`. The `gasLimit / 63` term accounts for
     ///      the EIP-150 (63/64) rule: a CALL forwards at most 63/64 of available gas, so
-    ///      without this buffer a high gas limit (above ~220,500) would cause the target to
+    ///      without this buffer a high gas limit (above ~441,000) would cause the target to
     ///      receive less than configured. This ensures a low-gas delivery is recorded as failed
     ///      by the forwarder and can be retried, preventing griefing attacks. Each
     ///      (target, selector) pair has its own configurable limit.
@@ -358,8 +370,8 @@ contract AutomationReceiver is ReceiverTemplate, Pausable {
         bytes memory returnData;
         if (consumerGasLimit > 0) {
             // consumerGasLimit / 63 compensates for EIP-150: a CALL forwards at most
-            // 63/64 of available gas. Without this term, limits above ~220,500
-            // (63 × GAS_OVERHEAD, ~220,500) would cause the target to receive less than requested.
+            // 63/64 of available gas. Without this term, limits above ~441,000
+            // (63 × GAS_OVERHEAD, ~441,000) would cause the target to receive less than requested.
             uint256 required = consumerGasLimit + consumerGasLimit / 63 + GAS_OVERHEAD;
             if (gasleft() < required) {
                 revert InsufficientGas(gasleft(), required);
