@@ -10,6 +10,11 @@ interface Vm {
     function prank(address msgSender) external;
     function expectRevert(bytes4 revertData) external;
     function expectRevert(bytes calldata revertData) external;
+    /// @dev Marks `target` cold, as if it had never been accessed in the current transaction.
+    ///      Used to simulate production delivery, where setCallAllowed ran in an earlier
+    ///      transaction and the target account is therefore cold at delivery time — unlike a
+    ///      same-transaction Foundry test, which would otherwise leave it warm.
+    function cool(address target) external;
 }
 
 /// @dev Minimal Automation-style target. `performUpkeep` records the last performData and
@@ -79,7 +84,7 @@ contract AutomationReceiverTest {
     address private constant WORKFLOW_OWNER = address(uint160(5));
 
     // GAS_OVERHEAD mirrors the private constant in AutomationReceiver (EIP-2929 worst-case).
-    uint256 private constant GAS_OVERHEAD = 3500;
+    uint256 private constant GAS_OVERHEAD = 7000;
 
     AutomationReceiver private receiver;
     MockUpkeep private target;
@@ -136,7 +141,11 @@ contract AutomationReceiverTest {
     ///      0 = onReport returned (success, including the swallowed CallFailed path),
     ///      1 = reverted with InsufficientGas (the gas guard fired),
     ///      2 = any other revert (e.g. the receiver itself ran out of gas post-guard).
-    function _deliverOutcome(uint256 gasAmount, bytes memory report) private returns (uint8) {
+    ///      Cools `target` first so every delivery pays the cold-CALL cost that a real,
+    ///      separate-transaction delivery would — otherwise the account would stay warm
+    ///      across repeated calls within this single test transaction.
+    function _deliverOutcome(address target, uint256 gasAmount, bytes memory report) private returns (uint8) {
+        vm.cool(target);
         vm.prank(FORWARDER);
         try receiver.onReport{gas: gasAmount}(_metadata(WORKFLOW_ID, WORKFLOW_OWNER), report) {
             return 0;
@@ -524,15 +533,15 @@ contract AutomationReceiverTest {
         _assertEq(emittedRequired, limit + limit / 63 + GAS_OVERHEAD);
     }
 
-    /// @dev Verifies that at a consumerGasLimit above the 63 × GAS_OVERHEAD threshold (~220,500)
+    /// @dev Verifies that at a consumerGasLimit above the 63 × GAS_OVERHEAD threshold (~441,000)
     ///      the target still receives its full configured gas. Without the EIP-150 buffer in
     ///      `required`, the CALL would deliver less than consumerGasLimit due to the 63/64 cap.
-    ///      For example, at limit = 600,000 without the fix:
-    ///        available ≈ limit + GAS_OVERHEAD → 63/64 × 603,500 ≈ 594,070 < 600,000.
+    ///      For example, at limit = 1,000,000 without the fix:
+    ///        available ≈ limit + GAS_OVERHEAD → 63/64 × 1,007,000 ≈ 991,109 < 1,000,000.
     ///      With the fix (required includes limit/63), the CALL always has enough headroom.
     function testEIP150TermEnsuresFullGasForwardedAtHighLimit() external {
         receiver.setCallAllowed(address(gasRecorder), PERFORM_SELECTOR, true);
-        uint256 limit = 600_000; // above 63 × GAS_OVERHEAD = 220,500
+        uint256 limit = 1_000_000; // above 63 × GAS_OVERHEAD = 441,000
         receiver.setConsumerGasLimit(address(gasRecorder), PERFORM_SELECTOR, limit);
 
         bytes memory report = _report(address(gasRecorder), _performCall(hex""));
@@ -550,9 +559,13 @@ contract AutomationReceiverTest {
 
     // ─── GAS_OVERHEAD accuracy ──────────────────────────────────
     /// @dev Validates that GAS_OVERHEAD is large enough to cover all post-guard overhead
-    ///      (warm CALL dispatch ~900 + returnData handling + LOG3 emission ~2,200).
+    ///      (cold CALL dispatch ~2,600 + returnData handling + LOG3 emission ~2,200).
     ///      A no-op consumer is used as the worst case: the target records gasleft() via
     ///      a single cold SSTORE (≈ 22,100 gas) and returns — no business logic.
+    ///      `vm.cool` marks the target cold before delivery, matching production where
+    ///      setCallAllowed ran in an earlier transaction (see GAS_OVERHEAD's docstring);
+    ///      without it, Foundry would leave the target warm from `setCallAllowed`'s
+    ///      `EXTCODESIZE` read above, understating the real cold-CALL cost.
     ///      If GAS_OVERHEAD were severely underestimated (e.g. 1,000) the function would
     ///      OOG during LOG3 emission and this test would fail.
     ///      The 60,000 pre-check allowance covers ReceiverTemplate metadata validation,
@@ -566,6 +579,7 @@ contract AutomationReceiverTest {
         receiver.setConsumerGasLimit(address(gasRecorder), PERFORM_SELECTOR, limit);
 
         bytes memory report = _report(address(gasRecorder), _performCall(hex""));
+        vm.cool(address(gasRecorder));
         vm.prank(FORWARDER);
         receiver.onReport{gas: limit + limit / 63 + GAS_OVERHEAD + 60_000}(
             _metadata(WORKFLOW_ID, WORKFLOW_OWNER), report
@@ -588,7 +602,11 @@ contract AutomationReceiverTest {
     ///      A deliberately small consumerGasLimit is the true worst case for a fixed overhead: the
     ///      `consumerGasLimit / 63` term (which doubles as post-call headroom, see the constant's
     ///      docstring) shrinks toward zero, so GAS_OVERHEAD alone must cover the cold CALL dispatch
-    ///      plus the LOG3 emission.
+    ///      plus the LOG3 emission. `_deliverOutcome` cools the target before every delivery so the
+    ///      CALL actually pays the cold-account surcharge, matching production where setCallAllowed
+    ///      ran in an earlier transaction — without cooling, the target would stay warm across the
+    ///      binary search's repeated calls within this one test transaction and understate the real
+    ///      worst case (this is what let the previous, too-small GAS_OVERHEAD value pass here).
     ///
     ///      onReport's success is monotonic in the gas budget (more gas never turns a success into a
     ///      failure). We binary-search the smallest budget that succeeds, then assert that ONE unit
@@ -604,12 +622,12 @@ contract AutomationReceiverTest {
 
         uint256 lo = 0; // no gas: reverts (outcome != 0)
         uint256 hi = 500_000; // ample: onReport runs to completion (outcome 0)
-        _assertEq(_deliverOutcome(hi, report), 0);
+        _assertEq(_deliverOutcome(address(gasBurner), hi, report), 0);
 
         // Binary-search the smallest budget at which onReport succeeds.
         while (hi - lo > 1) {
             uint256 mid = (lo + hi) / 2;
-            if (_deliverOutcome(mid, report) == 0) {
+            if (_deliverOutcome(address(gasBurner), mid, report) == 0) {
                 hi = mid;
             } else {
                 lo = mid;
@@ -619,7 +637,7 @@ contract AutomationReceiverTest {
         // `lo` is the largest budget that does NOT succeed. It must revert with InsufficientGas
         // (the guard firing), proving there is no out-of-gas dead zone above the guard threshold:
         // the moment the guard is satisfied, GAS_OVERHEAD is enough to finish (CALL + LOG3).
-        _assertEq(_deliverOutcome(lo, report), 1);
+        _assertEq(_deliverOutcome(address(gasBurner), lo, report), 1);
     }
 
     // ─── block-number monotonicity (staleness protection) ───────
