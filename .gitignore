@@ -42,3 +42,7 @@ cache/
 node_modules/
 bun.lock
 tmp.js
+
+# Allow vendored Chainlink CRE interfaces in Solidity templates
+!starter-templates/automation-migration/contracts/evm/src/vendor/chainlink-evm/contracts/cre/
+!starter-templates/automation-migration/contracts/evm/src/vendor/chainlink-evm/contracts/cre/**

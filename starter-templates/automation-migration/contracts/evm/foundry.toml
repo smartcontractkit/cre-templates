@@ -2,4 +2,7 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-remappings = ["@openzeppelin/contracts/=src/vendor/openzeppelin/"]
+remappings = [
+  "@chainlink/contracts/=src/vendor/chainlink-evm/contracts/",
+  "@openzeppelin/contracts@5.0.2/=src/vendor/openzeppelin/"
+]
