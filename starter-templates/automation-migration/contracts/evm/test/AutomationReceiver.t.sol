@@ -3,8 +3,8 @@ pragma solidity ^0.8.19;
 
 import {AutomationReceiver} from "../src/AutomationReceiver.sol";
 import {ReceiverTemplate} from "../src/ReceiverTemplate.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Ownable} from "@openzeppelin/contracts@5.0.2/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts@5.0.2/utils/Pausable.sol";
 
 interface Vm {
     function prank(address msgSender) external;

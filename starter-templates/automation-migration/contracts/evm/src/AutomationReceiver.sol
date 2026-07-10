@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import "./ReceiverTemplate.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Pausable} from "@openzeppelin/contracts@5.0.2/utils/Pausable.sol";
 
 /**
  * @title AutomationReceiver
