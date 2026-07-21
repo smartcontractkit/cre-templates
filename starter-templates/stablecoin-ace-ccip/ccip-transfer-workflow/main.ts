@@ -1,14 +1,16 @@
-import { 
+import {
 	bytesToHex,
 	cre,
+	EVMClient,
 	getNetwork,
 	type HTTPPayload,
 	hexToBase64,
+	HTTPCapability,
 	Runner,
 	type Runtime,
 	TxStatus,
 } from '@chainlink/cre-sdk'
-import { encodeAbiParameters, parseAbiParameters, getAddress } from 'viem'
+import { encodeAbiParameters, getAddress, parseAbiParameters, parseUnits } from 'viem'
 import { z } from 'zod'
 
 const configSchema = z.object({
@@ -53,7 +55,7 @@ const safeJsonStringify = (obj: any): string =>
 
 const submitCCIPTransfer = (
 	runtime: Runtime<Config>,
-	evmClient: cre.capabilities.EVMClient,
+	evmClient: EVMClient,
 	consumerAddress: string,
 	sender: string,
 	recipient: string,
@@ -115,7 +117,7 @@ const submitCCIPTransfer = (
 	return txHashHex
 }
 
-const processCCIPTransfer = (runtime: Runtime<Config>, evmClient: cre.capabilities.EVMClient, transferData: TransferPayload): string => {
+const processCCIPTransfer = (runtime: Runtime<Config>, evmClient: EVMClient, transferData: TransferPayload): string => {
 	runtime.log(`Processing CCIP transfer from bank: ${transferData.bankReference}`)
 
 	// Look up source and destination chain configs
@@ -130,7 +132,7 @@ const processCCIPTransfer = (runtime: Runtime<Config>, evmClient: cre.capabiliti
 	}
 
 	// Convert amount from string to scaled bigint
-	const amountScaled = BigInt(parseFloat(transferData.amount) * 1e18)
+	const amountScaled = parseUnits(transferData.amount, 18)
 	runtime.log(`Amount scaled: ${amountScaled.toString()}`)
 	runtime.log(`Source: ${transferData.sourceChain}`)
 	runtime.log(`Destination: ${transferData.destinationChain}`)
@@ -183,7 +185,7 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
 			throw new Error(`Network not found for source chain: ${transferData.sourceChain}`)
 		}
 
-		const evmClient = new cre.capabilities.EVMClient(sourceNetwork.chainSelector.selector)
+		const evmClient = new EVMClient(sourceNetwork.chainSelector.selector)
 		
 		return processCCIPTransfer(runtime, evmClient, transferData)
 	} catch (error) {
@@ -193,10 +195,12 @@ const onHTTPTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
 }
 
 const initWorkflow = (config: Config) => {
-	const httpTrigger = new cre.capabilities.HTTPCapability()
+	const httpTrigger = new HTTPCapability()
 
 	return [
-		cre.handler(httpTrigger.trigger({}), onHTTPTrigger),
+		cre.handler(httpTrigger.trigger({}), (runtime: Runtime<Config>, payload: HTTPPayload) =>
+			onHTTPTrigger(runtime, payload),
+		),
 	]
 }
 

@@ -55,18 +55,29 @@ Path: [`./read-data-feeds`](./read-data-feeds)
 - On a cron schedule, reads `decimals()` and `latestAnswer()` from **Chainlink Data Feeds** (example targets BTC/USD and ETH/USD on Arbitrum One).
 - Shows how to add an ABI, generate Go bindings, configure chain RPC, and log scaled answers.
 
-👉 See the block's README for setup, config, and sample logs.
+👉 See the block’s README for setup, config, and sample logs.
 
 ---
 
-### 3) **Crypto Utils**
-Path: [`./crypto-utils`](./crypto-utils)
+### 3) **Compression Utils**
+Path: [`./compression-utils`](./compression-utils)
 
-- Demonstrates how to use **cryptographic operations** in CRE TypeScript workflows using the **Noble crypto libraries**.
-- Shows alternatives to Node.js `crypto` module for: hashing (SHA-256, SHA3, Keccak, BLAKE), HMAC, key derivation (PBKDF2, Scrypt, HKDF), symmetric encryption (AES-GCM, ChaCha20-Poly1305), digital signatures (ECDSA, Ed25519), and ECDH key exchange.
-- Includes practical examples for Bitcoin and Ethereum address derivation.
+- Demonstrates how to perform compression and decompression operations in CRE workflows using **fflate** as a pure JavaScript alternative to the Node.js `zlib` module.
+- Covers gzip, deflate, zlib formats, compression levels, ZIP archives, and string utilities.
+- Shows how to fetch a large JSON payload via CRE HTTP and compress it to stay within the 25KB response body limit.
 
-👉 See the block's README for setup, Node.js-to-Noble mapping table, and code examples.
+👉 See the block’s README for setup, config, and sample logs.
+
+---
+
+### 4) **XML Utils**
+Path: [`./xml-utils`](./xml-utils)
+
+- Demonstrates how to use XML in CRE workflows using **fast-xml-parser** as a pure JavaScript alternative to the browser's `DOMParser` and the Node.js `xml2js` module.
+- Covers parsing, validating, and building XML.
+- Shows how to fetch a XML payload via CRE HTTP, validate it, parse it with attributes and namespaces, and rebuild a filtered XML document.
+
+👉 See the block’s README for setup, config, and sample logs.
 
 ---
 
@@ -74,7 +85,8 @@ Path: [`./crypto-utils`](./crypto-utils)
 
 * **kv-store**: You want to see an **off-chain write** pattern (AWS S3), secrets usage, SigV4 signing, and a **consensus read → single write** flow.
 * **read-data-feeds**: You want to **read on-chain data** via contract calls, manage ABIs/bindings, and configure **RPC** access.
-* **crypto-utils**: You need to perform **cryptographic operations** (hashing, signing, encryption, key derivation) in a TypeScript workflow.
+* **compression-utils**: You want to handle **data compression** in CRE Typescript workflows, especially when working with large datasets and the CRE HTTP response limit.
+* **xml-utils**: You want to work with **XML data** in CRE workflows, including parsing, validating, and building XML documents.
 
 ---
 

@@ -1,0 +1,10 @@
+{
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-mainnet",
+      "predictionMarketAddress": "0xYOUR_DEPLOYED_CONTRACT_ADDRESS",
+      "priceFeedAddress": "0xYOUR_PRICE_FEED_ADDRESS",
+      "gasLimit": "500000"
+    }
+  ]
+}

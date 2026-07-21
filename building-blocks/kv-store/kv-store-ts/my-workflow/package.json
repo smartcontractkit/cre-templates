@@ -1,0 +1,17 @@
+{
+  "name": "kv-store-ts",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chainlink/cre-sdk": "^1.6.0",
+    "@noble/hashes": "^1.7.2"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

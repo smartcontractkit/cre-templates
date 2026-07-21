@@ -82,8 +82,8 @@ const postData = (sendRequester: HTTPSendRequester, config: Config, assetParams:
       "Content-Type": "application/json",
     },
     cacheSettings: {
-      readFromCache: true, // Enable reading from cache
-      maxAgeMs: 60000, // Accept cached responses up to 60 seconds old
+      store: true,
+      maxAge: '60s',
     },
   }
 
@@ -273,7 +273,7 @@ const initWorkflow = (config: Config) => {
   return [
     cre.handler(
       evmClient.logTrigger({
-        addresses: [config.evms[0].assetAddress],
+        addresses: [hexToBase64(config.evms[0].assetAddress)],
       }),
       onLogTrigger,
     ),

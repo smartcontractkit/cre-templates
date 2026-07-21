@@ -1,0 +1,20 @@
+kind: building-block
+id: block-trigger-go
+projectDir: .
+title: "Block Trigger (Go)"
+description: "Process new blocks and transactions using block-triggered webhooks with watched address matching."
+language: go
+category: workflow
+solutions:
+  - defi-vault-operations
+capabilities:
+  - http
+tags:
+  - indexer
+  - webhook
+  - event-monitoring
+networks:
+  - ethereum-testnet-sepolia
+  - ethereum-mainnet
+workflows:
+  - dir: workflow

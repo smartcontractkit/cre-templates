@@ -1,0 +1,12 @@
+{
+  "schedule": "0 */10 * * * *",
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "predictionMarketAddress": "0xEb792aF46AB2c2f1389A774AB806423DB43aA425",
+      "priceFeedAddress": "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
+      "gasLimit": "500000"
+    }
+  ],
+  "marketIdsToCheck": [0, 1, 2]
+}

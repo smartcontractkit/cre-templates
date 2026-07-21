@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Foundry build artifacts
+contracts/evm/out/
+contracts/evm/cache/
+contracts/evm/lib/
+
+# CRE build artifacts
+binary.wasm.br.b64
+.cre_build_tmp.js
+
+# Environment
+*.env

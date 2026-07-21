@@ -1,0 +1,5 @@
+{
+  "schedule": "0 */10 * * * *",
+  "chainSelectorName": "ethereum-mainnet",
+  "protocolContractAddress": "0xYOUR_DEPLOYED_CONTRACT_ADDRESS"
+}

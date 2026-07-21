@@ -1,0 +1,5 @@
+{
+  "schedule": "0 */10 * * * *",
+  "chainSelectorName": "ethereum-testnet-sepolia",
+  "protocolContractAddress": "0xaCb13C9940cB61367b45eEd504E410D4B4d7A6e4"
+}
