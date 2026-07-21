@@ -1,0 +1,85 @@
+name: Template Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: template-compat-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# Blocking merge gate for templates changed in the PR.
+#
+# Checks performed per template:
+#   TypeScript: YAML validation, bun install, typecheck, cre-compile to WASM
+#   Go:         YAML validation, go mod verify, go vet, go build (GOOS=wasip1 GOARCH=wasm)
+#
+# The SDK version used is captured from the installed package (TS) or go.mod (Go)
+# and printed in the Actions log when a check fails.
+
+permissions:
+  contents: read
+
+jobs:
+  template-check:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history needed for git diff against base branch
+
+      # Go is required for Go template builds (GOOS=wasip1 GOARCH=wasm).
+      # GOTOOLCHAIN=auto lets Go download the exact toolchain declared in go.mod
+      # (e.g. "toolchain go1.24.10") if it differs from the installed version.
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: false # cache managed explicitly below
+        env:
+          GOTOOLCHAIN: auto
+
+      # Node + npm are required for TypeScript template checks.
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      # cre-compile is shipped with a bun shebang; npx invokes it as /usr/bin/env bun.
+      # Match local dev machines where Bun is installed alongside Node.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      # Cache Go module downloads. Keyed on all go.sum files so any new module
+      # version busts the cache while unchanged templates stay fast.
+      - name: Cache Go modules
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-templates-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-templates-
+
+      # Cache npm package downloads. Multiple templates sharing the same
+      # @chainlink/cre-sdk version (e.g. ^1.5.0) will hit the cache after
+      # the first install, avoiding repeated network downloads.
+      - name: Cache npm
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-templates-${{ hashFiles('**/package.json') }}
+          restore-keys: ${{ runner.os }}-npm-templates-
+
+      - name: Run template checks
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          RESULTS_FILE: /tmp/template-results.json
+          GOTOOLCHAIN: auto
+        run: ./scripts/check-templates.sh

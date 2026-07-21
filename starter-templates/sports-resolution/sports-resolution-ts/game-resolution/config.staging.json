@@ -1,0 +1,14 @@
+{
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-testnet-sepolia",
+      "sportsMarketAddress": "0xYOUR_DEPLOYED_CONTRACT",
+      "gasLimit": "500000"
+    }
+  ],
+  "dataSourceUrls": [
+    "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+    "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+  ],
+  "aggregationMode": "majority"
+}

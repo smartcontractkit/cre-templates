@@ -1,0 +1,14 @@
+{
+  "evms": [
+    {
+      "chainSelectorName": "ethereum-mainnet",
+      "sportsMarketAddress": "0x0000000000000000000000000000000000000000",
+      "gasLimit": "500000"
+    }
+  ],
+  "dataSourceUrls": [
+    "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+    "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+  ],
+  "aggregationMode": "majority"
+}
