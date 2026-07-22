@@ -1,0 +1,26 @@
+kind: starter-template
+id: prediction-market-data-streams-ts
+projectDir: .
+title: "Prediction Market (Data Streams)"
+description: "Full prediction market lifecycle: create, resolve, and dispute binary markets using Chainlink Data Streams."
+language: typescript
+category: workflow
+capabilities:
+  - cron
+  - log-trigger
+  - chain-read
+  - chain-write
+  - http
+tags:
+  - prediction-market
+  - data-streams
+  - defi
+workflows:
+  - dir: market-creation
+  - dir: market-resolution
+  - dir: market-dispute
+postInit: |
+  A demo PredictionMarket contract is pre-deployed on Sepolia. See README.md for details.
+  This template uses Chainlink Data Streams (off-chain) instead of Data Feeds (on-chain).
+  You will need Data Streams API credentials — see README.md.
+  Run `cd market-creation && bun install && cd ..` for each workflow, then simulate.

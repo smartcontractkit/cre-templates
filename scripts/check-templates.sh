@@ -308,14 +308,22 @@ process.stdout.write(deps['@chainlink/cre-sdk'] || 'unknown');
     return 0
   fi
 
-  # 2b. bun install in template contracts/ when present (generated bindings import viem / cre-sdk).
-  local contracts_dir="$REPO_ROOT/$template_dir/contracts"
-  if [[ -f "$contracts_dir/package.json" ]]; then
-    vlog "    Installing contracts dependencies..."
-    cd "$contracts_dir"
-    local _contracts_rel="${contracts_dir#"$REPO_ROOT/"}"
+  # 2b. bun install in sibling shared dirs (e.g. contracts/, data-streams/) when present —
+  # workflows may import generated bindings or shared helpers that in turn need their own
+  # node_modules (viem / cre-sdk) since node resolution won't walk into a sibling dir's deps.
+  local template_root="$REPO_ROOT/$template_dir"
+  local shared_dir shared_name
+  for shared_dir in "$template_root"/*/; do
+    shared_dir="${shared_dir%/}"
+    shared_name="$(basename "$shared_dir")"
+    [[ "$shared_name" == "$workflow_subdir" ]] && continue
+    [[ -f "$shared_dir/package.json" ]] || continue
+
+    vlog "    Installing $shared_name dependencies..."
+    cd "$shared_dir"
+    local _shared_rel="${shared_dir#"$REPO_ROOT/"}"
     for lockfile in package-lock.json bun.lock; do
-      if git -C "$REPO_ROOT" ls-files --error-unmatch "$_contracts_rel/$lockfile" &>/dev/null; then
+      if git -C "$REPO_ROOT" ls-files --error-unmatch "$_shared_rel/$lockfile" &>/dev/null; then
         cp "$lockfile" "${lockfile}.__cre_bak"
         LOCKFILE_BACKUPS+=("$(pwd)/${lockfile}.__cre_bak:$(pwd)/$lockfile")
       else
@@ -324,13 +332,13 @@ process.stdout.write(deps['@chainlink/cre-sdk'] || 'unknown');
     done
     if ! run_captured _out bun install; then
       printf '%s' "$_out" > "$_FAIL_OUT"
-      info "    ❌ bun install (contracts) failed"
-      record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "bun install (contracts)" "$_FAIL_OUT"
+      info "    ❌ bun install ($shared_name) failed"
+      record_fail "$display" "typescript" "$sdk_range" "$sdk_resolved" "bun install ($shared_name)" "$_FAIL_OUT"
       cd "$abs_wf"
       return 0
     fi
     cd "$abs_wf"
-  fi
+  done
 
   # 3. Capture resolved SDK version
   if [[ -f "node_modules/@chainlink/cre-sdk/package.json" ]]; then
