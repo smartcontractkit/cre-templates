@@ -1,0 +1,4 @@
+{
+  "chainSelectorName": "ethereum-testnet-sepolia",
+  "consumerAddress": "0xYOUR_CONSUMER_CONTRACT_ADDRESS"
+}
