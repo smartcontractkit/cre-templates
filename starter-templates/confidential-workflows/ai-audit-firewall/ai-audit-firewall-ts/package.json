@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "mock:server": "bun ../mock-server.js"
+    "mock:server": "bun mock-server.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
