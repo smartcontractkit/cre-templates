@@ -1,0 +1,6 @@
+{
+  "schedule": "0 */5 * * * *",
+  "url": "https://YOUR_AUTHENTICATED_API_ENDPOINT",
+  "secretId": "API_TOKEN",
+  "scoreThreshold": 500
+}
