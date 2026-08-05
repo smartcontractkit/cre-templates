@@ -6,18 +6,18 @@ description: "Monitor DeFi lending risk and execute confidential policy-constrai
 language: typescript
 category: workflow
 capabilities:
-	- cron
-	- http
+  - cron
+  - http
 tags:
-	- defi
-	- liquidation
-	- risk-management
-	- lending
-	- automation
-	- confidential-workflow
-	- confidential
+  - defi
+  - liquidation
+  - risk-management
+  - lending
+  - automation
+  - confidential-workflow
+  - confidential
 workflows:
-	- dir: automated-liquidation-protection
+  - dir: automated-liquidation-protection
 postInit: |
 	This workflow evaluates liquidation signals and executes defensive actions through HTTP endpoints.
 	Configure .env values and secrets.yaml mappings before simulation.

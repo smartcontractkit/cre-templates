@@ -6,18 +6,18 @@ description: "Continuously monitor allocation drift and execute confidential, po
 language: typescript
 category: workflow
 capabilities:
-	- cron
-	- http
+  - cron
+  - http
 tags:
-	- portfolio
-	- rebalancing
-	- trading
-	- automation
-	- risk-management
-	- confidential-workflow
-	- confidential
+  - portfolio
+  - rebalancing
+  - trading
+  - automation
+  - risk-management
+  - confidential-workflow
+  - confidential
 workflows:
-	- dir: automated-portfolio-rebalancing
+  - dir: automated-portfolio-rebalancing
 postInit: |
 	This workflow monitors portfolio drift, generates rebalance actions, and executes through HTTP endpoints.
 	Configure .env values and secrets.yaml mappings before simulation.

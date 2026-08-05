@@ -6,20 +6,20 @@ description: "Analyze and screen proposed smart contract interactions before exe
 language: typescript
 category: workflow
 capabilities:
-	- cron
-	- http
-	- chain-read
-	- chain-write
+  - cron
+  - http
+  - chain-read
+  - chain-write
 tags:
-	- security
-	- smart-contracts
-	- firewall
-	- ai-audit
-	- risk-management
-	- confidential-workflow
-	- confidential
+  - security
+  - smart-contracts
+  - firewall
+  - ai-audit
+  - risk-management
+  - confidential-workflow
+  - confidential
 workflows:
-	- dir: ai-audit-firewall
+  - dir: ai-audit-firewall
 postInit: |
 	This workflow uses scanner APIs and dual-model reasoning endpoints via the local mock server.
 	Configure secrets in .env/.env.example and secrets.yaml before simulation.
