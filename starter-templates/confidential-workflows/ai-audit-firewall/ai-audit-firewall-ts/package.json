@@ -10,7 +10,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@chainlink/cre-sdk": "1.17.0-alpha.1",
+    "@chainlink/cre-sdk": "1.17.1-alpha.1",
     "express": "5.1.0",
     "viem": "^2.37.5"
   },

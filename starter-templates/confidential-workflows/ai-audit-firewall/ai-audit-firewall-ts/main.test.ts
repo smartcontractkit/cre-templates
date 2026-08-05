@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { determineVerdict, initWorkflow, runAuditFirewall } from "./main";
+import { buildRestrictions, determineVerdict, initWorkflow, runAuditFirewall } from "./main";
 import type { Config } from "./main";
 
 const cleanAnalysis = {
@@ -57,6 +57,84 @@ describe("determineVerdict", () => {
 
   test("allows clean, high-confidence agreements", () => {
     expect(determineVerdict(cleanAnalysis, cleanAnalysis)).toBe("ALLOW");
+  });
+});
+
+describe("buildRestrictions", () => {
+  const fullConfig: Config = {
+    ...baseConfig,
+    evms: [
+      {
+        chain_selector_name: "ethereum-testnet-sepolia",
+        consumer_address: "0x0000000000000000000000000000000000000000",
+        gas_limit: "500000",
+      },
+    ],
+  };
+
+  test("uses CLOSED capability restrictions with exact max calls", () => {
+    const restrictions = buildRestrictions(fullConfig);
+
+    expect(restrictions.capabilities?.type).toBe("CAPABILITY_RESTRICTION_TYPE_CLOSED");
+    expect(restrictions.capabilities?.maxTotalCalls).toBe(10);
+  });
+
+  test("limits HTTP SendRequest to 8 calls", () => {
+    const restrictions = buildRestrictions(fullConfig);
+    const httpRestriction = restrictions.capabilities?.restrictions?.find(
+      (r) => r.method?.method === "SendRequest",
+    );
+
+    expect(httpRestriction?.method?.id).toBe("http-actions@1.0.0-alpha");
+    expect(httpRestriction?.method?.maxCalls).toBe(8);
+  });
+
+  test("limits consensus Report to 1 call", () => {
+    const restrictions = buildRestrictions(fullConfig);
+    const consensusRestriction = restrictions.capabilities?.restrictions?.find(
+      (r) => r.method?.id === "consensus@1.0.0-alpha",
+    );
+
+    expect(consensusRestriction?.method?.method).toBe("Report");
+    expect(consensusRestriction?.method?.maxCalls).toBe(1);
+  });
+
+  test("limits EVM WriteReport to 1 call", () => {
+    const restrictions = buildRestrictions(fullConfig);
+    const evmRestriction = restrictions.capabilities?.restrictions?.find(
+      (r) => r.method?.method === "WriteReport",
+    );
+
+    expect(evmRestriction?.method?.maxCalls).toBe(1);
+  });
+
+  test("omits EVM restriction when no evms configured", () => {
+    const restrictions = buildRestrictions(baseConfig);
+    const evmRestriction = restrictions.capabilities?.restrictions?.find(
+      (r) => r.method?.method === "WriteReport",
+    );
+
+    expect(evmRestriction).toBeUndefined();
+  });
+
+  test("allows exactly 3 secrets with exact-match restrictions", () => {
+    const restrictions = buildRestrictions(fullConfig);
+
+    expect(restrictions.secrets?.maxSecrets).toBe(3);
+    expect(restrictions.secrets?.restrictions).toHaveLength(3);
+
+    const secretIds = restrictions.secrets?.restrictions?.map((r) => r.exactSecret?.id);
+    expect(secretIds).toContain("scanner_api_key");
+    expect(secretIds).toContain("primary_llm_api_key");
+    expect(secretIds).toContain("secondary_llm_api_key");
+  });
+
+  test("uses empty namespace for all secrets", () => {
+    const restrictions = buildRestrictions(fullConfig);
+
+    for (const r of restrictions.secrets?.restrictions ?? []) {
+      expect(r.exactSecret?.namespace).toBe("");
+    }
   });
 });
 

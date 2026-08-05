@@ -1,9 +1,11 @@
 import {
   CronCapability,
   EVMClient,
+  EVMRestrictor,
   HTTPClient,
-  NITRO_REGIONS,
+  HTTPClientRestrictor,
   Runner,
+  TeeType,
   handlerInTee,
   TxStatus,
   bytesToHex,
@@ -653,6 +655,52 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
   return runAuditFirewall(runtime);
 };
 
+const CONSENSUS_CAPABILITY_ID = "consensus@1.0.0-alpha";
+
+export const buildRestrictions = (config: Config) => {
+  const httpRestrictor = new HTTPClientRestrictor();
+  const capabilityRestrictions = [
+    httpRestrictor.limitSendRequest(8),
+    {
+      method: {
+        id: CONSENSUS_CAPABILITY_ID,
+        method: "Report",
+        maxCalls: 1,
+      },
+    },
+  ];
+
+  const evmConfig = config.evms?.[0];
+  if (evmConfig?.chain_selector_name) {
+    const network = getNetwork({
+      chainFamily: "evm",
+      chainSelectorName: evmConfig.chain_selector_name,
+    });
+    if (network) {
+      const evmRestrictor = new EVMRestrictor(BigInt(network.chainSelector.selector));
+      capabilityRestrictions.push(evmRestrictor.limitWriteReport(1));
+    }
+  }
+
+  const { secrets_ids } = config;
+
+  return {
+    capabilities: {
+      type: "CAPABILITY_RESTRICTION_TYPE_CLOSED" as const,
+      maxTotalCalls: 10,
+      restrictions: capabilityRestrictions,
+    },
+    secrets: {
+      maxSecrets: 3,
+      restrictions: [
+        { exactSecret: { id: secrets_ids.scanner_api_key_id, namespace: "" } },
+        { exactSecret: { id: secrets_ids.primary_llm_api_key_id, namespace: "" } },
+        { exactSecret: { id: secrets_ids.secondary_llm_api_key_id, namespace: "" } },
+      ],
+    },
+  };
+};
+
 export const initWorkflow = (config: Config): Workflow<Config> => {
   if (
     !config.schedule ||
@@ -680,7 +728,10 @@ export const initWorkflow = (config: Config): Workflow<Config> => {
     handlerInTee(
       cron.trigger({ schedule: config.schedule }),
       onCronTrigger,
-      [{ tee: "nitro", regions: [NITRO_REGIONS[0]] }],
+      [{ type: TeeType.AWS_NITRO, regions: ["us-west-2"] }],
+      {
+        preHook: (cfg: Config) => buildRestrictions(cfg),
+      },
     ),
   ];
 };
