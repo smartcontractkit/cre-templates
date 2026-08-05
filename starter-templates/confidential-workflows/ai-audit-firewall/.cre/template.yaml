@@ -19,9 +19,9 @@ tags:
   - confidential-workflow
   - confidential
 workflows:
-  - dir: ai-audit-firewall
+  - dir: ai-audit-firewall-ts
 postInit: |
-	This workflow uses scanner APIs and dual-model reasoning endpoints via the local mock server.
-	Configure secrets in .env/.env.example and secrets.yaml before simulation.
-	Optional onchain verdict delivery is configured in ai-audit-firewall/config.staging.json and config.production.json.
-	Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./ai-audit-firewall --project-root ./ --target=staging-settings --env ./.env`.
+  This workflow uses scanner APIs and dual-model reasoning endpoints via the local mock server.
+  Configure secrets in .env/.env.example and secrets.yaml before simulation.
+  Optional onchain verdict delivery is configured in ai-audit-firewall/config.staging.json and config.production.json.
+  Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./ai-audit-firewall --project-root ./ --target=staging-settings --env ./.env`.

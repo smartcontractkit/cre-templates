@@ -6,6 +6,6 @@ Starter templates for building confidential workflows using Chainlink CRE.
 
 | Workflow | Directory |
 |----------|-----------|
-| AI Audit Firewall | [ai-audit-firewall](./ai-audit-firewall) |
-| Automated Liquidation Protection | [automated-liquidation-protection](./automated-liquidation-protection) |
-| Automated Portfolio Rebalancing | [automated-portfolio-rebalancing](./automated-portfolio-rebalancing) |
+| AI Audit Firewall | [ai-audit-firewall](./ai-audit-firewall-ts) |
+| Automated Liquidation Protection | [automated-liquidation-protection](./automated-liquidation-protection-ts) |
+| Automated Portfolio Rebalancing | [automated-portfolio-rebalancing](./automated-portfolio-rebalancing-ts) |
