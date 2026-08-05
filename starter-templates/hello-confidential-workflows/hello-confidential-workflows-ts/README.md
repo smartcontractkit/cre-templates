@@ -1,6 +1,6 @@
 # Hello Confidential Workflows — CRE Starter Template (TypeScript)
 
-Run a handler's callback inside a secure enclave: fetch a secret from the Vault DON, call an API from inside the enclave, apply confidential decision logic, then cross back to the Workflow DON for consensus.
+Quickstart confidential workflow. Run a handler's callback inside a secure enclave: fetch a secret from the Vault DON, call an API from inside the enclave, execute decision logic over the confidential data such as Vault DON secrets or HTTP response payloads, then cross back to the Workflow DON for consensus.
 
 **⚠️ DISCLAIMER**
 
@@ -14,9 +14,9 @@ This template is an educational example to demonstrate how to interact with Chai
 
 ## Overview
 
-By default, a CRE workflow's callback runs on Workflow DON nodes, where node operators can in principle inspect what it is computing. That's fine for most workflows — but some logic is sensitive on its own: a risk threshold, a rebalancing policy, a proprietary scoring model. Leaking the policy can be as damaging as leaking a credential.
+By default, a CRE workflow's callback runs on Workflow DON nodes, where node operators can in principle inspect the data it is computing over. That's fine for most workflows — but some logic needs to be computed over sensitive data while preserving the confidentiality of that data: risk thresholds, API credentials, centralised exchange stablecoin reserves for reasoning, identity details. Leaking this data could have adverse effects, including enabling front-running attacks, exposing sensitive financial information, and compromising individual privacy.
 
-A **Confidential Workflow** moves that part into a hardware-isolated [enclave](https://docs.chain.link/cre/key-terms#enclave). This template is the minimal end-to-end shape of one, in four steps:
+A **Confidential Workflow** moves that computation into a hardware-isolated [enclave](https://docs.chain.link/cre/key-terms#enclave). This template is the minimal end-to-end shape of one, in four steps:
 
 | Step | What it demonstrates | API |
 |------|----------------------|-----|
@@ -25,13 +25,13 @@ A **Confidential Workflow** moves that part into a hardware-isolated [enclave](h
 | 3 | Make a capability call from inside the enclave | `HTTPClient.sendRequest(teeRuntime, req)` |
 | 4 | Cross back to the DON for anything needing consensus | `runtime.usingTheDons()` |
 
+**Hello Confidential Workflow** (this template): Quickstart confidential workflow. Registers a TEE handler to execute in the enclave that securely fetches a secret inside the enclave, executes a capability call from within the enclave, and returns to the DON for any operations requiring decentralized consensus.
+
 ### Use Cases
 
-- **Automated liquidation protection**: keep risk thresholds and the defensive strategy off Workflow DON nodes so they can't be predicted and front-run
-- **Portfolio rebalancing**: hide the allocation policy and trade-sizing logic so the rebalance isn't anticipated
-- **LLM audit firewall**: keep evaluation criteria and third-party API credentials inside the enclave
-- **Payment orchestration**: keep routing logic and account details confidential
-- **Proprietary scoring**: compute over licensed or sensitive data without exposing the data or the model
+- **Automated liquidation protection**: Automatically protect DeFi lending positions by continuously monitoring liquidation risk and executing collateral management, debt repayment, position reduction, or hedging strategies while preserving the confidentiality of centralized exchange as well as LLM API keys, proprietary risk management thresholds, and execution preferences.
+- **Automated portfolio rebalancing**: Automatically rebalance crypto portfolios by continuously monitoring allocation drift and executing portfolio adjustments when predefined thresholds are exceeded, while preserving the confidentiality of exchange API keys, LLM reasoning, portfolio allocation thresholds, and execution preferences.
+- **AI smart contract audit firewall**: Automatically analyze and screen smart contract interactions before execution to detect and block malicious transactions, while preserving the confidentiality of chain scanner and LLM reasoning API credentials.
 
 ## Architecture
 
@@ -42,25 +42,29 @@ A **Confidential Workflow** moves that part into a hardware-isolated [enclave](h
        │  DON hands the triggered request to an enclave
        v
 ╔══════════════════════════════════════════════════════════════╗
-║  ENCLAVE (TEE — hidden from node operators)                   ║
+║  ENCLAVE (TEE)                                               ║
+║  Data below is kept confidential from node operators.        ║
+║  The binary — including this logic — is NOT confidential.    ║
 ║                                                              ║
 ║   Step 2: runtime.getSecret({ id: 'API_TOKEN' })             ║
 ║             ▲                                                ║
-║             └──── released by Vault DON, decrypted in-enclave ║
+║             └── released by Vault DON, decrypted in-enclave  ║
 ║                                                              ║
 ║   Step 3: HTTPClient.sendRequest(runtime, { ... })           ║
-║             Authorization: Bearer <secret>                    ║
-║             ▲ trust from enclave attestation, not consensus   ║
+║             Authorization: Bearer <secret>                   ║
+║             ▲ request + response payloads stay confidential  ║
 ║                                                              ║
-║   Confidential logic: score(response) vs. scoreThreshold     ║
-║             -> verdict = APPROVE | REJECT                     ║
+║   Logic over confidential data:                              ║
+║             score(response) vs. scoreThreshold               ║
+║             -> verdict = APPROVE | REJECT                    ║
 ╚═══════════════════════════╤══════════════════════════════════╝
                             │  Step 4: runtime.usingTheDons()
                             │  ONLY the verdict + score cross out
                             v
 ┌──────────────────────────────────────────────────────────────┐
-│  WORKFLOW DON — donRuntime.report({ ... })                    │
-│  BFT consensus verifies the enclave attestation, then signs   │
+│  WORKFLOW DON — donRuntime.report({ ... })                   │
+│  Consensus verifies the enclave attestations, proving the    │
+│  integrity of the logic executed in the enclave, then signs  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -71,7 +75,7 @@ A **Confidential Workflow** moves that part into a hardware-isolated [enclave](h
 1. **Registers the cron handler with `cre.handlerInTee`**, constrained to `[{ tee: 'nitro', regions: ['us-west-2'] }]`
 2. **Fetches `API_TOKEN`** with `runtime.getSecret()` — the Vault DON releases it only into an attested enclave, and it's decrypted at the moment the call runs
 3. **Calls the configured URL** with `HTTPClient.sendRequest(runtime, ...)`, passing the `TeeRuntime` so the request executes from inside the enclave with the secret in the `Authorization` header
-4. **Scores the response** against `scoreThreshold` — this stands in for your proprietary logic, and is the part that stays invisible to node operators
+4. **Scores the response** against `scoreThreshold` — decision logic executed over confidential data. The data it reads (the secret and the response payload) stays confidential from node operators; the logic itself is part of the binary and is not
 5. **Crosses back with `usingTheDons()`** and generates a signed report containing only the verdict and score — never the secret or the raw response
 
 The default endpoint is `https://postman-echo.com/headers`, which echoes the request headers back — no signup or real API key needed. The workflow uses that to confirm the secret really was injected inside the enclave, reporting it as the boolean `secret reached API: true` rather than by logging the token. Note that it never logs the response body either; the confidentiality boundary is the reason, and it's worth keeping that habit even in simulation.
@@ -152,7 +156,7 @@ Three things to notice:
 | `schedule` | Cron expression (6 fields, seconds first) |
 | `url` | Endpoint called from inside the enclave |
 | `secretId` | Secret ID fetched with `runtime.getSecret()`; must match `secrets.yaml` |
-| `scoreThreshold` | Threshold the confidential scoring compares against |
+| `scoreThreshold` | Threshold the in-enclave scoring compares against |
 
 ## TEE constraints
 
@@ -173,21 +177,21 @@ Understanding what is and isn't protected matters more here than in a regular wo
 | Protected by default | **Not** automatically protected |
 |----------------------|--------------------------------|
 | Secrets the Vault DON releases into the enclave | Triggers, chain reads, and chain writes — these always run on Workflow DON nodes |
-| Sensitive inputs and intermediate values you don't share outside the enclave | Your workflow's **source code and deployed binary** |
-| Capability calls made from inside the enclave | Capability calls not routed through the enclave |
+| Request and response payloads of HTTP calls made from the enclave | Your workflow's **source code and deployed binary, including the logic executed in the enclave** |
+| Sensitive inputs and intermediate values you don't share outside the enclave | Capability calls not routed through the enclave |
 | Enclave execution memory, while your computation runs | Reports, calldata, and any output you deliver outside the enclave |
 
 Consequences worth internalizing:
 
-- **Your source and binary are readable.** If the logic itself is the secret, make sure it actually *executes* inside the enclave — don't rely on the binary being opaque, because it isn't.
-- **`usingTheDons()` is a one-way door.** Anything you pass into a capability call on that runtime executes on Workflow DON nodes like any non-confidential call. Cross over only what doesn't need to stay hidden.
-- **Don't log from inside the enclave in production.** Logs leave the confidentiality boundary. This template logs only the verdict, and the comment marks it for removal before deploying.
-- **Keep enclave logic deterministic.** The enclave result is attested and verified by DON consensus.
+- **The logic is not confidential — the data is.** A confidential workflow, despite running inside the enclave, is part of the binary the Workflow DON provides to the enclave, so that binary including the enclave logic is revealed. What running that logic in the enclave currently provides is confidentiality of the *data* it computes over: Vault DON secrets such as API keys, the request and response payloads of HTTP calls made from the enclave, and other intermediate values. Confidential logic is on the future roadmap, not part of the current beta.
+- **`usingTheDons()` is a one-way door.** Anything you pass into a capability call on that runtime executes on Workflow DON nodes like any non-confidential call. Cross over only the data that does not need to stay confidential.
+- **Logs are for simulation only.** Every `runtime.log()` inside the enclave MUST be removed before deploying to production to preserve the confidentiality offered by enclaves — and logging should be avoided for sensitive and non-sensitive values alike.
+- **Keep enclave logic deterministic.** The Workflow DON verifies enclave attestations and reaches consensus before the workflow completes successfully.
 - **Enclaves are not tenant-isolated today.** A single enclave can run confidential workflows from multiple customers concurrently, sharing execution memory. Isolation between confidential executions is planned, not part of the current beta.
 
 ## Customization
 
-- **Put your real logic in the enclave**: replace `scoreResponse` in `workflow.ts` with the policy, threshold, or model you need to keep private
+- **Put your real logic in the enclave**: replace `scoreResponse` in `workflow.ts` with the decision logic you need to run over confidential data. Remember that the logic itself is revealed as part of the binary — what the enclave preserves is the confidentiality of the secrets and payloads it reads
 - **Deliver the report on-chain**: pass the report from Step 4 to `evmClient.writeReport(donRuntime, report)` — the RPCs in `project.yaml` are already set up for Sepolia. See the [Keeper Bot](../../keeper-bot) or [Event Reactor](../../event-reactor) templates for the full write path
 - **Change the trigger**: `handlerInTee` accepts any CRE trigger, same as `handler` — swap cron for a log trigger to react to on-chain events confidentially
 - **Fetch more secrets**: call `runtime.getSecret()` once per secret; the TypeScript `SecretsProvider` has no batch variant
@@ -205,8 +209,9 @@ The common thread: a secret belongs in the enclave if disclosure would expose mo
 ## Security
 
 - Never commit `.env` files or secrets — `.gitignore` covers `*.env`
-- Remove or gate every `runtime.log()` inside the TEE handler before deploying
+- Remove every `runtime.log()` inside the TEE handler before deploying to production
 - Audit what crosses `usingTheDons()`; that data is no longer confidential
+- Do not treat the enclave logic as secret — the binary that contains it is provided to the enclave by the Workflow DON and is revealed
 
 ## Further Reading
 

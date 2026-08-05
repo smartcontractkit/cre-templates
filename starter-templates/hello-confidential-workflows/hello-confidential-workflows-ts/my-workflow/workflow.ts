@@ -13,15 +13,24 @@ export const configSchema = z.object({
 	schedule: z.string(),
 	url: z.string(),
 	secretId: z.string(),
-	// Part of the "proprietary" logic that stays inside the enclave.
 	scoreThreshold: z.number(),
 })
 type Config = z.infer<typeof configSchema>
 
-// ─── Confidential Decision Logic ────────────────────────────
-// This is the part node operators cannot see while it runs. In a real workflow
-// this is where your risk thresholds, scoring model, or routing policy live —
-// the logic that would be exposed if it ran on Workflow DON nodes.
+// ─── Logic to be executed over confidential data ────────────
+// Some logic needs to be computed over sensitive data while preserving the
+// confidentiality of that data from node operators: risk thresholds, API
+// credentials, centralised exchange stablecoin reserves for reasoning, identity
+// details. Leaking this data could have adverse effects, including enabling
+// front-running attacks, exposing sensitive financial information, and
+// compromising individual privacy.
+//
+// Note what is and is not confidential here: a confidential workflow, despite
+// running inside the enclave, is part of the binary the Workflow DON provides to
+// the enclave — so the binary, including this logic, is revealed. What the
+// enclave keeps confidential is the data this logic computes over: Vault DON
+// secrets, the request and response payloads of HTTP calls made from the
+// enclave, and other intermediate values.
 //
 // Keep it deterministic for a given input — the enclave result is attested and
 // verified by DON consensus before the workflow completes.
@@ -47,8 +56,10 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 
 	// ── Step 3: Make a capability call from inside the enclave ──
 	// `HTTPClient.sendRequest()` has a `TeeRuntime` overload, so passing the TEE
-	// runtime executes the request from inside the enclave. Trust comes from
-	// enclave attestation rather than Workflow DON consensus.
+	// runtime executes the request from inside the enclave, keeping the request
+	// and response payloads confidential from node operators. The Workflow DON
+	// offers consensus verification of enclave attestations, proving the integrity
+	// of the logic executed within the enclave.
 	//
 	// Note: do NOT reach for `ConfidentialHTTPClient` here — it has no
 	// `TeeRuntime` overload and is not meant to be called from a TEE handler.
@@ -73,13 +84,13 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 	// logging the token itself. Drop this once `url` points at a real API.
 	const secretReachedApi = body.includes(apiToken)
 
-	// Confidential computation over the secret-authenticated response.
+	// Decision logic executed over the confidential response payload.
 	const score = scoreResponse(body)
 	const verdict = score >= config.scoreThreshold ? 'APPROVE' : 'REJECT'
 
-	// ⚠️ Logging inside an enclave defeats the point — anything logged is visible
-	// outside the confidentiality boundary. This log is deliberately limited to
-	// non-sensitive values, and should be removed before deploying to production.
+	// ⚠️ Logs should be used for simulations only, and MUST be removed before
+	// deploying to production to preserve the confidentiality offered by enclaves.
+	// Avoid logging inside the enclave in general — sensitive or not.
 	runtime.log(`Enclave computation complete. verdict=${verdict}`)
 
 	// ── Step 4: Cross back to the DON for anything that needs consensus ──

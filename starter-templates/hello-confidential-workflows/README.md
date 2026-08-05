@@ -1,6 +1,8 @@
 # Hello Confidential Workflows
 
-Run part of a workflow inside a TEE (Trusted Execution Environment) so the computation, and the secrets it processes, stay hidden from node operators.
+Run part of a workflow inside a TEE (Trusted Execution Environment) so that computation over sensitive data — Vault DON secrets such as API keys, the request and response payloads of HTTP calls made from the enclave, and other intermediate data in the computation — is kept confidential from node operators.
+
+Note that a confidential workflow, despite running inside the enclave, is part of the binary the Workflow DON provides to the enclave. That binary — including the logic to be executed in the enclave — is revealed; what the enclave keeps confidential is the data that logic computes over.
 
 ## Available Languages
 
