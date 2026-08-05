@@ -12,7 +12,7 @@
   "evms": [
     {  
       "chain_selector_name": "ethereum-testnet-sepolia",
-      "consumer_address": "0xYourDeployedAuditFirewallConsumer",
+      "consumer_address": "0x0000000000000000000000000000000000000000",
       "gas_limit": "500000"
     }
   ]
