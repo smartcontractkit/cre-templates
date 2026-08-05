@@ -85,5 +85,5 @@ bun run test
 5. Simulate workflow
 
 ```bash
-cre workflow simulate ./ai-audit-firewall --project-root ./ --target=staging-settings --env ./.env
+cre workflow simulate ./ai-audit-firewall --target=staging-settings
 ```

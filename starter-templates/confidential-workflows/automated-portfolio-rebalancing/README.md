@@ -91,5 +91,5 @@ bun run test
 5. Simulate workflow
 
 ```bash
-cre workflow simulate ./automated-portfolio-rebalancing --project-root ./ --target=staging-settings --env ./.env
+cre workflow simulate ./automated-portfolio-rebalancing --target=staging-settings
 ```

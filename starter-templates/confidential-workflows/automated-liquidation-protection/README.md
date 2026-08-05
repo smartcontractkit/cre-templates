@@ -89,5 +89,5 @@ bun run test
 5. Simulate workflow
 
 ```bash
-cre workflow simulate ./automated-liquidation-protection --project-root ./ --target=staging-settings --env ./.env
+cre workflow simulate ./automated-liquidation-protection --target=staging-settings
 ```
