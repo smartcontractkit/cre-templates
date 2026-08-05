@@ -20,12 +20,10 @@ A **Confidential Workflow** moves that computation into a hardware-isolated [enc
 
 | Step | What it demonstrates | API |
 |------|----------------------|-----|
-| 1 | Register a handler that runs inside a TEE | `cre.handlerInTee(trigger, fn, tees)` |
-| 2 | Fetch a secret inside the enclave, no upfront declaration | `runtime.getSecret({ id })` |
-| 3 | Make a capability call from inside the enclave | `HTTPClient.sendRequest(teeRuntime, req)` |
-| 4 | Cross back to the DON for anything needing consensus | `runtime.usingTheDons()` |
-
-**Hello Confidential Workflow** (this template): Quickstart confidential workflow. Registers a TEE handler to execute in the enclave that securely fetches a secret inside the enclave, executes a capability call from within the enclave, and returns to the DON for any operations requiring decentralized consensus.
+| 1 | Registers a TEE handler to execute in the enclave | `cre.handlerInTee(trigger, fn, tees)` |
+| 2 | Securely fetches a secret inside the enclave | `runtime.getSecret({ id })` |
+| 3 | Executes a capability call from within the enclave | `HTTPClient.sendRequest(teeRuntime, req)` |
+| 4 | Returns to the DON for any operations requiring decentralized consensus | `runtime.usingTheDons()` |
 
 ### Use Cases
 
