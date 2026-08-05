@@ -22,4 +22,4 @@ postInit: |
   This workflow evaluates liquidation signals and executes defensive actions through HTTP endpoints.
   Configure .env values and secrets.yaml mappings before simulation.
   The mock server for this project serves routes under /liquidation/*.
-  Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./automated-liquidation-protection --project-root ./ --target=staging-settings --env ./.env`.
+  Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./automated-liquidation-protection-ts --project-root ./ --target=staging-settings --env ./.env`.
