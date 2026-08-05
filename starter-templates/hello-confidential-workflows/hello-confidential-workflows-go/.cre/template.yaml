@@ -1,0 +1,24 @@
+kind: starter-template
+id: hello-confidential-workflows-go
+projectDir: .
+title: "Hello Confidential Workflows (Go)"
+description: "Run a handler inside a TEE — fetch a secret, call an API from the enclave, then cross back to the DON for consensus."
+language: go
+category: workflow
+capabilities:
+  - cron
+  - http
+  - secrets
+  - tee
+tags:
+  - confidential-compute
+  - tee
+  - secrets
+workflows:
+  - dir: my-workflow
+postInit: |
+  Confidential Workflows is in private beta — enrollment via your Chainlink
+  account team is required to deploy. Copy .env.example to .env and set
+  SECRET_API_TOKEN before simulating. The Go SDK versions in go.mod are pinned
+  to an unreleased commit; repin them once Confidential Workflows ships.
+  See README.md for details.

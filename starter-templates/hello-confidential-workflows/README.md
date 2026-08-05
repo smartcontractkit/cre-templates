@@ -9,3 +9,6 @@ Note that a confidential workflow, despite running inside the enclave, is part o
 | Language | Directory |
 |----------|-----------|
 | TypeScript | [hello-confidential-workflows-ts](./hello-confidential-workflows-ts) |
+| Go | [hello-confidential-workflows-go](./hello-confidential-workflows-go) |
+
+Both implementations perform the same four steps and return the same result for the same input.
