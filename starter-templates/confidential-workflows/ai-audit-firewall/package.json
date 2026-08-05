@@ -2,12 +2,12 @@
   "name": "ai-audit-firewall-project",
   "private": true,
   "workspaces": [
-    "ai-audit-firewall"
+    "ai-audit-firewall-ts"
   ],
   "scripts": {
     "mock:server": "bun mock-server.js",
-    "typecheck": "bun run --cwd ./ai-audit-firewall typecheck",
-    "test": "bun run --cwd ./ai-audit-firewall test"
+    "typecheck": "bun run --cwd ./ai-audit-firewall-ts typecheck",
+    "test": "bun run --cwd ./ai-audit-firewall-ts test"
   },
   "dependencies": {
     "express": "^5.2.1"
