@@ -20,6 +20,9 @@ workflows:
   - dir: automated-portfolio-rebalancing-ts
 postInit: |
   This workflow monitors portfolio drift, generates rebalance actions, and executes through HTTP endpoints.
-  Configure .env values and secrets.yaml mappings before simulation.
+  
+  1. In the project root, configure .env values using `cp .env.example .env`
+  2. From within the workflow directory (defaults to my-workflow), run `bun install` and then `bun run mock:server`
+  3. In the project root, execute `cre workflow simulate ./my-workflow`
+  
   The mock server for this project serves routes under /rebalancing/*.
-  Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./automated-portfolio-rebalancing-ts --project-root ./ --target=staging-settings --env ./.env`.
