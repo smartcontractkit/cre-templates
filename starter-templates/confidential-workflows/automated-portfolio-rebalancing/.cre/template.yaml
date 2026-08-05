@@ -1,0 +1,25 @@
+kind: starter-template
+id: automated-portfolio-rebalancing-ts
+projectDir: .
+title: "Automated Portfolio Rebalancing"
+description: "Continuously monitor allocation drift and execute confidential, policy-constrained portfolio rebalancing actions."
+language: typescript
+category: workflow
+capabilities:
+	- cron
+	- http
+tags:
+	- portfolio
+	- rebalancing
+	- trading
+	- automation
+	- risk-management
+  - confidential-workflow
+  - confidential
+workflows:
+	- dir: automated-portfolio-rebalancing
+postInit: |
+	This workflow monitors portfolio drift, generates rebalance actions, and executes through HTTP endpoints.
+	Configure .env values and secrets.yaml mappings before simulation.
+	The mock server for this project serves routes under /rebalancing/*.
+	Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./automated-portfolio-rebalancing --project-root ./ --target=staging-settings --env ./.env`.

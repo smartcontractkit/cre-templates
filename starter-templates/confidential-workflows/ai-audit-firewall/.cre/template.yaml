@@ -1,0 +1,27 @@
+kind: starter-template
+id: ai-audit-firewall-ts
+projectDir: .
+title: "AI Smart Contract Audit Firewall"
+description: "Analyze and screen proposed smart contract interactions before execution, then allow, deny, or escalate based on confidential risk analysis."
+language: typescript
+category: workflow
+capabilities:
+	- cron
+	- http
+	- chain-read
+	- chain-write
+tags:
+	- security
+	- smart-contracts
+	- firewall
+	- ai-audit
+	- risk-management
+  - confidential-workflow
+  - confidential
+workflows:
+	- dir: ai-audit-firewall
+postInit: |
+	This workflow uses scanner APIs and dual-model reasoning endpoints via the local mock server.
+	Configure secrets in .env/.env.example and secrets.yaml before simulation.
+	Optional onchain verdict delivery is configured in ai-audit-firewall/config.staging.json and config.production.json.
+	Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./ai-audit-firewall --project-root ./ --target=staging-settings --env ./.env`.

@@ -1,0 +1,15 @@
+{
+  "name": "automated-liquidation-protection-project",
+  "private": true,
+  "workspaces": [
+    "automated-liquidation-protection"
+  ],
+  "scripts": {
+    "mock:server": "bun mock-server.js",
+    "typecheck": "bun run --cwd ./automated-liquidation-protection typecheck",
+    "test": "bun run --cwd ./automated-liquidation-protection test"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

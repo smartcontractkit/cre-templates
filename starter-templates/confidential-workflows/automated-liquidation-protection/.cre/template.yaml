@@ -1,0 +1,25 @@
+kind: starter-template
+id: automated-liquidation-protection-ts
+projectDir: .
+title: "Automated Liquidation Protection"
+description: "Monitor DeFi lending risk and execute confidential policy-constrained defensive actions to reduce liquidation exposure."
+language: typescript
+category: workflow
+capabilities:
+	- cron
+	- http
+tags:
+	- defi
+	- liquidation
+	- risk-management
+	- lending
+	- automation
+  - confidential-workflow
+  - confidential
+workflows:
+	- dir: automated-liquidation-protection
+postInit: |
+	This workflow evaluates liquidation signals and executes defensive actions through HTTP endpoints.
+	Configure .env values and secrets.yaml mappings before simulation.
+	The mock server for this project serves routes under /liquidation/*.
+	Run `bun install`, then `bun run mock:server`, then `cre workflow simulate ./automated-liquidation-protection --project-root ./ --target=staging-settings --env ./.env`.
