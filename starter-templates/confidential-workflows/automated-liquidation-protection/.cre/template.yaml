@@ -14,8 +14,8 @@ tags:
 	- risk-management
 	- lending
 	- automation
-  - confidential-workflow
-  - confidential
+	- confidential-workflow
+	- confidential
 workflows:
 	- dir: automated-liquidation-protection
 postInit: |

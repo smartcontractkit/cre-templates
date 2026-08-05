@@ -16,8 +16,8 @@ tags:
 	- firewall
 	- ai-audit
 	- risk-management
-  - confidential-workflow
-  - confidential
+	- confidential-workflow
+	- confidential
 workflows:
 	- dir: ai-audit-firewall
 postInit: |

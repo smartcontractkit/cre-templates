@@ -14,8 +14,8 @@ tags:
 	- trading
 	- automation
 	- risk-management
-  - confidential-workflow
-  - confidential
+	- confidential-workflow
+	- confidential
 workflows:
 	- dir: automated-portfolio-rebalancing
 postInit: |
