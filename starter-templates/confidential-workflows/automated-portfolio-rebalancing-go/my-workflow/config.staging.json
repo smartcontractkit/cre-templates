@@ -1,0 +1,19 @@
+{
+  "schedule": "0 */5 * * * *",
+  "mock_base_url": "http://127.0.0.1:8787/rebalancing",
+  "openai_url": "http://127.0.0.1:8787/rebalancing/v1/responses",
+  "openai_model": "gpt-4.1-mini",
+  "secrets_ids": {
+    "exchange_api_key_id": "exchange_api_key",
+    "openai_api_key_id": "openai_api_key",
+    "target_allocation_btc_pct_secret_id": "rebalancing_target_allocation_btc_pct",
+    "target_allocation_eth_pct_secret_id": "rebalancing_target_allocation_eth_pct",
+    "target_allocation_usdc_pct_secret_id": "rebalancing_target_allocation_usdc_pct",
+    "drift_threshold_pct_secret_id": "rebalancing_drift_threshold_pct",
+    "max_trade_usd_secret_id": "rebalancing_max_trade_usd",
+    "reserve_floor_usdc_secret_id": "rebalancing_reserve_floor_usdc",
+    "max_slippage_bps_secret_id": "rebalancing_max_slippage_bps",
+    "preferred_venues_secret_id": "rebalancing_preferred_venues",
+    "order_sequence_preference_secret_id": "rebalancing_order_sequence_preference"
+  }
+}
