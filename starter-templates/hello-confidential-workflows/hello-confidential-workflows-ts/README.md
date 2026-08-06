@@ -8,7 +8,7 @@ This template is an educational example to demonstrate how to interact with Chai
 
 **⚠️ PRIVATE BETA**
 
-[Confidential Workflows](https://docs.chain.link/cre/concepts/confidential-workflows) is in **private beta** and requires enrollment through your Chainlink account team — see [Requesting Confidential Workflows Access](https://docs.chain.link/cre/account/confidential-workflows-access). The TypeScript SDK ships it as an **alpha release**, so this template pins `@chainlink/cre-sdk@1.17.0-alpha.4` rather than the stable line. Confirm the current alpha version with your Chainlink contact before building against these APIs.
+[Confidential Workflows](https://docs.chain.link/cre/concepts/confidential-workflows) is in **private beta** and requires enrollment through your Chainlink account team — see [Requesting Confidential Workflows Access](https://docs.chain.link/cre/account/confidential-workflows-access). 
 
 ---
 

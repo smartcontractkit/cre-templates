@@ -10,8 +10,6 @@ This template is an educational example to demonstrate how to interact with Chai
 
 [Confidential Workflows](https://docs.chain.link/cre/concepts/confidential-workflows) is in **private beta** and requires enrollment through your Chainlink account team — see [Requesting Confidential Workflows Access](https://docs.chain.link/cre/account/confidential-workflows-access).
 
-`cre.HandlerInTee` is **not yet in a tagged release** of the Go SDK. `go.mod` pins the three `cre-sdk-go` modules to pseudo-versions of the commit that adds it, so the template builds today. **Repin them to the released versions once Confidential Workflows ships** — there is a `TODO` in `go.mod` marking this.
-
 ---
 
 ## Overview
