@@ -14,7 +14,7 @@ The workflow screens proposed transactions before they are allowed to proceed. I
 
 ## Structure
 
-- `go.mod`: module definition (rooted in this workflow directory), with the SDK pinned to an unreleased commit (see below)
+- `go.mod`: module definition (rooted in this workflow directory), pinned to the `cre-sdk-go` `v1.18.0` release (see below)
 - `../project.yaml`: project-level target settings (shared with the TypeScript template)
 - `../secrets.yaml`: secret ID mappings (shared with the TypeScript template)
 - `../contracts/`: `AuditFirewallConsumer.sol` and `ReceiverTemplate.sol` (shared)
@@ -161,9 +161,9 @@ go test ./...
 cd .. && cre workflow simulate ./ai-audit-firewall-go --target=staging-settings
 ```
 
-## Testing against an unreleased SDK
+## Testing against a local SDK checkout
 
-`go.mod` pins the SDK to a commit, which is enough to build and simulate. If you are iterating on the Go SDK itself and want the template to compile against your **local working tree**, add a `go.work` file (already gitignored) rather than editing `go.mod`:
+`go.mod` pins `cre-sdk-go` to the `v1.18.0` tag; the `capabilities/networking/http`, `capabilities/scheduler/cron`, and `capabilities/blockchain/evm` submodules are pinned by pseudo-version to that same commit, since they haven't had a tagged release since. If you are iterating on the Go SDK itself and want the template to compile against your **local working tree**, add a `go.work` file (already gitignored) rather than editing `go.mod`:
 
 ```bash
 go work init .

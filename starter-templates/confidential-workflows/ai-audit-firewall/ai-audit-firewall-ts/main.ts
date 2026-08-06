@@ -5,7 +5,6 @@ import {
   HTTPClient,
   HTTPClientRestrictor,
   Runner,
-  TeeType,
   handlerInTee,
   TxStatus,
   bytesToHex,
@@ -748,7 +747,7 @@ export const initWorkflow = (config: Config): Workflow<Config> => {
     handlerInTee(
       cron.trigger({ schedule: config.schedule }),
       onCronTrigger,
-      [{ type: TeeType.AWS_NITRO, regions: ["us-west-2"] }],
+      [{ tee: "nitro", regions: ["us-west-2"] }],
       {
         preHook: (cfg: Config) => buildRestrictions(cfg),
       },

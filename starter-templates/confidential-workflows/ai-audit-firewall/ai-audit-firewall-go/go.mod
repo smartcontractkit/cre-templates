@@ -2,24 +2,25 @@ module ai-audit-firewall-go
 
 go 1.25.3
 
-// TODO: Confidential Workflows (cre.HandlerInTee / cre.TeeRuntime) is not yet in a
-// tagged release of the Go SDK. The cre-sdk-go versions below are pseudo-versions
-// pinned to the commit that adds it, so this template builds today. Repin them to the
-// released versions once Confidential Workflows ships, then run `go mod tidy`.
+// cre-sdk-go is pinned to the v1.18.0 tag, which includes Confidential Workflows
+// (cre.HandlerInTee / cre.TeeRuntime). The capabilities/networking/http,
+// capabilities/scheduler/cron, and capabilities/blockchain/evm submodules have not
+// had a tagged release since v1.18.0 shipped, so they're pinned via pseudo-version
+// to the same commit.
 //
 // To test against a local SDK checkout instead, use a go.work file (gitignored) —
-// see README.md → "Testing against an unreleased SDK".
+// see README.md → "Testing against a local SDK checkout".
 require (
 	github.com/ethereum/go-ethereum v1.17.2
-	github.com/smartcontractkit/cre-sdk-go v1.16.1-0.20260805150528-24c7012ee9ea
-	github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http v1.4.1-0.20260805150528-24c7012ee9ea
-	github.com/smartcontractkit/cre-sdk-go/capabilities/scheduler/cron v1.3.1-0.20260805150528-24c7012ee9ea
+	github.com/smartcontractkit/cre-sdk-go v1.18.0
+	github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http v1.4.1-0.20260806122424-24d22c8dc5bd
+	github.com/smartcontractkit/cre-sdk-go/capabilities/scheduler/cron v1.3.1-0.20260806122424-24d22c8dc5bd
 	github.com/stretchr/testify v1.11.1
 )
 
 require (
-	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20260804191526-b7a850ae7648
-	github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm v1.0.0-beta.15.0.20260805150528-24c7012ee9ea
+	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20260804200254-c1accce563a8
+	github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm v1.0.0-beta.15.0.20260806122424-24d22c8dc5bd
 )
 
 require (
