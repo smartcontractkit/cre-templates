@@ -1,0 +1,11 @@
+*.env
+node_modules/
+.cre_build_tmp.js
+
+# Compiled Go workflow artifacts
+*.wasm
+
+# Local override for testing against an unreleased Go SDK checkout
+go.work
+go.work.sum
+go.work.disabled

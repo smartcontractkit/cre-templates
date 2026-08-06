@@ -1,0 +1,19 @@
+{
+  "name": "automated-portfolio-rebalancing-workflow",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "mock:server": "bun mock-server.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chainlink/cre-sdk": "1.18.0",
+    "express": "5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

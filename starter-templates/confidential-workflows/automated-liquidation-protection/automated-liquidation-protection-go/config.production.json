@@ -1,0 +1,19 @@
+{
+  "schedule": "0 */5 * * * *",
+  "mock_base_url": "",
+  "openai_url": "",
+  "openai_model": "gpt-4.1-mini",
+  "secrets_ids": {
+    "exchange_api_key_id": "exchange_api_key",
+    "openai_api_key_id": "openai_api_key",
+    "liquidation_warning_action_threshold_secret_id": "liquidation_liquidation_warning_action_threshold",
+    "minimum_health_factor_secret_id": "liquidation_minimum_health_factor",
+    "target_health_factor_secret_id": "liquidation_target_health_factor",
+    "maximum_stablecoin_reserve_deployment_secret_id": "liquidation_maximum_stablecoin_reserve_deployment",
+    "minimum_stablecoin_reserve_balance_secret_id": "liquidation_minimum_stablecoin_reserve_balance",
+    "maximum_collateral_allocation_secret_id": "liquidation_maximum_collateral_allocation",
+    "maximum_partial_debt_repayment_secret_id": "liquidation_maximum_partial_debt_repayment",
+    "defensive_action_sequencing_preference_secret_id": "liquidation_defensive_action_sequencing_preference",
+    "preferred_venues_secret_id": "liquidation_preferred_venues"
+  }
+}
