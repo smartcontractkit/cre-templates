@@ -70,6 +70,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 11. **Automation Migration** — [`./automation-migration`](./automation-migration)
     Migrate existing Chainlink Automation upkeeps (time-based, custom logic, and log trigger) to CRE via a reusable `AutomationReceiver` bridge, without rewriting the legacy upkeep logic.
 
+12. **Hello Confidential Workflows** — [`./hello-confidential-workflows`](./hello-confidential-workflows)
+    Confidential compute with `handlerInTee` — fetch a secret and call an API from inside a TEE enclave, then cross back to the DON for consensus. Requires private beta access.
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
