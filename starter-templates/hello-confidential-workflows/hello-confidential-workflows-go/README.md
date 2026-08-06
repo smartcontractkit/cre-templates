@@ -6,7 +6,7 @@ Quickstart confidential workflow. Run a handler's callback inside a secure encla
 
 This template is an educational example to demonstrate how to interact with Chainlink systems, products, and services. It is provided **"AS IS"** and **"AS AVAILABLE"** without warranties of any kind, has **not** been audited, and may omit checks or error handling for clarity. **Do not use this code in production** without performing your own audits and applying best practices. Neither Chainlink Labs, the Chainlink Foundation, nor Chainlink node operators are responsible for unintended outputs generated due to errors in code.
 
-**⚠️ PRIVATE BETA — UNRELEASED SDK**
+**⚠️ PRIVATE BETA**
 
 [Confidential Workflows](https://docs.chain.link/cre/concepts/confidential-workflows) is in **private beta** and requires enrollment through your Chainlink account team — see [Requesting Confidential Workflows Access](https://docs.chain.link/cre/account/confidential-workflows-access).
 
@@ -141,9 +141,9 @@ Three things to notice:
 - `secret reached API: true` means the Vault DON secret was fetched inside the enclave and arrived in the outbound request's `Authorization` header.
 - The verdict flips between `APPROVE` and `REJECT` from run to run. That's expected: the score is derived from the live response body, and the echo endpoint includes a per-request trace ID. Lower `scoreThreshold` to see `APPROVE` consistently.
 
-## Testing against an unreleased SDK
+## Testing against a local SDK checkout
 
-`go.mod` pins the SDK to a commit, which is enough to build and simulate. If you are iterating on the Go SDK itself and want the template to compile against your **local working tree**, add a `go.work` file (already gitignored) rather than editing `go.mod`:
+`go.mod` pins `cre-sdk-go` to the `v1.18.0` tag; the `capabilities/networking/http` and `capabilities/scheduler/cron` submodules are pinned by pseudo-version to that same commit, since they haven't had a tagged release since. If you are iterating on the Go SDK itself and want the template to compile against your **local working tree**, add a `go.work` file (already gitignored) rather than editing `go.mod`:
 
 ```bash
 go work init .

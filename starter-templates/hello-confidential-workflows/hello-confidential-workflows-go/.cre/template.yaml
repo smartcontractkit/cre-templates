@@ -19,6 +19,4 @@ workflows:
 postInit: |
   Confidential Workflows is in private beta — enrollment via your Chainlink
   account team is required to deploy. Copy .env.example to .env and set
-  SECRET_API_TOKEN before simulating. The Go SDK versions in go.mod are pinned
-  to an unreleased commit; repin them once Confidential Workflows ships.
-  See README.md for details.
+  SECRET_API_TOKEN before simulating. See README.md for details.

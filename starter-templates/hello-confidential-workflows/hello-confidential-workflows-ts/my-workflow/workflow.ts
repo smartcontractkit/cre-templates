@@ -4,7 +4,6 @@ import {
 	ok,
 	text,
 	type TeeRuntime,
-	TeeType,
 } from '@chainlink/cre-sdk'
 import { encodeAbiParameters, parseAbiParameters } from 'viem'
 import { z } from 'zod'
@@ -137,7 +136,7 @@ export function initWorkflow(config: Config) {
 		// AWS Nitro in us-west-2 is currently the only registered TEE type and
 		// region; check your SDK version if you expect otherwise.
 		cre.handlerInTee(cronTrigger.trigger({ schedule: config.schedule }), onCronTrigger, [
-			{ type: TeeType.AWS_NITRO, regions: ['us-west-2'] },
+			{ tee: 'nitro', regions: ['us-west-2'] },
 		]),
 	]
 }

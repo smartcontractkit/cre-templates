@@ -166,7 +166,7 @@ The third argument to `handlerInTee` declares which enclaves the handler accepts
 [{ tee: 'nitro', regions: ['us-west-2'] }]  // specific TEE types and regions
 ```
 
-AWS Nitro in `us-west-2` is currently the only registered TEE type and region. This is an actively evolving alpha API — check your installed SDK version if you expect otherwise.
+AWS Nitro in `us-west-2` is currently the only registered TEE type and region. This is an actively evolving API — check your installed SDK version if you expect otherwise.
 
 ## Confidentiality boundary
 
