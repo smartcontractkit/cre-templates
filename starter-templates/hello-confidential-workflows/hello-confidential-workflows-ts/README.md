@@ -1,6 +1,6 @@
 # Hello Confidential Workflows — CRE Starter Template (TypeScript)
 
-Quickstart confidential workflow. Run a handler's callback inside a secure enclave: fetch a secret from the Vault DON, call an API from inside the enclave, execute decision logic over the confidential data such as Vault DON secrets or HTTP response payloads, then cross back to the Workflow DON for consensus.
+Quickstart confidential workflow. Run a handler's callback inside a secure enclave: fetch a secret from the Vault DON, call an API from inside the enclave, execute decision logic over the confidential data such as Vault DON secrets or HTTP response payloads, then cross back to the Workflow DON for consensus and DON capability calls. 
 
 **⚠️ DISCLAIMER**
 
@@ -27,7 +27,7 @@ A **Confidential Workflow** moves that computation into a hardware-isolated [enc
 
 ### Use Cases
 
-- **Automated liquidation protection**: Automatically protect DeFi lending positions by continuously monitoring liquidation risk and executing collateral management, debt repayment, position reduction, or hedging strategies while preserving the confidentiality of centralized exchange as well as LLM API keys, proprietary risk management thresholds, and execution preferences.
+- **Automated liquidation protection**: Automatically protect DeFi lending positions by continuously monitoring liquidation risk and executing collateral management, debt repayment while preserving the confidentiality of centralized exchange as well as LLM API keys, proprietary risk management thresholds, and execution preferences.
 - **Automated portfolio rebalancing**: Automatically rebalance crypto portfolios by continuously monitoring allocation drift and executing portfolio adjustments when predefined thresholds are exceeded, while preserving the confidentiality of exchange API keys, LLM reasoning, portfolio allocation thresholds, and execution preferences.
 - **AI smart contract audit firewall**: Automatically analyze and screen smart contract interactions before execution to detect and block malicious transactions, while preserving the confidentiality of chain scanner and LLM reasoning API credentials.
 
@@ -185,7 +185,7 @@ Consequences worth internalizing:
 - **`usingTheDons()` is a one-way door.** Anything you pass into a capability call on that runtime executes on Workflow DON nodes like any non-confidential call. Cross over only the data that does not need to stay confidential.
 - **Logs are for simulation only.** Every `runtime.log()` inside the enclave MUST be removed before deploying to production to preserve the confidentiality offered by enclaves — and logging should be avoided for sensitive and non-sensitive values alike.
 - **Keep enclave logic deterministic.** The Workflow DON verifies enclave attestations and reaches consensus before the workflow completes successfully.
-- **Enclaves are not tenant-isolated today.** A single enclave can run confidential workflows from multiple customers concurrently, sharing execution memory. Isolation between confidential executions is planned, not part of the current beta.
+- **Multiple confidential workflows may execute within the same enclave.** Workflows are isolated from one another by the wasmtime. Dedicated per workflow enclave isolation is planned as a future enhancement.
 
 ## Customization
 
