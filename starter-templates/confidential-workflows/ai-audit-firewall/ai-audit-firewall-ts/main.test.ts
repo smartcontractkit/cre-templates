@@ -129,11 +129,11 @@ describe("buildRestrictions", () => {
     expect(secretIds).toContain("secondary_llm_api_key");
   });
 
-  test("uses empty namespace for all secrets", () => {
+  test("uses main namespace for all secrets", () => {
     const restrictions = buildRestrictions(fullConfig);
 
     for (const r of restrictions.secrets?.restrictions ?? []) {
-      expect(r.exactSecret?.namespace).toBe("");
+      expect(r.exactSecret?.namespace).toBe("main");
     }
   });
 });

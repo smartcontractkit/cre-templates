@@ -657,6 +657,26 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
 
 const CONSENSUS_CAPABILITY_ID = "consensus@1.0.0-alpha";
 
+const DEFAULT_CONFIG: Config = {
+  schedule: "0 */5 * * * *",
+  mock_base_url: "prehook-default",
+  scanner_url: "prehook-default",
+  primary_llm_url: "prehook-default",
+  secondary_llm_url: "prehook-default",
+  secrets_ids: {
+    scanner_api_key_id: "scanner_api_key",
+    primary_llm_api_key_id: "primary_llm_api_key",
+    secondary_llm_api_key_id: "secondary_llm_api_key",
+  },
+  evms: [
+    {
+      chain_selector_name: "ethereum-testnet-sepolia",
+      consumer_address: "0x0000000000000000000000000000000000000000",
+      gas_limit: "500000",
+    },
+  ],
+};
+
 export const buildRestrictions = (config: Config) => {
   const httpRestrictor = new HTTPClientRestrictor();
   const capabilityRestrictions = [
@@ -693,9 +713,9 @@ export const buildRestrictions = (config: Config) => {
     secrets: {
       maxSecrets: 3,
       restrictions: [
-        { exactSecret: { id: secrets_ids.scanner_api_key_id, namespace: "" } },
-        { exactSecret: { id: secrets_ids.primary_llm_api_key_id, namespace: "" } },
-        { exactSecret: { id: secrets_ids.secondary_llm_api_key_id, namespace: "" } },
+        { exactSecret: { id: secrets_ids.scanner_api_key_id, namespace: "main" } },
+        { exactSecret: { id: secrets_ids.primary_llm_api_key_id, namespace: "main" } },
+        { exactSecret: { id: secrets_ids.secondary_llm_api_key_id, namespace: "main" } },
       ],
     },
   };
@@ -737,6 +757,14 @@ export const initWorkflow = (config: Config): Workflow<Config> => {
 };
 
 export async function main() {
-  const runner = await Runner.newRunner<Config>();
+  const runner = await Runner.newRunner<Config>({
+    configParser: (raw: Uint8Array) => {
+      const text = new TextDecoder().decode(raw);
+      if (!text || text.trim() === "") {
+        return DEFAULT_CONFIG;
+      }
+      return JSON.parse(text) as Config;
+    },
+  });
   await runner.run(initWorkflow);
 }
