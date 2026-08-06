@@ -5,13 +5,23 @@ Starter templates for building confidential workflows using Chainlink CRE.
 Each workflow is available in both TypeScript and Go. The two implementations are
 behaviourally equivalent; pick whichever language you build in.
 
+Both live in the same CRE project, as sibling workflow directories sharing one
+`project.yaml`, `secrets.yaml` and `.env.example`:
+
+```
+ai-audit-firewall/            <- project root
+  project.yaml  secrets.yaml  .env.example  contracts/
+  ai-audit-firewall-ts/       <- TypeScript workflow
+  ai-audit-firewall-go/       <- Go workflow (go.mod rooted here)
+```
+
 ## Available Workflows
 
 | Workflow | TypeScript | Go |
 |----------|------------|-----|
-| AI Audit Firewall | [ai-audit-firewall](./ai-audit-firewall) | [ai-audit-firewall-go](./ai-audit-firewall-go) |
-| Automated Liquidation Protection | [automated-liquidation-protection](./automated-liquidation-protection) | [automated-liquidation-protection-go](./automated-liquidation-protection-go) |
-| Automated Portfolio Rebalancing | [automated-portfolio-rebalancing](./automated-portfolio-rebalancing) | [automated-portfolio-rebalancing-go](./automated-portfolio-rebalancing-go) |
+| AI Audit Firewall | [ai-audit-firewall-ts](./ai-audit-firewall/ai-audit-firewall-ts) | [ai-audit-firewall-go](./ai-audit-firewall/ai-audit-firewall-go) |
+| Automated Liquidation Protection | [automated-liquidation-protection-ts](./automated-liquidation-protection/automated-liquidation-protection-ts) | [automated-liquidation-protection-go](./automated-liquidation-protection/automated-liquidation-protection-go) |
+| Automated Portfolio Rebalancing | [automated-portfolio-rebalancing-ts](./automated-portfolio-rebalancing/automated-portfolio-rebalancing-ts) | [automated-portfolio-rebalancing-go](./automated-portfolio-rebalancing/automated-portfolio-rebalancing-go) |
 
 ## Confidential execution
 

@@ -14,14 +14,14 @@ The workflow screens proposed transactions before they are allowed to proceed. I
 
 ## Structure
 
-- `go.mod`: module definition, with the SDK pinned to an unreleased commit (see below)
-- `project.yaml`: project-level target settings
-- `secrets.yaml`: secret ID mappings used by the workflow
-- `contracts/`: `AuditFirewallConsumer.sol` and `ReceiverTemplate.sol`
-- `my-workflow/main.go`: WASM entry point (`//go:build wasip1`)
-- `my-workflow/workflow.go`: workflow implementation
-- `my-workflow/workflow_test.go`: unit tests, including in-enclave HTTP and EVM stubs
-- `my-workflow/mock-server.js`: local deterministic API server
+- `go.mod`: module definition (rooted in this workflow directory), with the SDK pinned to an unreleased commit (see below)
+- `../project.yaml`: project-level target settings (shared with the TypeScript template)
+- `../secrets.yaml`: secret ID mappings (shared with the TypeScript template)
+- `../contracts/`: `AuditFirewallConsumer.sol` and `ReceiverTemplate.sol` (shared)
+- `main.go`: WASM entry point (`//go:build wasip1`)
+- `workflow.go`: workflow implementation
+- `workflow_test.go`: unit tests, including in-enclave HTTP and EVM stubs
+- `mock-server.js`: local deterministic API server
 
 ## Private Inputs
 
@@ -94,7 +94,7 @@ The `evms` array in config is optional; with no entry (or an incomplete one) the
 
 Verdict codes: `ALLOW` = 1, `DENY` = 2, `MANUAL_REVIEW` = 3. Risk mask bits: `obfuscatedTax` = 1, `privilegeEscalation` = 2, `externalCallRisk` = 4, `logicBomb` = 8.
 
-To use it, deploy `contracts/AuditFirewallConsumer.sol` and set the deployed address in `my-workflow/config.staging.json` under `evms[0].consumer_address`. The shipped config uses the zero address as a placeholder — the write is still attempted against it, so set a real address before relying on this leg.
+To use it, deploy `../contracts/AuditFirewallConsumer.sol` and set the deployed address in `config.staging.json` under `evms[0].consumer_address`. The shipped config uses the zero address as a placeholder — the write is still attempted against it, so set a real address before relying on this leg.
 
 ## TEE constraints
 
@@ -122,7 +122,7 @@ The local mock server for this project only exposes routes under `/audit-firewal
 
 ## Configuration
 
-`my-workflow/config.staging.json`:
+`config.staging.json`:
 
 | Field | Description |
 |-------|-------------|
@@ -136,16 +136,16 @@ The local mock server for this project only exposes routes under `/audit-firewal
 
 ## Quick Start
 
-1. Create environment file
+1. Create environment file (at the shared project root)
 
 ```bash
-cp .env.example .env
+cp ../.env.example ../.env
 ```
 
 2. Start the mock server (requires Node or Bun)
 
 ```bash
-cd my-workflow && bun mock-server.js
+bun mock-server.js
 ```
 
 3. In another terminal, run checks
@@ -158,7 +158,7 @@ go test ./...
 4. Simulate workflow
 
 ```bash
-cre workflow simulate ./my-workflow --target=staging-settings
+cd .. && cre workflow simulate ./ai-audit-firewall-go --target=staging-settings
 ```
 
 ## Testing against an unreleased SDK
