@@ -1,0 +1,9 @@
+staging-settings:
+  rpcs:
+    - chain-name: ethereum-mainnet-arbitrum-1
+      url: https://arbitrum-one-rpc.publicnode.com
+
+production-settings:
+  rpcs:
+    - chain-name: ethereum-mainnet-arbitrum-1
+      url: https://arbitrum-one-rpc.publicnode.com

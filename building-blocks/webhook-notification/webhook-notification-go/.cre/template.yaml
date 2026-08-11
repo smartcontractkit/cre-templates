@@ -1,0 +1,14 @@
+kind: building-block
+id: webhook-notification-go
+projectDir: .
+title: "Webhook Notification (Go)"
+description: "Read a Chainlink Data Feed on-chain and send a price notification to Slack or Telegram via webhook."
+language: go
+category: notifications
+tags:
+  - data-feeds
+  - webhook
+  - notifications
+  - confidential-http
+workflows:
+  - dir: my-workflow

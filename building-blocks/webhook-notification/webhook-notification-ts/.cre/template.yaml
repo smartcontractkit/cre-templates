@@ -1,0 +1,14 @@
+kind: building-block
+id: webhook-notification-ts
+projectDir: .
+title: "Webhook Notification (TypeScript)"
+description: "Read a Chainlink Data Feed on-chain and send a price notification to Slack or Telegram via webhook."
+language: typescript
+category: notifications
+tags:
+  - data-feeds
+  - webhook
+  - notifications
+  - confidential-http
+workflows:
+  - dir: my-workflow
