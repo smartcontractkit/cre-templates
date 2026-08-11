@@ -25,7 +25,7 @@ ai-audit-firewall/            <- project root
 
 ## Confidential execution
 
-All six templates register their handler with the TEE variant of the handler API
+The templates register their handler with the TEE variant of the handler API
 (`handlerInTee` in TypeScript, `cre.HandlerInTee` in Go), so the handler receives
 a TEE runtime rather than a regular one. Secrets are released by the Vault DON
 directly into the attested enclave, and HTTP calls made from the handler keep
