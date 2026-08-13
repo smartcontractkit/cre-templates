@@ -208,6 +208,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # Node + npm are required for TypeScript template checks.
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      # cre-compile is shipped with a bun shebang; npx invokes it as /usr/bin/env bun.
+      # Match local dev machines where Bun is installed alongside Node.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
       # Docker is preinstalled on the GitHub-hosted Linux runners but not on macOS.
       - name: Setup Docker (macOS)
         if: runner.os == 'macOS'
