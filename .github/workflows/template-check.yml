@@ -3,6 +3,16 @@ name: Template Check
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  # Manual runs are useful for re-checking reproducibility of the verifiable-build
+  # template on demand (optionally against a specific CRE CLI release).
+  # Note: on a manual run `github.base_ref` is empty, so template-check falls back
+  # to checking *every* template rather than only the changed ones.
+  workflow_dispatch:
+    inputs:
+      cre_version:
+        description: 'CRE CLI release tag for the verifiable-build hash job (e.g. v1.30.0). Defaults to the latest release.'
+        required: false
+        type: string
 
 concurrency:
   group: template-compat-${{ github.head_ref || github.ref }}
@@ -16,9 +26,22 @@ concurrency:
 #
 # The SDK version used is captured from the installed package (TS) or go.mod (Go)
 # and printed in the Actions log when a check fails.
+#
+# The verifiable-build template is checked separately (see the
+# verifiable-build-* jobs below): it has no .cre/template.yaml, and its whole
+# point is that `cre workflow hash` must produce the same hashes on every
+# developer platform.
 
 permissions:
   contents: read
+
+env:
+  # Project root passed to the CRE CLI (the dir holding project.yaml).
+  VERIFIABLE_BUILD_PROJECT: starter-templates/verifiable-build/verifiable-build-ts
+  # Any fixed address works: the owner only has to be identical across platforms
+  # for the workflow hashes to be comparable. This is the address used in the
+  # template README's example output.
+  WORKFLOW_OWNER_ADDRESS: '0xb0f2D38245dD6d397ebBDB5A814b753D56c30715'
 
 jobs:
   template-check:
@@ -83,3 +106,271 @@ jobs:
           RESULTS_FILE: /tmp/template-results.json
           GOTOOLCHAIN: auto
         run: ./scripts/check-templates.sh
+
+  # ------------------------------------------------------------------------
+  # Verifiable build: `cre workflow hash` must be reproducible per platform.
+  #
+  # The template builds its WASM inside a pinned Docker image, so the resulting
+  # binary/config/workflow hashes must be byte-identical no matter which OS or
+  # CPU architecture the developer (or a third-party verifier) runs on.
+  # The jobs below compute the hashes on each supported platform and then
+  # assert that they all agree.
+  # ------------------------------------------------------------------------
+
+  verifiable-build-prepare:
+    name: Verifiable build (detect changes)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    outputs:
+      changed: ${{ steps.detect.outputs.changed }}
+      cre_version: ${{ steps.cli.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history needed for git diff against base branch
+
+      # Hashing means a full Docker build on three runners, so only do it when
+      # the template (or this workflow) actually changed.
+      - name: Detect verifiable-build changes
+        id: detect
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "Manual run — hashing regardless of changed files."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed_files=$(git diff --name-only "origin/${BASE_REF}...HEAD")
+          if grep -qE '^(starter-templates/verifiable-build/|\.github/workflows/template-check\.yml$)' <<< "$changed_files"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "verifiable-build template changed — hashing on all platforms."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "verifiable-build template unchanged — skipping hash jobs."
+          fi
+
+      # Resolved once, here, so every platform uses the exact same CLI build.
+      # Letting each runner resolve "latest" independently would produce bogus
+      # mismatches if a release lands mid-run.
+      - name: Resolve CRE CLI version
+        id: cli
+        if: steps.detect.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }} # avoids unauthenticated api.github.com rate limits
+          REQUESTED_VERSION: ${{ inputs.cre_version }}
+        run: |
+          version="$REQUESTED_VERSION"
+          if [[ -z "$version" ]]; then
+            version=$(gh release view --repo smartcontractkit/cre-cli --json tagName --jq .tagName)
+          fi
+          echo "CRE CLI version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  verifiable-build-hash:
+    name: Verifiable build hash (${{ matrix.label }})
+    needs: verifiable-build-prepare
+    if: needs.verifiable-build-prepare.outputs.changed == 'true'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60 # Docker under emulation (arm64) and Colima (macOS) are slow
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false # one platform failing must not hide the others' hashes
+      matrix:
+        include:
+          - label: linux-amd64
+            os: ubuntu-latest
+            arch: amd64
+          - label: linux-arm64
+            os: ubuntu-24.04-arm
+            arch: arm64
+          - label: macos-amd64
+            os: macos-15-intel
+            arch: amd64
+          # macOS/arm64 is deliberately absent: GitHub-hosted Apple silicon
+          # runners have no nested virtualization, so Docker (via Colima/Lima)
+          # cannot run there and the template's `make build` has no engine to
+          # talk to. See the warning in docker/setup-docker-action's README.
+          # Apple silicon coverage needs a self-hosted macOS ARM64 runner.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Docker is preinstalled on the GitHub-hosted Linux runners but not on macOS.
+      - name: Setup Docker (macOS)
+        if: runner.os == 'macOS'
+        uses: docker/setup-docker-action@77e84dbf09b47d1e29270283c22f16145aa85ca1 # v5.4.0
+
+      # The template pins its build to linux/amd64, which an arm64 host can only
+      # run through binfmt/QEMU emulation.
+      - name: Setup QEMU (arm64 hosts)
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+        with:
+          platforms: linux/amd64
+
+      # Installs to $HOME/.cre/bin. No login is required for `cre workflow hash`.
+      - name: Install CRE CLI
+        env:
+          CRE_VERSION: ${{ needs.verifiable-build-prepare.outputs.cre_version }}
+        run: |
+          # install.sh queries api.github.com unauthenticated, so retry on flakes.
+          for attempt in 1 2 3; do
+            if curl -fsSL "https://github.com/smartcontractkit/cre-cli/releases/download/${CRE_VERSION}/install.sh" \
+                 | bash -s -- "$CRE_VERSION"; then
+              installed=true
+              break
+            fi
+            echo "CRE CLI install attempt $attempt failed — retrying in 15s"
+            sleep 15
+          done
+          [[ "${installed:-false}" == "true" ]] || { echo "::error::Could not install the CRE CLI"; exit 1; }
+          echo "$HOME/.cre/bin" >> "$GITHUB_PATH"
+
+      - name: Compute workflow hash
+        working-directory: ${{ env.VERIFIABLE_BUILD_PROJECT }}
+        env:
+          CRE_VERSION: ${{ needs.verifiable-build-prepare.outputs.cre_version }}
+          LABEL: ${{ matrix.label }}
+          RUNNER_LABEL: ${{ matrix.os }}
+          ARCH: ${{ matrix.arch }}
+          DOCKER_BUILDKIT: '1' # `docker build --output type=local` requires BuildKit
+        run: |
+          mkdir -p "$RUNNER_TEMP/hashes"
+          log="$RUNNER_TEMP/hashes/log-$LABEL.txt"
+
+          cre version
+          cre workflow hash workflow \
+            --public_key "$WORKFLOW_OWNER_ADDRESS" \
+            --target production-settings \
+            --non-interactive 2>&1 | tee "$log"
+
+          # Output lines look like: "  Binary hash:   <64 hex chars>"
+          extract() { grep -i "$1" "$log" | grep -oE '[0-9a-f]{64}' | head -1 || true; }
+          binary_hash=$(extract 'Binary hash')
+          config_hash=$(extract 'Config hash')
+          workflow_hash=$(extract 'Workflow hash')
+
+          if [[ -z "$binary_hash" || -z "$config_hash" || -z "$workflow_hash" ]]; then
+            echo "::error::Could not parse the hashes out of the cre CLI output (see the log above)."
+            exit 1
+          fi
+
+          cat > "$RUNNER_TEMP/hashes/hash-$LABEL.json" <<EOF
+          {
+            "label": "$LABEL",
+            "runner": "$RUNNER_LABEL",
+            "arch": "$ARCH",
+            "cre_version": "$CRE_VERSION",
+            "owner": "$WORKFLOW_OWNER_ADDRESS",
+            "binary_hash": "$binary_hash",
+            "config_hash": "$config_hash",
+            "workflow_hash": "$workflow_hash"
+          }
+          EOF
+
+      - name: Upload hashes
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: verifiable-build-hash-${{ matrix.label }}
+          path: ${{ runner.temp }}/hashes/
+          retention-days: 7
+
+  verifiable-build-hash-compare:
+    name: Verifiable build hash (compare platforms)
+    needs: [verifiable-build-prepare, verifiable-build-hash]
+    # always(): still publish the summary when a platform leg failed.
+    if: always() && needs.verifiable-build-prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Download platform hashes
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        continue-on-error: true # no artifacts exist at all if every leg failed
+        with:
+          pattern: verifiable-build-hash-*
+          path: hashes
+          merge-multiple: true
+
+      - name: Compare hashes across platforms
+        env:
+          LEG_RESULT: ${{ needs.verifiable-build-hash.result }}
+        run: |
+          set +e
+          python3 - <<'PY'
+          import glob, json, os, sys
+
+          results = []
+          for path in sorted(glob.glob('hashes/hash-*.json')):
+              with open(path) as f:
+                  results.append(json.load(f))
+
+          out = ['## Verifiable build — `cre workflow hash`', '']
+          failed = False
+
+          if len(results) < 2:
+              out.append(f'Only {len(results)} platform result(s) available — nothing to compare.')
+              failed = True
+          else:
+              r0 = results[0]
+              out.append(f"CRE CLI `{r0['cre_version']}` · owner `{r0['owner']}`")
+              out.append('')
+              out.append('| Platform | Runner | Binary hash | Config hash | Workflow hash |')
+              out.append('| --- | --- | --- | --- | --- |')
+              for r in results:
+                  out.append(
+                      f"| {r['label']} | `{r['runner']}` | `{r['binary_hash'][:12]}…` "
+                      f"| `{r['config_hash'][:12]}…` | `{r['workflow_hash'][:12]}…` |"
+                  )
+              out.append('')
+
+              for field in ('binary_hash', 'config_hash', 'workflow_hash'):
+                  distinct = sorted({r[field] for r in results})
+                  if len(distinct) > 1:
+                      failed = True
+                      out.append(f'❌ **{field} differs across platforms** — the build is not reproducible:')
+                      out.append('')
+                      for value in distinct:
+                          platforms = ', '.join(r['label'] for r in results if r[field] == value)
+                          out.append(f'- `{value}` — {platforms}')
+                      out.append('')
+                      print(f'::error::{field} differs across platforms')
+
+              if not failed:
+                  out.append(f"✅ Identical on all {len(results)} platforms. "
+                             f"Workflow hash: `{results[0]['workflow_hash']}`")
+
+          summary = '\n'.join(out) + '\n'
+          print(summary)
+          step_summary = os.environ.get('GITHUB_STEP_SUMMARY')
+          if step_summary:
+              with open(step_summary, 'a') as f:
+                  f.write(summary)
+
+          sys.exit(1 if failed else 0)
+          PY
+          compare_rc=$?
+          set -e
+
+          if [[ "$LEG_RESULT" != "success" ]]; then
+            echo "::error::One or more platform hash jobs did not succeed (result: $LEG_RESULT)"
+            compare_rc=1
+          fi
+
+          exit "$compare_rc"
