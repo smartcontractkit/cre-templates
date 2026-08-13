@@ -252,6 +252,7 @@ jobs:
           log="$RUNNER_TEMP/hashes/log-$LABEL.txt"
 
           cre version
+          bun install --cwd ./workflow
           cre workflow hash workflow \
             --public_key "$WORKFLOW_OWNER_ADDRESS" \
             --target production-settings \
