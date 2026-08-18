@@ -1,0 +1,20 @@
+kind: building-block
+id: ccip-send-ts
+projectDir: .
+title: "Send a CCIP Message (TypeScript)"
+description: "Send a CCIP message from a CRE workflow using the cre-ccip-sdk library, on a cron schedule."
+language: typescript
+category: workflow
+solutions:
+  - cross-chain-interoperability
+capabilities:
+  - cron
+  - chain-read
+  - chain-write
+tags:
+  - ccip
+  - cre-ccip-sdk
+networks:
+  - ethereum-testnet-sepolia
+workflows:
+  - dir: my-workflow

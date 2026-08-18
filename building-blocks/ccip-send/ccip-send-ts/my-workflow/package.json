@@ -1,0 +1,19 @@
+{
+  "name": "typescript-ccip-send",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chainlink/cre-sdk": "^1.6.0",
+    "cre-ccip-sdk": "file:../../../../../cre-libraries-ts/packages/cre-ccip-sdk",
+    "viem": "2.34.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
