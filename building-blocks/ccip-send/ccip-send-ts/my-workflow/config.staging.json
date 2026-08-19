@@ -2,7 +2,7 @@
   "schedule": "0 */10 * * * *",
   "chainName": "ethereum-testnet-sepolia",
   "routerAddress": "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
-  "receiverContractAddress": "0x1234567890123456789012345678901234567890",
+  "receiverContractAddress": "0x4A2E52B12B4d0b35Bf12AF535f753DE26C2a10e8",
   "destinationChainSelector": "3478487238524512106",
   "destinationReceiver": "0x000000000000000000000000000000000000dEaD",
   "message": "Hello from CRE!"
