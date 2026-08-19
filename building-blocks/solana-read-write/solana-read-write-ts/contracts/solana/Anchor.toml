@@ -1,0 +1,19 @@
+[toolchain]
+anchor_version = "0.31.0"
+
+[features]
+resolution = false
+skip-lint = false
+
+[programs.devnet]
+kv_store_receiver = "aPkfGwVg9Lj3yF2CSgxeRmMn7uU9tKWT6PSHTDf2ZX6"
+
+[programs.localnet]
+kv_store_receiver = "KvStoreReceiver1111111111111111111111111111"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"

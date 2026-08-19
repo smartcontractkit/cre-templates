@@ -1,0 +1,24 @@
+kind: building-block
+id: solana-read-write-ts
+projectDir: .
+title: "Read & Write Solana (TypeScript)"
+description: "Write a key/value report to a Solana program via the keystone forwarder, then read it back directly on a cron schedule, logging the devnet transaction signature."
+language: typescript
+category: workflow
+capabilities:
+  - cron
+  - chain-write
+  - chain-read
+tags:
+  - solana
+  - chain-write
+  - chain-read
+  - keystone-forwarder
+networks:
+  - solana-devnet
+workflows:
+  - dir: my-workflow
+postInit: |
+  The keystone forwarder is already deployed and operated by Chainlink — you only
+  need to deploy your own kv_store_receiver program. See contracts/solana/README.md,
+  then copy the resulting addresses into my-workflow/config.staging.json.

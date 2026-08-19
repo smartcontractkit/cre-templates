@@ -1,0 +1,15 @@
+{
+  "schedule": "0 */5 * * * *",
+  "solana": {
+    "chainSelectorName": "solana-devnet",
+    "receiverProgramId": "aPkfGwVg9Lj3yF2CSgxeRmMn7uU9tKWT6PSHTDf2ZX6",
+    "forwarderState": "726bmjnxLeYkvSWUBRby5eUXds96xR58MFfcZoBzuuW3",
+    "forwarderAuthority": "DBmhqGAE3eEjbVUUX45npzen8mEVY3HmQHqaUzn7PmYW",
+    "receiverAccounts": [
+      {
+        "publicKey": "3pAmDKMDtsXtYtJJFHEqqc5UGGkfgFnn76crfNvCZNqX",
+        "isWritable": true
+      }
+    ]
+  }
+}
