@@ -137,11 +137,19 @@ const onReadCronTrigger = (runtime: Runtime<Config>) => {
 		throw new Error('solana.receiverAccounts[0] (the kv_store account) is required to read')
 	}
 
-	const account = kvStoreReceiver.readKvStore(runtime, kvStoreAccount)
+	const { exists, account } = kvStoreReceiver.readKvStore(runtime, kvStoreAccount)
+
+	if (!exists) {
+		runtime.log(`kv_store account ${kvStoreAccount} not found yet (has on_report ever run?)`)
+		return { Exists: false, Found: false, Key: '', Value: '', UpdatedAt: '', UpdateCount: '' }
+	}
 
 	if (!account) {
-		runtime.log(`kv_store account ${kvStoreAccount} not found yet (has on_report ever run?)`)
-		return { Found: false, Key: '', Value: '', UpdatedAt: '', UpdateCount: '' }
+		// The account exists on-chain (confirmed via lamports), but this CRE
+		// engine build didn't return its byte contents this time — see
+		// KvStoreReceiver.readKvStore's doc comment.
+		runtime.log(`kv_store account ${kvStoreAccount} exists but its data was not returned by this read`)
+		return { Exists: true, Found: false, Key: '', Value: '', UpdatedAt: '', UpdateCount: '' }
 	}
 
 	runtime.log(
@@ -150,6 +158,7 @@ const onReadCronTrigger = (runtime: Runtime<Config>) => {
 	)
 
 	return {
+		Exists: true,
 		Found: true,
 		Key: account.key,
 		Value: account.value,

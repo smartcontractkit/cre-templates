@@ -30,6 +30,24 @@ unintended outputs generated due to errors in code.
 
 ---
 
+**A note on `cre workflow simulate` and forwarders:** `cre workflow simulate`
+(with or without `--broadcast`) always constructs Solana writes through CRE's own
+**simulator mock forwarder** — a real, stable devnet program Chainlink runs
+specifically for this — never through the real DON forwarder your workflow would
+use once deployed. Because of that, this template's `kv_store_receiver` program
+has **two independent `kv_store` accounts**, each `initialize`d against a
+different forwarder:
+
+| Use case | forwarderState | kv_store account |
+|---|---|---|
+| `cre workflow simulate` (this README's golden path, incl. `--broadcast`) | simulator mock forwarder | used by `config.staging.json` |
+| Real `cre workflow deploy` to a live DON | Chainlink's real staging devnet forwarder | see [Deploying your own receiver program](#deploying-your-own-receiver-program-optional) |
+
+`config.staging.json` ships pointed at the mock-forwarder account so the golden
+path below produces a real, finalized devnet transaction out of the box.
+
+---
+
 ## Table of Contents
 
 - [What This Does](#what-this-does)
@@ -53,13 +71,16 @@ override the read one with `readSchedule`):
 
 1. Builds a Borsh-encoded `KvEntry { key, value }` report.
 2. Submits it as a CRE report through `SolanaClient.writeReport`.
-3. The **keystone forwarder** (already deployed and operated by Chainlink — you
+3. A **keystone forwarder** (already deployed and operated by Chainlink — you
    never deploy or configure it yourself) verifies the report and CPIs into your
    `kv_store_receiver` program's `on_report` instruction.
 4. `kv_store_receiver` stores the latest `{key, value}` in its `kv_store` account
    and emits a `KvUpdated` event.
 5. The workflow logs the transaction signature and a Solana devnet block-explorer
    link so you can watch it land on-chain.
+
+With `--broadcast`, this is a genuine on-chain write — see the forwarder note
+above for which `kv_store` account is used and why.
 
 **Read cron** — same schedule by default:
 
@@ -87,9 +108,9 @@ CRE workflow (main.ts)
 
 The only piece **you** would deploy yourself is `kv_store_receiver` (see
 [`contracts/solana`](./contracts/solana)) — but a `kv_store_receiver` is already
-deployed and initialized on Solana devnet for this example, so `config.staging.json`
-works as-is. The forwarder is shared, Chainlink-run infrastructure — the same one
-every CRE Solana workflow in this environment CPIs through.
+deployed and initialized on Solana devnet for this example (twice — once per
+forwarder, see the table above), so `config.staging.json` works as-is. Forwarders
+are shared, Chainlink-run infrastructure — you never deploy one yourself.
 
 ## Get Started
 
@@ -121,7 +142,69 @@ bun install --cwd ./my-workflow
 ```
 
 `my-workflow/config.staging.json` already points at the pre-deployed
-`kv_store_receiver` for this example:
+`kv_store_receiver`, initialized against CRE's simulator mock forwarder so
+`cre workflow simulate` works out of the box:
+
+```json
+{
+  "schedule": "0 */5 * * * *",
+  "solana": {
+    "chainSelectorName": "solana-devnet",
+    "receiverProgramId": "aPkfGwVg9Lj3yF2CSgxeRmMn7uU9tKWT6PSHTDf2ZX6",
+    "forwarderState": "5Tipz3yhTBdVsDbaBxZkrp7Gjf3brGq5SKkxReefPMP7",
+    "forwarderAuthority": "w4jzYfQFToKw6BQsMxn4dWevn9xXnVMn9y91N5k7fxB",
+    "receiverAccounts": [
+      { "publicKey": "7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr", "isWritable": true }
+    ]
+  }
+}
+```
+
+* `schedule` is a 6-field cron expression — the default runs every 5 minutes.
+* `forwarderState`/`forwarderAuthority` here are **CRE's simulator mock
+  forwarder** — the one `cre workflow simulate` actually uses, not the real DON
+  forwarder (see the forwarder note above).
+* `receiverProgramId` and `receiverAccounts[0].publicKey` identify the
+  pre-deployed `kv_store_receiver` program and the `kv_store` account tied to
+  that mock forwarder.
+
+No changes are needed to run the golden path — see
+[Deploying your own receiver program](#deploying-your-own-receiver-program-optional)
+below if you'd rather write to a program you control, or to point at the real
+forwarder for an actual `cre workflow deploy`.
+
+#### Mock forwarder vs. production forwarder
+
+This template's `kv_store_receiver` is `initialize`d twice on devnet — once
+against each forwarder — so both configs below are ready to use as-is; you
+only need to switch `config.staging.json` between them.
+
+**Mock forwarder** — what `config.staging.json` ships with. Use this whenever
+you run `cre workflow simulate` (with or without `--broadcast`), since the CLI
+always builds the transaction through this forwarder regardless of what's
+configured — see the "note on `cre workflow simulate` and forwarders" near the
+top of this README. This is the config to develop and test against locally.
+
+```json
+{
+  "schedule": "0 */5 * * * *",
+  "solana": {
+    "chainSelectorName": "solana-devnet",
+    "receiverProgramId": "aPkfGwVg9Lj3yF2CSgxeRmMn7uU9tKWT6PSHTDf2ZX6",
+    "forwarderState": "5Tipz3yhTBdVsDbaBxZkrp7Gjf3brGq5SKkxReefPMP7",
+    "forwarderAuthority": "w4jzYfQFToKw6BQsMxn4dWevn9xXnVMn9y91N5k7fxB",
+    "receiverAccounts": [
+      { "publicKey": "7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr", "isWritable": true }
+    ]
+  }
+}
+```
+
+**Production forwarder** — Chainlink's real staging Solana-devnet keystone
+forwarder, the one a live DON actually signs through. `cre workflow simulate`
+cannot write successfully against this config (it'll fail with
+`MismatchedForwarderProgram` — expected, not a bug, see above); this config is
+what you deploy with `cre workflow deploy` to a real DON.
 
 ```json
 {
@@ -138,15 +221,18 @@ bun install --cwd ./my-workflow
 }
 ```
 
-* `schedule` is a 6-field cron expression — the default runs every 5 minutes.
-* `forwarderState` is Chainlink's shared Solana-devnet keystone forwarder for the
-  staging environment.
-* `receiverProgramId`, `forwarderAuthority`, and `receiverAccounts[0].publicKey`
-  identify the pre-deployed `kv_store_receiver` program and its `kv_store` account.
+| | Mock forwarder (default) | Production forwarder |
+|---|---|---|
+| `cre workflow simulate` write (`--broadcast`) | ✅ succeeds, real finalized tx | ❌ `MismatchedForwarderProgram` (expected) |
+| `cre workflow simulate` read | ✅ works | ✅ works |
+| Real `cre workflow deploy` to a live DON | n/a — mock forwarder is simulate-only | ✅ this is what a live DON signs through |
 
-No changes are needed to run the golden path — see
-[Deploying your own receiver program](#deploying-your-own-receiver-program-optional)
-below if you'd rather write to a program you control.
+Both `kv_store` accounts (mock: `7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr`,
+production: `3pAmDKMDtsXtYtJJFHEqqc5UGGkfgFnn76crfNvCZNqX`) belong to the same
+`receiverProgramId`, so you can freely switch between the two JSON blocks above
+without redeploying anything — this only matters if you deployed your own
+`kv_store_receiver` and want the same choice (see
+[Deploying your own receiver program](#deploying-your-own-receiver-program-optional)).
 
 ### 3. Run a simulation
 
@@ -158,30 +244,64 @@ cre workflow simulate my-workflow --target staging-settings
 
 `cre workflow simulate` prompts you to pick which trigger to run (or pass
 `--trigger-index 0` for the write cron, `--trigger-index 1` for the read cron,
-non-interactively). Write, then read, to see the round trip:
+non-interactively). `--broadcast` additionally requires `CRE_ETH_PRIVATE_KEY` in
+`.env` — the CLI's settings loader checks for it regardless of chain family; any
+well-formed placeholder works since this workflow never touches EVM (already in
+`.env.example`).
+
+**Write cron with `--broadcast`** produces a real, finalized devnet transaction:
+
+```bash
+cre workflow simulate my-workflow --target staging-settings --trigger-index 0 --broadcast
+```
 
 ```
-Workflow compiled
-2026-08-19T09:24:27Z [SIMULATION] Simulator Initialized
-2026-08-19T09:24:27Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
-2026-08-19T09:24:28Z [USER LOG] msg="Writing KvEntry {key: \"cre-example\", value: \"hello from CRE @ 2026-08-19T09:24:28.000Z\"} to kv_store_receiver..."
-2026-08-19T09:24:30Z [USER LOG] msg="Wrote to Solana devnet, tx=5h1q... explorer=https://explorer.solana.com/tx/5h1q...?cluster=devnet"
+2026-08-19T15:28:47Z [USER LOG] Writing KvEntry {key: "cre-example", value: "hello from CRE @ 2026-08-19T19:28:47.922Z"} to kv_store_receiver...
+2026-08-19T15:28:48Z [USER LOG] Wrote to Solana devnet, tx=4JLvLioF1T23BUW5RJSSwBHVtDywYErcd9JvMzuKSPExzXYSiMBHxzMQxzwM3KBm3TMMqPC9cKLeWHVYVe6CwDC explorer=https://explorer.solana.com/tx/4JLvLioF1T23BUW5RJSSwBHVtDywYErcd9JvMzuKSPExzXYSiMBHxzMQxzwM3KBm3TMMqPC9cKLeWHVYVe6CwDC?cluster=devnet
 
 Workflow Simulation Result:
- "{\"Key\":\"cre-example\",\"Value\":\"hello from CRE @ 2026-08-19T09:24:28.000Z\",\"TxSignature\":\"5h1q...\",\"ExplorerUrl\":\"https://explorer.solana.com/tx/5h1q...?cluster=devnet\"}"
+ "{\"Key\":\"cre-example\",\"Value\":\"hello from CRE @ 2026-08-19T19:28:47.922Z\",\"TxSignature\":\"4JLvLioF1T23BUW5RJSSwBHVtDywYErcd9JvMzuKSPExzXYSiMBHxzMQxzwM3KBm3TMMqPC9cKLeWHVYVe6CwDC\",\"ExplorerUrl\":\"https://explorer.solana.com/tx/4JLvLioF1T23BUW5RJSSwBHVtDywYErcd9JvMzuKSPExzXYSiMBHxzMQxzwM3KBm3TMMqPC9cKLeWHVYVe6CwDC?cluster=devnet\"}"
 ```
 
+Open the printed `explorer.solana.com` link to see the real, finalized
+transaction and its `KvUpdated` event. Without `--broadcast`, the same command
+dry-runs the transaction (no fees spent, nothing lands on-chain) — useful for
+checking your report/account setup before spending devnet SOL.
+
+If you point `config.staging.json` at the **real** DON forwarder instead (see
+[Deploying your own receiver program](#deploying-your-own-receiver-program-optional)),
+this same command instead fails with `MismatchedForwarderProgram` — expected,
+since `cre workflow simulate` always builds the transaction through the mock
+forwarder, never a real one. That failure happens *after* correct Borsh
+encoding, account ordering, PDA derivation, and CPI dispatch, so it still
+confirms everything is wired correctly up to real DON verification; actually
+landing a write through the real forwarder requires `cre workflow deploy` to a
+live DON (see [CRE docs](https://docs.chain.link/cre)).
+
+**Read cron** (`--trigger-index 1`) is a real, consensus'd RPC call against the
+account above:
+
 ```
-2026-08-19T09:25:01Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
-2026-08-19T09:25:02Z [USER LOG] msg="Read kv_store: key=\"cre-example\" value=\"hello from CRE @ 2026-08-19T09:24:28.000Z\" updatedAt=1755595468 updateCount=1"
+2026-08-19T15:29:28Z [USER LOG] kv_store account 7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr exists but its data was not returned by this read
 
 Workflow Simulation Result:
- "{\"Found\":true,\"Key\":\"cre-example\",\"Value\":\"hello from CRE @ 2026-08-19T09:24:28.000Z\",\"UpdatedAt\":\"1755595468\",\"UpdateCount\":\"1\"}"
+ "{\"Exists\":true,\"Found\":false,\"Key\":\"\",\"Value\":\"\",\"UpdatedAt\":\"\",\"UpdateCount\":\"\"}"
 ```
 
-Open the printed `explorer.solana.com` link (or the same signature on
-[solscan.io](https://solscan.io), passing `?cluster=devnet`) to see the real
-transaction and the `KvUpdated` event it emitted.
+`Exists: true` confirms the account is live on devnet (via `lamports > 0`). As of
+the current CRE engine build, `SolanaClient.getAccountInfoWithOpts` reliably
+returns `lamports`/`owner`/`space` but doesn't yet populate the account's byte
+contents (`data`) inside `cre workflow simulate` — so `Found`/`Key`/`Value` stay
+empty even though the on-chain account genuinely has the `{key, value}` the
+write cron just stored. `readKvStore` decodes `data` whenever the capability
+does return it, so this becomes a full `{key, value, updatedAt, updateCount}`
+readout with no code changes once that's populated upstream. You can
+independently verify the account's real bytes any time with a plain RPC call:
+
+```bash
+curl -s https://api.devnet.solana.com -X POST -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"getAccountInfo","params":["7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr",{"encoding":"base64"}]}'
+```
 
 ### Deploying your own receiver program (optional)
 
@@ -196,6 +316,14 @@ deploy the forwarder itself). It ends with four addresses; paste them into
 
 If you're new to Solana, budget \~20–30 minutes for the toolchain install; the
 actual deploy + initialize is a handful of commands.
+
+Note that once your `config.staging.json` points at this real forwarder,
+`cre workflow simulate --broadcast` will fail the write with
+`MismatchedForwarderProgram` (see the note above) — that's expected. To
+actually see `--broadcast` succeed end-to-end while developing, keep a second
+`kv_store` account initialized against the mock forwarder (as described above)
+and switch back to the real forwarder's account only once you're ready to
+`cre workflow deploy`.
 
 ## Security Considerations
 

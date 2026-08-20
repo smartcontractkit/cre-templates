@@ -257,10 +257,19 @@ export class KvStoreReceiver {
 	/**
 	 * Reads the `kv_store` account directly from the chain (no forwarder, no
 	 * report — this is a plain consensus'd RPC read, the counterpart to
-	 * `writeReportFromKvEntry`). Returns `null` if the account doesn't exist yet
-	 * (e.g. before the first `on_report` call).
+	 * `writeReportFromKvEntry`).
+	 *
+	 * `exists` reflects `lamports > 0` (account has been created by `initialize`).
+	 * `account` is the decoded key/value — populated only when the capability's
+	 * reply actually includes account bytes. As of the current CRE engine build,
+	 * `GetAccountInfoWithOpts` reliably returns `lamports`/`owner`/`space`, but
+	 * `data` is not always populated yet; `exists` lets callers confirm the
+	 * account is live even if byte-level decoding isn't available yet.
 	 */
-	readKvStore(runtime: Runtime<unknown>, kvStoreAccount: string | Uint8Array): KvStoreAccount | null {
+	readKvStore(
+		runtime: Runtime<unknown>,
+		kvStoreAccount: string | Uint8Array,
+	): { exists: boolean; account: KvStoreAccount | null } {
 		const accountBytes =
 			typeof kvStoreAccount === 'string' ? solanaAddressToBytes(kvStoreAccount) : kvStoreAccount
 
@@ -274,10 +283,13 @@ export class KvStoreReceiver {
 			})
 			.result()
 
-		if (!reply.value || reply.value.data?.body.case !== 'raw') {
-			return null
+		if (!reply.value || reply.value.lamports <= 0n) {
+			return { exists: false, account: null }
 		}
 
-		return decodeKvStoreAccount(reply.value.data.body.value)
+		const account =
+			reply.value.data?.body.case === 'raw' ? decodeKvStoreAccount(reply.value.data.body.value) : null
+
+		return { exists: true, account }
 	}
 }
