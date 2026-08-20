@@ -1,10 +1,10 @@
 # AI Audit Firewall CRE Project (Go)
 
-This standalone CRE project implements a confidential pre-execution security firewall for smart contract interactions. It is the Go port of `ai-audit-firewall/` (TypeScript) and behaves identically.
+This standalone CRE project implements a confidential pre-execution security firewall for smart contract interactions. It is the Go port of the TypeScript workflow and uses the same live Etherscan and OpenRouter flow.
 
 ## Description
 
-The workflow screens proposed transactions before they are allowed to proceed. It fetches and validates contract intelligence, runs confidential reasoning to classify risk, and then enforces a firewall decision path. Scanner and model credentials remain protected inside confidential execution throughout the process.
+The workflow screens a configured proposed transaction before it is allowed to proceed. It fetches verified contract source from Etherscan, runs confidential OpenRouter reasoning to classify risk, and then enforces a firewall decision path. Both API credentials remain protected inside confidential execution.
 
 ## Target Customer
 
@@ -21,37 +21,40 @@ The workflow screens proposed transactions before they are allowed to proceed. I
 - `main.go`: WASM entry point (`//go:build wasip1`)
 - `workflow.go`: workflow implementation
 - `workflow_test.go`: unit tests, including in-enclave HTTP and EVM stubs
-- `mock-server.js`: local deterministic API server
 
 ## Private Inputs
 
 The following inputs are handled as confidential:
 
-- Chain scanner API credentials used for contract metadata retrieval and verification checks.
-- LLM reasoning API credentials used for independent audit analysis.
+- The Etherscan API credential used to retrieve verified contract source.
+- The OpenRouter API credential used for both audit models.
 
 ## Workflow Notes
 
-1. Monitor and ingest the proposed interaction.
-   The workflow receives candidate transaction context, including token and protocol contract addresses.
+1. Read the proposed interaction from workflow config.
+   Proposal config is visible to the DON; do not put secrets in it.
 2. Fetch and validate contract data confidentially.
-   It retrieves source and ABI artifacts through the scanner and verifies scanner credential permissions before trusting fetched data.
+   The workflow makes two calls to `https://api.etherscan.io/v2/api`, one for each configured contract, and denies the proposal if either contract lacks verified source.
+   The workflow waits one second between these requests to stay within Etherscan's free-tier rate limit, using CRE DON time rather than a Go local-clock sleep.
 3. Run smart contract audit analysis.
-   The workflow submits context to two reasoning models and classifies behavior into structured risk signals:
+   The workflow makes two calls to `https://openrouter.ai/api/v1/chat/completions`. The primary model receives the proposal and verified token contract artifact. The secondary model receives the proposal, verified protocol contract artifact, and primary analysis. The models classify:
+   During simulation, the non-sensitive `audit-firewall-primary-model-complete` and `audit-firewall-secondary-model-start` markers identify whether the primary or secondary model call failed.
    - `obfuscatedTax`
    - `privilegeEscalation`
    - `externalCallRisk`
    - `logicBomb`
-4. Enforce the firewall decision, log the audit, and optionally deliver the verdict on-chain.
+4. Apply the firewall decision and optionally deliver the verdict on-chain.
+
+Model output is only an advisory signal used by the workflow's deterministic decision logic. OpenRouter provider data collection is denied.
 
 ## Confidentiality boundary
 
-The handler is registered with `cre.HandlerInTee`, so it receives a `cre.TeeRuntime` rather than a `cre.Runtime`. Everything in the handler runs inside the enclave:
+The handler is registered with `cre.HandlerInTeeWithPreHook`, so it receives a `cre.TeeRuntime` rather than a `cre.Runtime`. Everything in the handler runs inside the enclave:
 
-- Scanner and model credentials are released by the Vault DON directly into the attested enclave and decrypted at the moment `GetSecret()` runs.
-- HTTP calls go through `client.SendRequestInTee(runtime, ...)`, keeping URLs, headers (including API keys), contract source and model reasoning confidential from node operators.
+- Etherscan and OpenRouter credentials are released by the Vault DON directly into the attested enclave and decrypted when `GetSecret()` runs.
+- HTTP calls go through `client.SendRequestInTee(runtime, ...)`, keeping headers, verified contract source and model reasoning confidential from node operators.
 
-The one place that leaves the enclave is `writeVerdictOnChain`, which calls `runtime.UsingTheDons()` to sign and deliver the report. Only three values cross that boundary — the verdict code, the risk-flag bitmask and the chain selector. The contract source, model reasoning and scanner credentials never do.
+The one place that leaves the enclave is `writeVerdictOnChain`, which calls `runtime.UsingTheDons()` to sign and deliver the report. Only three values cross that boundary — the verdict code, the risk-flag bitmask and the chain selector. The contract source, model reasoning and API credentials never do.
 
 What is *not* confidential: the workflow binary itself, including this logic, is provided to the enclave by the Workflow DON and is therefore revealed. What the enclave protects is the *data* the logic computes over.
 
@@ -72,33 +75,33 @@ The handler is registered with `cre.HandlerInTeeWithPreHook`. The fourth argumen
 | Restriction | Value | Why |
 |-------------|-------|-----|
 | Capability set type | `CLOSED` | Any capability call not listed below is rejected outright |
-| `maxTotalCalls` | 10 | Overall ceiling across all capabilities |
-| `http-actions@1.0.0-alpha` / `SendRequest` | 8 | Steady state is 7 calls (proposal, credential check, 2 contract fetches, 2 model calls, audit log, firewall action); 8 leaves one call of headroom |
+| `maxTotalCalls` | 6 | Four HTTP calls, one report and one optional on-chain write |
+| `http-actions@1.0.0-alpha` / `SendRequest` | 4 | Two Etherscan source fetches followed by two OpenRouter model calls |
 | `consensus@1.0.0-alpha` / `Report` | 1 | One signed report per run |
 | `evm:ChainSelector:<selector>@1.0.0` / `WriteReport` | 1 | One on-chain write per run, scoped to the configured chain |
-| `maxSecrets` | 3 | Exact-match only, in the `main` namespace |
+| `maxSecrets` | 2 | Exact matches for `etherscan_api_key` and `openrouter_api_key` in the `main` namespace |
 
 The EVM restriction is added only when an EVM target is configured, keeping the on-chain leg opt-in. An unresolvable chain name is skipped here rather than treated as fatal — the write path reports that error at execution time.
 
-Because the set is closed, **adding a capability call to the workflow means raising the matching limit here**, or the run will be cut off by its own restrictions. `TestBuildRestrictions_HTTPBudgetCoversASuccessfulRun` guards against that by asserting a full successful run stays within the declared HTTP budget.
+Because the set is closed, **adding a capability call to the workflow means raising the matching limit here**, or the run will be cut off by its own restrictions.
 
 ## Default config
 
 `ParseConfig` (wired into `wasm.NewRunner` in `main.go` in place of `cre.ParseJSON`) falls back to `DefaultConfig` when the config payload is empty or whitespace. The DON hands the runner an empty payload when it invokes the pre-hook before a real config is attached; without the fallback that would fail to unmarshal and take the pre-hook down with it.
 
-The default's URLs are deliberately the placeholder string `prehook-default` — the pre-hook only needs the config's *shape* (the secret IDs and the EVM target) to build the restriction set, never real endpoints.
+The defaults use Etherscan chain ID `11155111`, low-cost paid primary model `google/gemini-2.5-flash-lite`, low-cost paid secondary model `openai/gpt-4.1-nano`, the two live secret IDs, and an empty `evms` array. Direct tests with the workflow's real prompts returned valid structured output from both models within CRE's 10-second standard HTTP limit. Provider pricing, availability, and latency can change. The service endpoints are fixed in the workflow rather than configurable.
 
 ## Onchain delivery
 
-The `evms` array in config is optional; with no entry (or an incomplete one) the workflow skips the onchain leg and returns the verdict only. The report is ABI-encoded as `(uint8 verdictCode, uint8 riskMask, uint64 chainSelector)`, decodable with `abi.decode(report, (uint8, uint8, uint64))`.
+The `evms` array defaults to empty, so the workflow returns the verdict without writing on-chain. To opt in, add a complete EVM target. The report is ABI-encoded as `(uint8 verdictCode, uint8 riskMask, uint64 chainSelector)`, decodable with `abi.decode(report, (uint8, uint8, uint64))`.
 
 Verdict codes: `ALLOW` = 1, `DENY` = 2, `MANUAL_REVIEW` = 3. Risk mask bits: `obfuscatedTax` = 1, `privilegeEscalation` = 2, `externalCallRisk` = 4, `logicBomb` = 8.
 
-To use it, deploy `../contracts/AuditFirewallConsumer.sol` and set the deployed address in `config.staging.json` under `evms[0].consumer_address`. The shipped config uses the zero address as a placeholder — the write is still attempted against it, so set a real address before relying on this leg.
+To use on-chain delivery, deploy `../contracts/AuditFirewallConsumer.sol`, then add its address, the chain selector name and a gas limit under `evms[0]` in `config.staging.json`.
 
 ## TEE constraints
 
-The third argument to `cre.HandlerInTee` declares which enclaves the handler accepts:
+The third argument to `cre.HandlerInTeeWithPreHook` declares which enclaves the handler accepts:
 
 ```go
 cre.AnyTee{}                                               // any registered TEE, any region
@@ -110,15 +113,12 @@ Each TEE binding owns its own region enum (`Nitro` ↔ `NitroRegion`), so passin
 
 ## Required Environment Variables
 
-Copy `.env.example` to `.env` and provide values for:
+Copy `../.env.example` to `../.env` and provide the two API secrets mapped by `../secrets.yaml`:
 
-- `CRE_ETH_PRIVATE_KEY` (required for the onchain write; optional otherwise)
-- `MOCK_PORT`
-- `MOCK_SCANNER_API_KEY`
-- `MOCK_PRIMARY_LLM_API_KEY`
-- `MOCK_SECONDARY_LLM_API_KEY`
+- `ETHERSCAN_API_KEY` → `etherscan_api_key`
+- `OPENROUTER_API_KEY` → `openrouter_api_key`
 
-The local mock server for this project only exposes routes under `/audit-firewall/*`.
+`CRE_ETH_PRIVATE_KEY` is optional for simulation and required only when you opt into an on-chain write.
 
 ## Configuration
 
@@ -127,35 +127,33 @@ The local mock server for this project only exposes routes under `/audit-firewal
 | Field | Description |
 |-------|-------------|
 | `schedule` | Cron expression (6 fields, seconds first) |
-| `mock_base_url` | Base URL for the proposal, audit-log and firewall-action endpoints |
-| `scanner_url` | Scanner base URL for credential and contract lookups |
-| `primary_llm_url` | First audit model endpoint, called from inside the enclave |
-| `secondary_llm_url` | Second audit model endpoint, given the first model's findings |
-| `secrets_ids` | Maps each credential to a secret ID in `secrets.yaml` |
-| `evms` | Optional onchain delivery target (chain, consumer address, gas limit) |
+| `proposal` | Transaction and contract context to audit; visible to the DON |
+| `etherscan_chain_id` | Etherscan V2 chain ID used for both source requests |
+| `primary_model` | First OpenRouter audit model; defaults to `google/gemini-2.5-flash-lite` |
+| `secondary_model` | Second OpenRouter audit model; defaults to `openai/gpt-4.1-nano` |
+| `secrets_ids` | The `etherscan_api_key` and `openrouter_api_key` secret IDs |
+| `evms` | Optional on-chain delivery targets; empty by default |
+
+The Etherscan and OpenRouter endpoints are fixed at `https://api.etherscan.io/v2/api` and `https://openrouter.ai/api/v1/chat/completions`.
 
 ## Quick Start
 
-1. Create environment file (at the shared project root)
+1. Create the shared environment file:
 
 ```bash
 cp ../.env.example ../.env
 ```
 
-2. Start the mock server (requires Node or Bun)
+2. Add `ETHERSCAN_API_KEY` and `OPENROUTER_API_KEY` to `../.env`.
 
-```bash
-bun mock-server.js
-```
-
-3. In another terminal, run checks
+3. Run checks:
 
 ```bash
 go vet ./...
 go test ./...
 ```
 
-4. Simulate workflow
+4. Simulate the workflow:
 
 ```bash
 cd .. && cre workflow simulate ./ai-audit-firewall-go --target=staging-settings

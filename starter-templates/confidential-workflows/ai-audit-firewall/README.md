@@ -1,89 +1,80 @@
 # AI Audit Firewall CRE Project
 
-This standalone CRE project implements a confidential pre-execution security firewall for smart contract interactions.
+This CRE project screens proposed smart contract interactions before execution. It fetches verified contract artifacts, asks two independent models for structured risk analysis, and returns `ALLOW`, `DENY`, or `MANUAL_REVIEW`. TypeScript and Go implementations share the same configuration and secret mappings.
 
-## Description
+## Workflow
 
-The workflow screens proposed transactions before they are allowed to proceed. It fetches and validates contract intelligence, runs confidential reasoning to classify risk, and then enforces a firewall decision path. Scanner and model credentials remain protected inside confidential execution throughout the process.
+Each successful audit makes four fixed, in-enclave HTTP calls:
 
-## Target Customer
+1. Fetch the token contract source and ABI from `https://api.etherscan.io/v2/api`.
+2. Fetch the protocol contract source and ABI from the same Etherscan endpoint.
+3. Send the proposal and verified token contract artifact to the configured OpenRouter primary model at `https://openrouter.ai/api/v1/chat/completions`.
+4. Send the proposal, verified protocol contract artifact, and primary analysis to the configured OpenRouter secondary model at the same endpoint.
 
-- Professional retail traders
-- Developer shops
-- Founders building trading products
+The workflow waits one second between the two Etherscan source requests to stay within Etherscan's free-tier rate limit.
 
-## Structure
+During simulation, the non-sensitive `audit-firewall-primary-model-complete` and `audit-firewall-secondary-model-start` markers identify whether the primary or secondary model call failed.
 
-- `project.yaml`: project-level target settings
-- `secrets.yaml`: secret ID mappings used by the workflow
-- `mock-server.js`: local deterministic API server
-- `ai-audit-firewall/`: workflow implementation
+The models check for `obfuscatedTax`, `privilegeEscalation`, `externalCallRisk`, and `logicBomb`. An unverified contract is denied without a model call. Model output is an advisory security signal, not authorization to execute a transaction.
 
-## Private Inputs
+## Configuration
 
-The following inputs are handled as confidential:
+Edit `config.staging.json` or `config.production.json` in the implementation you plan to run:
 
-- Chain scanner API credentials used for contract metadata retrieval and verification checks.
-- LLM reasoning API credentials used for independent audit analysis.
+- `proposal` contains the candidate interaction, including both contract addresses.
+- `proposal.from_address` is the account that would send the proposed transaction.
+- `proposal.signer` is the account or system expected to authorize it. This can differ from `from_address` for multisigs, delegated wallets, or relayers.
+- `from_address` and `signer` are input context sent to the models and included in the returned JSON. The workflow does not verify them, check a signature, or send the proposed transaction. The DON signs any verdict report.
+- `etherscan_chain_id` selects the Etherscan chain.
+- `primary_model` and `secondary_model` must be two different OpenRouter model IDs.
+- `secrets_ids` must remain `etherscan_api_key` and `openrouter_api_key` to match `secrets.yaml`.
+- `evms` is empty by default, so the workflow returns the verdict as JSON without requiring a deployed receiver. To write verdicts on-chain, deploy `AuditFirewallConsumer`, then configure `evms[0]` with its `consumer_address`, the matching `chain_selector_name`, and a `gas_limit`.
 
-## Workflow Notes
+The low-cost paid defaults are primary model `google/gemini-2.5-flash-lite` and secondary model `openai/gpt-4.1-nano`. Direct tests with the workflow's real prompts returned valid structured output from both models within CRE's 10-second standard HTTP limit. Provider pricing, availability, and latency can change.
 
-1. Monitor and ingest the proposed interaction.
-	The workflow receives candidate transaction context, including token and protocol contract addresses.
-2. Fetch and validate contract data confidentially.
-	It retrieves source and ABI artifacts through the scanner and verifies scanner credential permissions before trusting fetched data.
-3. Run smart contract audit analysis.
-	The workflow submits context to multiple reasoning models and classifies behavior into structured risk signals:
-	- `obfuscatedTax`
-	- `privilegeEscalation`
-	- `externalCallRisk`
-	- `logicBomb`
-4. Enforce firewall action and record outcomes.
-	Based on aggregate risk, the workflow allows execution, blocks malicious interactions, or routes the attempt for manual review while preserving audit and action logs.
+## Secrets
 
-Note: Any reasoning stage can be replaced with deterministic rule-based logic if a purely policy-engine implementation is preferred.
-
-## Required Environment Variables
-
-Copy `.env.example` to `.env` and provide values for:
-
-- `CRE_ETH_PRIVATE_KEY` (optional for local simulate, required for real chain writes)
-- `MOCK_PORT`
-- `MOCK_SCANNER_API_KEY`
-- `MOCK_PRIMARY_LLM_API_KEY`
-- `MOCK_SECONDARY_LLM_API_KEY`
-
-The local mock server for this project only exposes routes under `/audit-firewall/*`.
-
-## Quick Start
-
-1. Install dependencies
-
-```bash
-bun install
-```
-
-2. Create environment file
+Copy the environment template and set both values:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Start mock server
-
-```bash
-bun run mock:server
+```dotenv
+ETHERSCAN_API_KEY=your-etherscan-key
+OPENROUTER_API_KEY=your-openrouter-key
 ```
 
-4. In another terminal, run checks
+Do not commit `.env`. For deployment, provide these same two values through the CRE secret workflow referenced by `secrets.yaml`.
+
+## Simulate or Deploy
+
+Run commands from this directory. Choose one implementation:
 
 ```bash
-bun run typecheck
-bun run test
+# TypeScript
+cre workflow simulate ./ai-audit-firewall-ts --target=staging-settings
+
+# Go
+cre workflow simulate ./ai-audit-firewall-go --target=staging-settings
 ```
 
-5. Simulate workflow
+After reviewing the staging result and production config, deploy the chosen implementation:
 
 ```bash
-cre workflow simulate ./ai-audit-firewall --target=staging-settings
+# TypeScript
+cre workflow deploy ./ai-audit-firewall-ts --target=production-settings
+
+# Go
+cre workflow deploy ./ai-audit-firewall-go --target=production-settings
 ```
+
+No local service is required.
+
+## Trust Boundaries
+
+- Etherscan and OpenRouter credentials are fetched inside confidential execution and are not included in workflow output.
+- Verified contract source and model reasoning remain protected from DON node operators, but Etherscan receives the configured chain ID and contract addresses.
+- OpenRouter receives the proposal and verified token contract artifact for the primary call. For the secondary call, it receives the proposal, verified protocol contract artifact, and primary analysis. Its provider policy sets data collection to `deny`.
+- The configured `proposal` is visible to the DON. Do not place secrets in it.
+- With `evms` configured, only the encoded verdict, risk flags, and chain selector are written on-chain; credentials, contract source, and model reasoning are not.

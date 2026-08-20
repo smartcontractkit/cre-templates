@@ -1,19 +1,23 @@
 {
   "schedule": "0 */5 * * * *",
-  "mock_base_url": "",
-  "scanner_url": "",
-  "primary_llm_url": "",
-  "secondary_llm_url": "",
-  "secrets_ids": {
-    "scanner_api_key_id": "scanner_api_key",
-    "primary_llm_api_key_id": "primary_llm_api_key",
-    "secondary_llm_api_key_id": "secondary_llm_api_key"
+  "proposal": {
+    "chain_selector": 16015286601757825753,
+    "chain_name": "sepolia",
+    "tx_hash": "0x0",
+    "from_address": "0x0000000000000000000000000000000000000000",
+    "token_contract_address": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+    "protocol_contract_address": "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
+    "calldata": "0x",
+    "value_wei": "0",
+    "signer": "0x0000000000000000000000000000000000000000",
+    "requested_action": "transfer"
   },
-  "evms": [
-    {  
-      "chain_selector_name": "ethereum-testnet-sepolia",
-      "consumer_address": "0x0000000000000000000000000000000000000000",
-      "gas_limit": "500000"
-    }
-  ]
+  "etherscan_chain_id": "11155111",
+  "primary_model": "google/gemini-2.5-flash-lite",
+  "secondary_model": "openai/gpt-4.1-nano",
+  "secrets_ids": {
+    "etherscan_api_key_id": "etherscan_api_key",
+    "openrouter_api_key_id": "openrouter_api_key"
+  },
+  "evms": []
 }
