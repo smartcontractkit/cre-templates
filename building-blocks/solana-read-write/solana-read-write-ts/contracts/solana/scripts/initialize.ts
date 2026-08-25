@@ -1,7 +1,9 @@
 // Deploy helper — NOT part of the CRE workflow. Run this once after `anchor deploy`
 // to create the `kv_store` account and record the keystone forwarder program id.
 // It also derives `forwarderAuthority`, the PDA the forwarder signs with when it
-// CPIs into this program's `on_report` instruction.
+// CPIs into this program's `on_report` instruction — printed only so you can sanity
+// check it; the workflow (main.ts) derives it itself at runtime and it is not part
+// of config.staging.json.
 //
 // Usage (from contracts/solana):
 //   bun run scripts/initialize.ts \
@@ -10,8 +12,8 @@
 //     --keypair ~/.config/solana/id.json \
 //     --url https://api.devnet.solana.com
 //
-// Prints receiverProgramId / forwarderAuthority / kvStoreAccount / a devnet
-// explorer link — copy these into my-workflow/config.staging.json.
+// Prints receiverProgramId / forwarderState / forwarderProgramId / kvStoreAccount /
+// a devnet explorer link — copy these into my-workflow/config.staging.json.
 import { AnchorProvider, Program, Wallet, type Idl } from '@coral-xyz/anchor'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { readFileSync } from 'node:fs'
@@ -68,13 +70,14 @@ async function main() {
 
 	console.log('\nInitialized kv_store_receiver')
 	console.log('--------------------------------')
-	console.log(`receiverProgramId : ${receiverProgramId.toBase58()}`)
+	console.log(`receiverProgramId  : ${receiverProgramId.toBase58()}`)
 	console.log(`forwarderState     (input, echo) : ${forwarderState.toBase58()}`)
-	console.log(`forwarderAuthority (derived)      : ${forwarderAuthority.toBase58()}`)
+	console.log(`forwarderProgramId (input, echo) : ${forwarderProgram.toBase58()}`)
+	console.log(`forwarderAuthority (derived, sanity-check only, not part of config) : ${forwarderAuthority.toBase58()}`)
 	console.log(`kvStoreAccount     (receiverAccounts[0]) : ${kvStore.publicKey.toBase58()}`)
 	console.log(`\ninitialize() tx: https://explorer.solana.com/tx/${sig}?cluster=devnet`)
 	console.log(
-		'\nCopy receiverProgramId, forwarderState, forwarderAuthority, and kvStoreAccount into my-workflow/config.staging.json.',
+		'\nCopy receiverProgramId, forwarderState, forwarderProgramId, and kvStoreAccount into my-workflow/config.staging.json.',
 	)
 }
 

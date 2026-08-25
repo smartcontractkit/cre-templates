@@ -152,7 +152,7 @@ bun install --cwd ./my-workflow
     "chainSelectorName": "solana-devnet",
     "receiverProgramId": "aPkfGwVg9Lj3yF2CSgxeRmMn7uU9tKWT6PSHTDf2ZX6",
     "forwarderState": "5Tipz3yhTBdVsDbaBxZkrp7Gjf3brGq5SKkxReefPMP7",
-    "forwarderAuthority": "w4jzYfQFToKw6BQsMxn4dWevn9xXnVMn9y91N5k7fxB",
+    "forwarderProgramId": "7kuEAA3mSC1Tz8gQjnvH7bKFda9xSPRRin9SZbH49cNK",
     "receiverAccounts": [
       { "publicKey": "7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr", "isWritable": true }
     ]
@@ -161,9 +161,12 @@ bun install --cwd ./my-workflow
 ```
 
 * `schedule` is a 6-field cron expression — the default runs every 5 minutes.
-* `forwarderState`/`forwarderAuthority` here are **CRE's simulator mock
+* `forwarderState`/`forwarderProgramId` here are **CRE's simulator mock
   forwarder** — the one `cre workflow simulate` actually uses, not the real DON
-  forwarder (see the forwarder note above).
+  forwarder (see the forwarder note above). `forwarderAuthority` is not part of
+  the config — the workflow derives it at runtime as the PDA of
+  `["forwarder", forwarderState, receiverProgramId]` under `forwarderProgramId`
+  (see [Solana Forwarder Directory](https://docs.chain.link/cre/guides/workflow/using-solana-client/solana-forwarder-directory-ts)).
 * `receiverProgramId` and `receiverAccounts[0].publicKey` identify the
   pre-deployed `kv_store_receiver` program and the `kv_store` account tied to
   that mock forwarder.
@@ -192,7 +195,7 @@ top of this README. This is the config to develop and test against locally.
     "chainSelectorName": "solana-devnet",
     "receiverProgramId": "aPkfGwVg9Lj3yF2CSgxeRmMn7uU9tKWT6PSHTDf2ZX6",
     "forwarderState": "5Tipz3yhTBdVsDbaBxZkrp7Gjf3brGq5SKkxReefPMP7",
-    "forwarderAuthority": "w4jzYfQFToKw6BQsMxn4dWevn9xXnVMn9y91N5k7fxB",
+    "forwarderProgramId": "7kuEAA3mSC1Tz8gQjnvH7bKFda9xSPRRin9SZbH49cNK",
     "receiverAccounts": [
       { "publicKey": "7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr", "isWritable": true }
     ]
@@ -201,10 +204,12 @@ top of this README. This is the config to develop and test against locally.
 ```
 
 **Production forwarder** — Chainlink's real staging Solana-devnet keystone
-forwarder, the one a live DON actually signs through. `cre workflow simulate`
-cannot write successfully against this config (it'll fail with
-`MismatchedForwarderProgram` — expected, not a bug, see above); this config is
-what you deploy with `cre workflow deploy` to a real DON.
+forwarder, the one a live DON actually signs through (see the [Solana Forwarder
+Directory](https://docs.chain.link/cre/guides/workflow/using-solana-client/solana-forwarder-directory-ts)
+for the full, tenant-scoped list). `cre workflow simulate` cannot write
+successfully against this config (it'll fail with `MismatchedForwarderProgram`
+— expected, not a bug, see above); this config is what you deploy with
+`cre workflow deploy` to a real DON.
 
 ```json
 {
@@ -212,14 +217,22 @@ what you deploy with `cre workflow deploy` to a real DON.
   "solana": {
     "chainSelectorName": "solana-devnet",
     "receiverProgramId": "aPkfGwVg9Lj3yF2CSgxeRmMn7uU9tKWT6PSHTDf2ZX6",
-    "forwarderState": "726bmjnxLeYkvSWUBRby5eUXds96xR58MFfcZoBzuuW3",
-    "forwarderAuthority": "DBmhqGAE3eEjbVUUX45npzen8mEVY3HmQHqaUzn7PmYW",
+    "forwarderState": "8QoomCQyPSkJ8WopJbX9B4HyvrFzziwvJdU8hZE6DCr9",
+    "forwarderProgramId": "CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5",
     "receiverAccounts": [
-      { "publicKey": "3pAmDKMDtsXtYtJJFHEqqc5UGGkfgFnn76crfNvCZNqX", "isWritable": true }
+      { "publicKey": "<kvStoreAccount initialized against this forwarder>", "isWritable": true }
     ]
   }
 }
 ```
+
+The `receiverAccounts[0]` value above must come from re-running
+[`contracts/solana/scripts/initialize.ts`](./contracts/solana/README.md#6-initialize-your-receiver)
+against `forwarderProgramId` `CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5` — the
+account previously shipped here (`3pAmDKMDtsXtYtJJFHEqqc5UGGkfgFnn76crfNvCZNqX`)
+was initialized against a stale, incorrect forwarder program id and will fail
+`on_report` with `MismatchedForwarderProgram` against the real Keystone
+forwarder.
 
 | | Mock forwarder (default) | Production forwarder |
 |---|---|---|
@@ -227,12 +240,11 @@ what you deploy with `cre workflow deploy` to a real DON.
 | `cre workflow simulate` read | ✅ works | ✅ works |
 | Real `cre workflow deploy` to a live DON | n/a — mock forwarder is simulate-only | ✅ this is what a live DON signs through |
 
-Both `kv_store` accounts (mock: `7d1kczQb6B2fMcnyCECyLitjvEHt6jLpEc8swPvscQSr`,
-production: `3pAmDKMDtsXtYtJJFHEqqc5UGGkfgFnn76crfNvCZNqX`) belong to the same
-`receiverProgramId`, so you can freely switch between the two JSON blocks above
-without redeploying anything — this only matters if you deployed your own
-`kv_store_receiver` and want the same choice (see
-[Deploying your own receiver program](#deploying-your-own-receiver-program-optional)).
+Both `kv_store` accounts belong to the same `receiverProgramId`, so once you've
+initialized one against each forwarder (see
+[Deploying your own receiver program](#deploying-your-own-receiver-program-optional))
+you can freely switch between the two JSON blocks above without redeploying
+anything.
 
 ### 3. Run a simulation
 
@@ -310,8 +322,11 @@ want your own so you're not sharing state with anyone else running this template
 Follow **[contracts/solana/README.md](./contracts/solana/README.md)** — a
 step-by-step guide (including Solana/Anchor install steps) for deploying
 `kv_store_receiver` to devnet and initializing it against Chainlink's shared
-keystone forwarder (`726bmjnxLeYkvSWUBRby5eUXds96xR58MFfcZoBzuuW3` — you do not
-deploy the forwarder itself). It ends with four addresses; paste them into
+keystone forwarder (`forwarderProgramId` `CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5`,
+`forwarderState` `8QoomCQyPSkJ8WopJbX9B4HyvrFzziwvJdU8hZE6DCr9` on Solana devnet
+— you do not deploy the forwarder itself; see the [Solana Forwarder
+Directory](https://docs.chain.link/cre/guides/workflow/using-solana-client/solana-forwarder-directory-ts)
+for other networks). It ends with three addresses; paste them into
 `my-workflow/config.staging.json` in place of the pre-deployed ones.
 
 If you're new to Solana, budget \~20–30 minutes for the toolchain install; the

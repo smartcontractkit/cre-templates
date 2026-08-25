@@ -8,8 +8,10 @@ By the end of this guide you'll have:
 
 - Your own `kv_store_receiver` program live on Solana **devnet**.
 - A `kv_store` account it can write into.
-- The four addresses (`receiverProgramId`, `forwarderState`, `forwarderAuthority`,
-  `kvStoreAccount`) to paste into [`../../my-workflow/config.staging.json`](../../my-workflow/config.staging.json).
+- The three addresses (`receiverProgramId`, `forwarderState`, `kvStoreAccount`) to
+  paste into [`../../my-workflow/config.staging.json`](../../my-workflow/config.staging.json)
+  (`forwarderAuthority` is not something you configure — the workflow derives it
+  at runtime; see [main.ts](../../my-workflow/main.ts)).
 
 Do this in a fresh terminal — no CRE-specific tooling required for this part, it's
 pure Solana/Anchor.
@@ -93,27 +95,31 @@ Install the small helper script's dependencies once, then run it:
 ```bash
 bun install
 bun run scripts/initialize.ts \
-  --forwarder-program Ey9KNM4ny1S2Sx2g9NiUJUsTy7e6ta1bcP28cT1xmKj5 \
-  --forwarder-state 726bmjnxLeYkvSWUBRby5eUXds96xR58MFfcZoBzuuW3 \
+  --forwarder-program CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5 \
+  --forwarder-state 8QoomCQyPSkJ8WopJbX9B4HyvrFzziwvJdU8hZE6DCr9 \
   --keypair ~/.config/solana/id.json \
   --url https://api.devnet.solana.com
 ```
 
 `--forwarder-program` and `--forwarder-state` above are Chainlink's shared
-Solana-devnet keystone forwarder for the **staging** CRE environment — the same
-values already filled into [`my-workflow/config.staging.json`](../../my-workflow/config.staging.json).
-Leave them as-is unless Chainlink gives you different addresses for your environment.
+Solana-devnet Keystone Forwarder for the **staging** CRE environment (see the
+[Solana Forwarder Directory](https://docs.chain.link/cre/guides/workflow/using-solana-client/solana-forwarder-directory-ts)
+for other networks/environments — addresses are tenant-scoped, so confirm yours
+with `cre workflow supported-chains` if you're not sure).
 
 The script creates your `kv_store` account, calls `initialize(forwarder_program)`,
-derives `forwarderAuthority` (the PDA the forwarder signs with), and prints all four
-values plus a devnet explorer link for the `initialize` transaction. Example output:
+derives `forwarderAuthority` (the PDA the forwarder signs with, printed only so
+you can sanity-check it — it is *not* something you paste into config; the
+workflow derives it itself at runtime), and prints all the values plus a devnet
+explorer link for the `initialize` transaction. Example output:
 
 ```
 Initialized kv_store_receiver
 --------------------------------
-receiverProgramId : <your program id>
-forwarderState     (input, echo) : 726bmjnxLeYkvSWUBRby5eUXds96xR58MFfcZoBzuuW3
-forwarderAuthority (derived)      : <derived PDA>
+receiverProgramId  : <your program id>
+forwarderState     (input, echo) : 8QoomCQyPSkJ8WopJbX9B4HyvrFzziwvJdU8hZE6DCr9
+forwarderProgramId (input, echo) : CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5
+forwarderAuthority (derived, sanity-check only, not part of config) : <derived PDA>
 kvStoreAccount     (receiverAccounts[0]) : <new account>
 
 initialize() tx: https://explorer.solana.com/tx/<signature>?cluster=devnet
@@ -121,15 +127,17 @@ initialize() tx: https://explorer.solana.com/tx/<signature>?cluster=devnet
 
 ## 7. Wire it into the workflow config
 
-Copy the four values into [`my-workflow/config.staging.json`](../../my-workflow/config.staging.json):
+Copy `receiverProgramId`, `forwarderState`, `forwarderProgramId`, and
+`kvStoreAccount` into [`my-workflow/config.staging.json`](../../my-workflow/config.staging.json)
+(`forwarderAuthority` is not a config field — see step 6):
 
 ```json
 {
   "solana": {
     "chainSelectorName": "solana-devnet",
     "receiverProgramId": "<receiverProgramId>",
-    "forwarderState": "726bmjnxLeYkvSWUBRby5eUXds96xR58MFfcZoBzuuW3",
-    "forwarderAuthority": "<forwarderAuthority>",
+    "forwarderState": "8QoomCQyPSkJ8WopJbX9B4HyvrFzziwvJdU8hZE6DCr9",
+    "forwarderProgramId": "CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5",
     "receiverAccounts": [
       { "publicKey": "<kvStoreAccount>", "isWritable": true }
     ]

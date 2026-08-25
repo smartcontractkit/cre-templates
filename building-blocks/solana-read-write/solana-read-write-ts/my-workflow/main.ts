@@ -9,12 +9,13 @@ import {
 	SolanaTxStatus,
 	solanaAccountMeta,
 } from '@chainlink/cre-sdk'
-import { address } from '@solana/addresses'
+import { address, getAddressEncoder, getProgramDerivedAddress } from '@solana/addresses'
 import { getBase58Decoder } from '@solana/codecs'
 import { z } from 'zod'
 import { KvStoreReceiver, type KvEntry } from '../contracts/ts/generated'
 
 const BASE58_DECODER = getBase58Decoder()
+const ADDRESS_ENCODER = getAddressEncoder()
 
 // Validates base58-encoded Solana addresses at config-parse time.
 const base58Address = z.string().refine(
@@ -41,8 +42,9 @@ const configSchema = z.object({
 		receiverProgramId: base58Address,
 		// Chainlink's shared keystone forwarder for this environment (do not deploy your own)
 		forwarderState: base58Address,
-		// PDA of ["forwarder", forwarderState, receiverProgramId] under the forwarder program
-		forwarderAuthority: base58Address,
+		// The keystone forwarder program id that owns forwarderState — see
+		// https://docs.chain.link/cre/guides/workflow/using-solana-client/solana-forwarder-directory-ts
+		forwarderProgramId: base58Address,
 		// Accounts kv_store_receiver's on_report instruction needs, in order
 		receiverAccounts: z.array(
 			z.object({
@@ -56,8 +58,32 @@ const configSchema = z.object({
 type Config = z.infer<typeof configSchema>
 type ConfiguredAccount = Config['solana']['receiverAccounts'][number]
 
-const onCronTrigger = (runtime: Runtime<Config>) => {
+// PDA the forwarder program signs with when it CPIs into on_report — must match
+// kv_store_receiver's own derivation (see contracts/solana/programs/kv_store_receiver/src/lib.rs).
+const deriveForwarderAuthority = async (solanaConfig: Config['solana']) => {
+	const [authority] = await getProgramDerivedAddress({
+		programAddress: address(solanaConfig.forwarderProgramId),
+		seeds: [
+			'forwarder',
+			ADDRESS_ENCODER.encode(address(solanaConfig.forwarderState)),
+			ADDRESS_ENCODER.encode(address(solanaConfig.receiverProgramId)),
+		],
+	})
+	return authority
+}
+
+const logSolanaConfig = (runtime: Runtime<Config>, solanaConfig: Config['solana']) => {
+	runtime.log(
+		`Solana config: chainSelectorName=${solanaConfig.chainSelectorName} ` +
+			`receiverProgramId=${solanaConfig.receiverProgramId} ` +
+			`forwarderState=${solanaConfig.forwarderState} ` +
+			`forwarderProgramId=${solanaConfig.forwarderProgramId}`,
+	)
+}
+
+const onCronTrigger = async (runtime: Runtime<Config>) => {
 	const solanaConfig = runtime.config.solana
+	logSolanaConfig(runtime, solanaConfig)
 
 	const network = getNetwork({
 		chainFamily: 'solana',
@@ -73,13 +99,15 @@ const onCronTrigger = (runtime: Runtime<Config>) => {
 		solanaConfig.receiverProgramId,
 	)
 
+	const forwarderAuthority = await deriveForwarderAuthority(solanaConfig)
+
 	// keystone-forwarder account layout: forwarder state first, the forwarder
 	// authority PDA second, then the accounts kv_store_receiver's on_report
 	// instruction needs (here: just the kv_store account). Order matters — the
 	// full list is hashed into the report and verified on-chain.
 	const accounts: SolanaAccountMeta[] = [
 		solanaAccountMeta(solanaConfig.forwarderState, true),
-		solanaAccountMeta(solanaConfig.forwarderAuthority),
+		solanaAccountMeta(forwarderAuthority),
 		...solanaConfig.receiverAccounts.map((account: ConfiguredAccount) =>
 			solanaAccountMeta(account.publicKey, account.isWritable ?? false),
 		),
@@ -115,6 +143,7 @@ const onCronTrigger = (runtime: Runtime<Config>) => {
 
 const onReadCronTrigger = (runtime: Runtime<Config>) => {
 	const solanaConfig = runtime.config.solana
+	logSolanaConfig(runtime, solanaConfig)
 
 	const network = getNetwork({
 		chainFamily: 'solana',

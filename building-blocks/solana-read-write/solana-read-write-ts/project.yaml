@@ -13,6 +13,13 @@
 #       url: "https://mainnet.infura.io/v3/KEY"
 
 # ==========================================================================
+simulation-settings:
+  rpcs:
+    - chain-name: solana-devnet
+      url: https://api.devnet.solana.com
+
+
+# ==========================================================================
 staging-settings:
   rpcs:
     - chain-name: solana-devnet
