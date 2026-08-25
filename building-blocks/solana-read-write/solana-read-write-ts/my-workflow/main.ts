@@ -9,13 +9,15 @@ import {
 	SolanaTxStatus,
 	solanaAccountMeta,
 } from '@chainlink/cre-sdk'
-import { address, getAddressEncoder, getProgramDerivedAddress } from '@solana/addresses'
+import { address } from '@solana/addresses'
 import { getBase58Decoder } from '@solana/codecs'
+import { PublicKey } from '@solana/web3.js'
 import { z } from 'zod'
 import { KvStoreReceiver, type KvEntry } from '../contracts/ts/generated'
 
 const BASE58_DECODER = getBase58Decoder()
-const ADDRESS_ENCODER = getAddressEncoder()
+// ASCII bytes of "forwarder" — the seed keystone-forwarder uses to derive its authority PDA.
+const FORWARDER_SEED = new TextEncoder().encode('forwarder')
 
 // Validates base58-encoded Solana addresses at config-parse time.
 const base58Address = z.string().refine(
@@ -60,16 +62,21 @@ type ConfiguredAccount = Config['solana']['receiverAccounts'][number]
 
 // PDA the forwarder program signs with when it CPIs into on_report — must match
 // kv_store_receiver's own derivation (see contracts/solana/programs/kv_store_receiver/src/lib.rs).
-const deriveForwarderAuthority = async (solanaConfig: Config['solana']) => {
-	const [authority] = await getProgramDerivedAddress({
-		programAddress: address(solanaConfig.forwarderProgramId),
-		seeds: [
-			'forwarder',
-			ADDRESS_ENCODER.encode(address(solanaConfig.forwarderState)),
-			ADDRESS_ENCODER.encode(address(solanaConfig.receiverProgramId)),
+//
+// Deliberately uses @solana/web3.js's synchronous PublicKey.findProgramAddressSync rather than
+// @solana/addresses's getProgramDerivedAddress: the latter hashes via crypto.subtle, which throws
+// "Cryptographic operations are only allowed in secure browser contexts" in the CRE workflow
+// runtime (not a browser secure context).
+const deriveForwarderAuthority = (solanaConfig: Config['solana']) => {
+	const [authority] = PublicKey.findProgramAddressSync(
+		[
+			FORWARDER_SEED,
+			new PublicKey(solanaConfig.forwarderState).toBytes(),
+			new PublicKey(solanaConfig.receiverProgramId).toBytes(),
 		],
-	})
-	return authority
+		new PublicKey(solanaConfig.forwarderProgramId),
+	)
+	return authority.toBase58()
 }
 
 const logSolanaConfig = (runtime: Runtime<Config>, solanaConfig: Config['solana']) => {
@@ -99,7 +106,7 @@ const onCronTrigger = async (runtime: Runtime<Config>) => {
 		solanaConfig.receiverProgramId,
 	)
 
-	const forwarderAuthority = await deriveForwarderAuthority(solanaConfig)
+	const forwarderAuthority = deriveForwarderAuthority(solanaConfig)
 
 	// keystone-forwarder account layout: forwarder state first, the forwarder
 	// authority PDA second, then the accounts kv_store_receiver's on_report
