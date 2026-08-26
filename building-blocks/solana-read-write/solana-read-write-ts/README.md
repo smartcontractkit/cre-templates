@@ -220,19 +220,19 @@ successfully against this config (it'll fail with `MismatchedForwarderProgram`
     "forwarderState": "8QoomCQyPSkJ8WopJbX9B4HyvrFzziwvJdU8hZE6DCr9",
     "forwarderProgramId": "CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5",
     "receiverAccounts": [
-      { "publicKey": "<kvStoreAccount initialized against this forwarder>", "isWritable": true }
+      { "publicKey": "7aoz8Xr7juGMDWDtGBsLMZWvBdsPFh9xznSr7TxxgBup", "isWritable": true }
     ]
   }
 }
 ```
 
-The `receiverAccounts[0]` value above must come from re-running
+If you deploy your own `kv_store_receiver`, the `receiverAccounts[0]` value above
+must come from running
 [`contracts/solana/scripts/initialize.ts`](./contracts/solana/README.md#6-initialize-your-receiver)
-against `forwarderProgramId` `CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5` — the
-account previously shipped here (`3pAmDKMDtsXtYtJJFHEqqc5UGGkfgFnn76crfNvCZNqX`)
-was initialized against a stale, incorrect forwarder program id and will fail
-`on_report` with `MismatchedForwarderProgram` against the real Keystone
-forwarder.
+against `forwarderProgramId` `CXsKEJcs25TQEYU2e5jZ8QTPE3ffMLZhH6BWHrdcCCB5` — an
+account initialized against the *mock* forwarder (as `config.staging.json`
+shipped with previously) will fail `on_report` with
+`MismatchedForwarderProgram` against the real Keystone forwarder.
 
 | | Mock forwarder (default) | Production forwarder |
 |---|---|---|
