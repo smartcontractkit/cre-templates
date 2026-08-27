@@ -478,43 +478,59 @@ const createOpenAiPrompt = (
 export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string> => {
   const { mock_base_url, openai_url, openai_model, secrets_ids } = runtime.config;
 
-  const exchangeApiKey = runtime.getSecret({ id: secrets_ids.exchange_api_key_id }).result().value;
-  const openAiApiKey = runtime.getSecret({ id: secrets_ids.openai_api_key_id }).result().value;
+  const secrets = runtime
+    .getSecrets([
+      { id: secrets_ids.exchange_api_key_id },
+      { id: secrets_ids.openai_api_key_id },
+      { id: secrets_ids.liquidation_warning_action_threshold_secret_id },
+      { id: secrets_ids.minimum_health_factor_secret_id },
+      { id: secrets_ids.target_health_factor_secret_id },
+      { id: secrets_ids.maximum_stablecoin_reserve_deployment_secret_id },
+      { id: secrets_ids.minimum_stablecoin_reserve_balance_secret_id },
+      { id: secrets_ids.maximum_collateral_allocation_secret_id },
+      { id: secrets_ids.maximum_partial_debt_repayment_secret_id },
+      { id: secrets_ids.defensive_action_sequencing_preference_secret_id },
+      { id: secrets_ids.preferred_venues_secret_id },
+    ])
+    .result();
+
+  const exchangeApiKey = secrets[secrets_ids.exchange_api_key_id].value;
+  const openAiApiKey = secrets[secrets_ids.openai_api_key_id].value;
   const liquidationWarningActionThreshold = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.liquidation_warning_action_threshold_secret_id }).result().value,
+    secrets[secrets_ids.liquidation_warning_action_threshold_secret_id].value,
     secrets_ids.liquidation_warning_action_threshold_secret_id,
   );
   const minimumHealthFactor = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.minimum_health_factor_secret_id }).result().value,
+    secrets[secrets_ids.minimum_health_factor_secret_id].value,
     secrets_ids.minimum_health_factor_secret_id,
   );
   const targetHealthFactor = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.target_health_factor_secret_id }).result().value,
+    secrets[secrets_ids.target_health_factor_secret_id].value,
     secrets_ids.target_health_factor_secret_id,
   );
   const maxStablecoinReserveDeployment = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.maximum_stablecoin_reserve_deployment_secret_id }).result().value,
+    secrets[secrets_ids.maximum_stablecoin_reserve_deployment_secret_id].value,
     secrets_ids.maximum_stablecoin_reserve_deployment_secret_id,
   );
   const minStablecoinReserveBalance = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.minimum_stablecoin_reserve_balance_secret_id }).result().value,
+    secrets[secrets_ids.minimum_stablecoin_reserve_balance_secret_id].value,
     secrets_ids.minimum_stablecoin_reserve_balance_secret_id,
   );
   const maxCollateralAllocation = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.maximum_collateral_allocation_secret_id }).result().value,
+    secrets[secrets_ids.maximum_collateral_allocation_secret_id].value,
     secrets_ids.maximum_collateral_allocation_secret_id,
   );
   const maxPartialDebtRepayment = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.maximum_partial_debt_repayment_secret_id }).result().value,
+    secrets[secrets_ids.maximum_partial_debt_repayment_secret_id].value,
     secrets_ids.maximum_partial_debt_repayment_secret_id,
   );
   const defensiveSequencePreference = parseExecutionSequencePreference(
-    runtime.getSecret({ id: secrets_ids.defensive_action_sequencing_preference_secret_id }).result().value,
+    secrets[secrets_ids.defensive_action_sequencing_preference_secret_id].value,
   );
   const preferredVenues = parseVenueListSecret(
-    runtime.getSecret({ id: secrets_ids.preferred_venues_secret_id }).result().value,
+    secrets[secrets_ids.preferred_venues_secret_id].value,
   );
-  runtime.log("liquidation-getsecret-ok");
+  runtime.log("liquidation-getsecrets-ok");
 
   const client = new HTTPClient();
   const risk = collectRiskSnapshot(runtime, client, mock_base_url, exchangeApiKey);
