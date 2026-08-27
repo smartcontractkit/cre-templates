@@ -164,8 +164,9 @@ describe("runAuditFirewall", () => {
       log: (message: string) => {
         logs.push(message);
       },
-      getSecret: ({ id }: { id: string }) => ({
-        result: () => ({ value: `${id}-value` }),
+      getSecrets: (requests: { id: string }[]) => ({
+        result: () =>
+          Object.fromEntries(requests.map(({ id }) => [id, { value: `${id}-value` }])),
       }),
       usingTheDons: () => ({
         report: () => ({

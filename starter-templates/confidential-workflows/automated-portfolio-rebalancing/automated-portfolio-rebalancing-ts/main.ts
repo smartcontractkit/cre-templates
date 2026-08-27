@@ -582,43 +582,59 @@ const createOpenAiPrompt = (
 export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string> => {
   const { mock_base_url, openai_url, openai_model, secrets_ids } = runtime.config;
 
-  const exchangeApiKey = runtime.getSecret({ id: secrets_ids.exchange_api_key_id }).result().value;
-  const openAiApiKey = runtime.getSecret({ id: secrets_ids.openai_api_key_id }).result().value;
+  const secrets = runtime
+    .getSecrets([
+      { id: secrets_ids.exchange_api_key_id },
+      { id: secrets_ids.openai_api_key_id },
+      { id: secrets_ids.target_allocation_btc_pct_secret_id },
+      { id: secrets_ids.target_allocation_eth_pct_secret_id },
+      { id: secrets_ids.target_allocation_usdc_pct_secret_id },
+      { id: secrets_ids.drift_threshold_pct_secret_id },
+      { id: secrets_ids.max_trade_usd_secret_id },
+      { id: secrets_ids.reserve_floor_usdc_secret_id },
+      { id: secrets_ids.max_slippage_bps_secret_id },
+      { id: secrets_ids.preferred_venues_secret_id },
+      { id: secrets_ids.order_sequence_preference_secret_id },
+    ])
+    .result();
+
+  const exchangeApiKey = secrets[secrets_ids.exchange_api_key_id].value;
+  const openAiApiKey = secrets[secrets_ids.openai_api_key_id].value;
   const targetAllocationBtcPct = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.target_allocation_btc_pct_secret_id }).result().value,
+    secrets[secrets_ids.target_allocation_btc_pct_secret_id].value,
     secrets_ids.target_allocation_btc_pct_secret_id,
   );
   const targetAllocationEthPct = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.target_allocation_eth_pct_secret_id }).result().value,
+    secrets[secrets_ids.target_allocation_eth_pct_secret_id].value,
     secrets_ids.target_allocation_eth_pct_secret_id,
   );
   const targetAllocationUsdcPct = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.target_allocation_usdc_pct_secret_id }).result().value,
+    secrets[secrets_ids.target_allocation_usdc_pct_secret_id].value,
     secrets_ids.target_allocation_usdc_pct_secret_id,
   );
   const driftThresholdPct = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.drift_threshold_pct_secret_id }).result().value,
+    secrets[secrets_ids.drift_threshold_pct_secret_id].value,
     secrets_ids.drift_threshold_pct_secret_id,
   );
   const maxTradeUsd = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.max_trade_usd_secret_id }).result().value,
+    secrets[secrets_ids.max_trade_usd_secret_id].value,
     secrets_ids.max_trade_usd_secret_id,
   );
   const reserveFloorUsdc = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.reserve_floor_usdc_secret_id }).result().value,
+    secrets[secrets_ids.reserve_floor_usdc_secret_id].value,
     secrets_ids.reserve_floor_usdc_secret_id,
   );
   const maxSlippageBps = parseRequiredSecretNumber(
-    runtime.getSecret({ id: secrets_ids.max_slippage_bps_secret_id }).result().value,
+    secrets[secrets_ids.max_slippage_bps_secret_id].value,
     secrets_ids.max_slippage_bps_secret_id,
   );
   const preferredVenues = parseVenueListSecret(
-    runtime.getSecret({ id: secrets_ids.preferred_venues_secret_id }).result().value,
+    secrets[secrets_ids.preferred_venues_secret_id].value,
   );
   const orderSequencePreference = parseOrderSequencePreference(
-    runtime.getSecret({ id: secrets_ids.order_sequence_preference_secret_id }).result().value,
+    secrets[secrets_ids.order_sequence_preference_secret_id].value,
   );
-  runtime.log("rebalance-getsecret-ok");
+  runtime.log("rebalance-getsecrets-ok");
 
   const client = new HTTPClient();
   const snapshot = collectMarketSnapshot(runtime, client, mock_base_url, exchangeApiKey);

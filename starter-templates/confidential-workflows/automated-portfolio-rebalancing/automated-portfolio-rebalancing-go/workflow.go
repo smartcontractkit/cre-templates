@@ -757,16 +757,13 @@ func collectMarketSnapshot(
 	}, nil
 }
 
-// loadPolicy fetches every policy input from the Vault DON. The secrets are
-// released only into an attested enclave and decrypted at the moment GetSecret
-// runs, so node operators never see the target weights or trade caps.
-func loadPolicy(runtime cre.TeeRuntime, ids SecretsConfig) (Policy, error) {
+// buildPolicy assembles the policy from the batch-fetched Vault DON secrets.
+// The secrets are released only into an attested enclave and decrypted at the
+// moment GetSecrets runs, so node operators never see the target weights or
+// trade caps.
+func buildPolicy(secretValues map[string]string, ids SecretsConfig) (Policy, error) {
 	numeric := func(secretID string) (float64, error) {
-		secret, err := runtime.GetSecret(&cre.SecretRequest{Id: secretID}).Await()
-		if err != nil {
-			return 0, fmt.Errorf("failed to fetch secret %q inside the enclave: %w", secretID, err)
-		}
-		return parseRequiredSecretNumber(secret.Value, secretID)
+		return parseRequiredSecretNumber(secretValues[secretID], secretID)
 	}
 
 	targetBtc, err := numeric(ids.TargetAllocationBtcPctSecretID)
@@ -798,20 +795,6 @@ func loadPolicy(runtime cre.TeeRuntime, ids SecretsConfig) (Policy, error) {
 		return Policy{}, err
 	}
 
-	venuesSecret, err := runtime.GetSecret(&cre.SecretRequest{Id: ids.PreferredVenuesSecretID}).Await()
-	if err != nil {
-		return Policy{}, fmt.Errorf("failed to fetch secret %q inside the enclave: %w",
-			ids.PreferredVenuesSecretID, err)
-	}
-
-	sequenceSecret, err := runtime.GetSecret(
-		&cre.SecretRequest{Id: ids.OrderSequencePreferenceSecretID},
-	).Await()
-	if err != nil {
-		return Policy{}, fmt.Errorf("failed to fetch secret %q inside the enclave: %w",
-			ids.OrderSequencePreferenceSecretID, err)
-	}
-
 	return Policy{
 		TargetAllocations: map[string]float64{
 			"BTC":  targetBtc,
@@ -822,8 +805,8 @@ func loadPolicy(runtime cre.TeeRuntime, ids SecretsConfig) (Policy, error) {
 		MaxTradeUsd:             maxTradeUsd,
 		ReserveFloorUsdc:        reserveFloor,
 		MaxSlippageBps:          maxSlippage,
-		PreferredVenues:         parseVenueListSecret(venuesSecret.Value),
-		OrderSequencePreference: parseOrderSequencePreference(sequenceSecret.Value),
+		PreferredVenues:         parseVenueListSecret(secretValues[ids.PreferredVenuesSecretID]),
+		OrderSequencePreference: parseOrderSequencePreference(secretValues[ids.OrderSequencePreferenceSecretID]),
 	}, nil
 }
 
@@ -833,19 +816,35 @@ func loadPolicy(runtime cre.TeeRuntime, ids SecretsConfig) (Policy, error) {
 func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (string, error) {
 	ids := config.SecretsIDs
 
-	exchangeSecret, err := runtime.GetSecret(&cre.SecretRequest{Id: ids.ExchangeAPIKeyID}).Await()
+	// Batch fetch every secret in a single call; if any secret fails, the error
+	// reports every failed secret at once. Results are keyed by ID afterwards so
+	// no value depends on slice position.
+	secrets, err := runtime.GetSecrets([]*cre.SecretRequest{
+		{Id: ids.ExchangeAPIKeyID},
+		{Id: ids.OpenAIAPIKeyID},
+		{Id: ids.TargetAllocationBtcPctSecretID},
+		{Id: ids.TargetAllocationEthPctSecretID},
+		{Id: ids.TargetAllocationUsdcPctSecretID},
+		{Id: ids.DriftThresholdPctSecretID},
+		{Id: ids.MaxTradeUsdSecretID},
+		{Id: ids.ReserveFloorUsdcSecretID},
+		{Id: ids.MaxSlippageBpsSecretID},
+		{Id: ids.PreferredVenuesSecretID},
+		{Id: ids.OrderSequencePreferenceSecretID},
+	}).Await()
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch secret %q inside the enclave: %w", ids.ExchangeAPIKeyID, err)
+		return "", fmt.Errorf("failed to fetch secrets inside the enclave: %w", err)
 	}
-	exchangeAPIKey := exchangeSecret.Value
 
-	openAISecret, err := runtime.GetSecret(&cre.SecretRequest{Id: ids.OpenAIAPIKeyID}).Await()
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch secret %q inside the enclave: %w", ids.OpenAIAPIKeyID, err)
+	secretValues := make(map[string]string, len(secrets))
+	for _, secret := range secrets {
+		secretValues[secret.Id] = secret.Value
 	}
-	openAIAPIKey := openAISecret.Value
 
-	policy, err := loadPolicy(runtime, ids)
+	exchangeAPIKey := secretValues[ids.ExchangeAPIKeyID]
+	openAIAPIKey := secretValues[ids.OpenAIAPIKeyID]
+
+	policy, err := buildPolicy(secretValues, ids)
 	if err != nil {
 		return "", err
 	}
@@ -853,7 +852,7 @@ func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (str
 	// ⚠️ Logs are for simulation only and MUST be removed before deploying to
 	// production — anything logged inside the enclave weakens the
 	// confidentiality guarantee. This records only that the fetch succeeded.
-	runtime.Logger().Info("rebalance-getsecret-ok")
+	runtime.Logger().Info("rebalance-getsecrets-ok")
 
 	client := &http.Client{}
 

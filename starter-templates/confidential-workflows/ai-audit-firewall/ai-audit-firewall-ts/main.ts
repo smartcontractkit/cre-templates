@@ -528,11 +528,19 @@ export const runAuditFirewall = async (
 ): Promise<string> => {
   const { mock_base_url, scanner_url, primary_llm_url, secondary_llm_url, secrets_ids } = runtime.config;
 
-  const scannerApiKey = runtime.getSecret({ id: secrets_ids.scanner_api_key_id }).result().value;
-  const primaryLlmApiKey = runtime.getSecret({ id: secrets_ids.primary_llm_api_key_id }).result().value;
-  const secondaryLlmApiKey = runtime.getSecret({ id: secrets_ids.secondary_llm_api_key_id }).result().value;
+  const secrets = runtime
+    .getSecrets([
+      { id: secrets_ids.scanner_api_key_id },
+      { id: secrets_ids.primary_llm_api_key_id },
+      { id: secrets_ids.secondary_llm_api_key_id },
+    ])
+    .result();
 
-  runtime.log("audit-firewall-getsecret-ok");
+  const scannerApiKey = secrets[secrets_ids.scanner_api_key_id].value;
+  const primaryLlmApiKey = secrets[secrets_ids.primary_llm_api_key_id].value;
+  const secondaryLlmApiKey = secrets[secrets_ids.secondary_llm_api_key_id].value;
+
+  runtime.log("audit-firewall-getsecrets-ok");
 
   const proposal = collectTransactionProposal(runtime, client, mock_base_url, scannerApiKey);
   const scannerCredentialValidation = validateScannerCredentials(runtime, client, scanner_url, scannerApiKey);
