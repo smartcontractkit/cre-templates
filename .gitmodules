@@ -19,3 +19,6 @@
 [submodule "starter-templates/multi-chain-token-manager/contracts/lib/chainlink-ccip"]
 	path = starter-templates/multi-chain-token-manager/contracts/lib/chainlink-ccip
 	url = https://github.com/smartcontractkit/chainlink-ccip
+[submodule "starter-templates/randomness/randomness-ts/contracts/evm/lib/openzeppelin-contracts"]
+	path = starter-templates/randomness/randomness-ts/contracts/evm/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts

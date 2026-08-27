@@ -13,6 +13,7 @@ import {
   EVMClient,
   hexToBase64,
   LAST_FINALIZED_BLOCK_NUMBER,
+  LATEST_BLOCK_NUMBER,
   prepareReportRequest,
   type EVMLog,
   type Runtime,
@@ -323,7 +324,7 @@ export class RandomnessConsumer {
     const result = this.client
       .callContract(runtime, {
         call: encodeCallMsg({ from: zeroAddress, to: this.address, data: callData }),
-        blockNumber: LAST_FINALIZED_BLOCK_NUMBER,
+        blockNumber: LATEST_BLOCK_NUMBER,
       })
       .result()
 

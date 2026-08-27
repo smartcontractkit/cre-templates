@@ -4,6 +4,7 @@
 staging-settings:
   user-workflow:
     workflow-name: "randomness-staging"
+    deployment-registry: "private"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.staging.json"
