@@ -683,28 +683,24 @@ func writeVerdictOnChain(
 func RunAuditFirewall(config *Config, runtime cre.TeeRuntime, client *http.Client) (string, error) {
 	ids := config.SecretsIDs
 
-	scannerSecret, err := runtime.GetSecret(&cre.SecretRequest{Id: ids.ScannerAPIKeyID}).Await()
+	// Batch fetch returns the secrets in the same order as the requests; if any
+	// secret fails, the error reports every failed secret at once.
+	secrets, err := runtime.GetSecrets([]*cre.SecretRequest{
+		{Id: ids.ScannerAPIKeyID},
+		{Id: ids.PrimaryLLMAPIKeyID},
+		{Id: ids.SecondaryLLMAPIKeyID},
+	}).Await()
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch secret %q inside the enclave: %w", ids.ScannerAPIKeyID, err)
+		return "", fmt.Errorf("failed to fetch secrets inside the enclave: %w", err)
 	}
-	scannerAPIKey := scannerSecret.Value
-
-	primarySecret, err := runtime.GetSecret(&cre.SecretRequest{Id: ids.PrimaryLLMAPIKeyID}).Await()
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch secret %q inside the enclave: %w", ids.PrimaryLLMAPIKeyID, err)
-	}
-	primaryLLMAPIKey := primarySecret.Value
-
-	secondarySecret, err := runtime.GetSecret(&cre.SecretRequest{Id: ids.SecondaryLLMAPIKeyID}).Await()
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch secret %q inside the enclave: %w", ids.SecondaryLLMAPIKeyID, err)
-	}
-	secondaryLLMAPIKey := secondarySecret.Value
+	scannerAPIKey := secrets[0].Value
+	primaryLLMAPIKey := secrets[1].Value
+	secondaryLLMAPIKey := secrets[2].Value
 
 	// ⚠️ Logs are for simulation only and MUST be removed before deploying to
 	// production — anything logged inside the enclave weakens the
 	// confidentiality guarantee. These record only non-sensitive markers.
-	runtime.Logger().Info("audit-firewall-getsecret-ok")
+	runtime.Logger().Info("audit-firewall-getsecrets-ok")
 
 	proposal, err := collectTransactionProposal(runtime, client, config.MockBaseURL, scannerAPIKey)
 	if err != nil {
