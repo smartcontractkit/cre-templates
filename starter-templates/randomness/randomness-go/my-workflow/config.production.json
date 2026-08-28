@@ -1,0 +1,5 @@
+{
+  "chainSelectorName": "ethereum-mainnet",
+  "consumerAddress": "0xYOUR_CONSUMER_CONTRACT_ADDRESS",
+  "gasLimit": 1000000
+}
