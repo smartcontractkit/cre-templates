@@ -2,6 +2,7 @@
   "name": "kv-store-receiver-deploy-helper",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "initialize": "bun run scripts/initialize.ts"

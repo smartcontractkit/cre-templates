@@ -3,6 +3,7 @@ name = "kv-store-receiver"
 version = "0.1.0"
 description = "Minimal CRE keystone receiver that stores a key/value pair on Solana"
 edition = "2021"
+license = "MIT"
 
 [lib]
 crate-type = ["cdylib", "lib"]

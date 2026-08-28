@@ -40,10 +40,10 @@ different forwarder:
 
 | Use case | forwarderState | kv_store account |
 |---|---|---|
-| `cre workflow simulate` (this README's golden path, incl. `--broadcast`) | simulator mock forwarder | used by `config.staging.json` |
+| `cre workflow simulate` (this README's golden path, incl. `--broadcast`) | simulator mock forwarder | used by `config.simulation.json` |
 | Real `cre workflow deploy` to a live DON | Chainlink's real staging devnet forwarder | see [Deploying your own receiver program](#deploying-your-own-receiver-program-optional) |
 
-`config.staging.json` ships pointed at the mock-forwarder account so the golden
+`config.simulation.json` ships pointed at the mock-forwarder account so the golden
 path below produces a real, finalized devnet transaction out of the box.
 
 ---
@@ -139,9 +139,17 @@ From your project root:
 
 ```bash
 bun install --cwd ./my-workflow
+bun install --cwd ./contracts
 ```
 
-`my-workflow/config.staging.json` already points at the pre-deployed
+Both installs are required: `my-workflow/main.ts` imports the generated Solana
+bindings from `../contracts/ts/generated`, and those bindings import
+`@chainlink/cre-sdk` and `@solana/codecs` — which resolve from `contracts/`
+(they are not reachable from `my-workflow/node_modules`). Skipping the
+`contracts/` install produces a `Cannot find module '@chainlink/cre-sdk'` /
+`'@solana/codecs'` typecheck error on the next step.
+
+`my-workflow/config.simulation.json` already points at the pre-deployed
 `kv_store_receiver`, initialized against CRE's simulator mock forwarder so
 `cre workflow simulate` works out of the box:
 
@@ -179,10 +187,11 @@ forwarder for an actual `cre workflow deploy`.
 #### Mock forwarder vs. production forwarder
 
 This template's `kv_store_receiver` is `initialize`d twice on devnet — once
-against each forwarder — so both configs below are ready to use as-is; you
-only need to switch `config.staging.json` between them.
+against each forwarder — so both configs below are ready to use as-is: the
+mock-forwarder config below lives in `config.simulation.json`, the production
+one in `config.staging.json`.
 
-**Mock forwarder** — what `config.staging.json` ships with. Use this whenever
+**Mock forwarder** — what `config.simulation.json` ships with. Use this whenever
 you run `cre workflow simulate` (with or without `--broadcast`), since the CLI
 always builds the transaction through this forwarder regardless of what's
 configured — see the "note on `cre workflow simulate` and forwarders" near the
@@ -251,7 +260,7 @@ anything.
 From your project root:
 
 ```bash
-cre workflow simulate my-workflow --target staging-settings
+cre workflow simulate my-workflow --target simulation-settings
 ```
 
 `cre workflow simulate` prompts you to pick which trigger to run (or pass
@@ -264,7 +273,7 @@ well-formed placeholder works since this workflow never touches EVM (already in
 **Write cron with `--broadcast`** produces a real, finalized devnet transaction:
 
 ```bash
-cre workflow simulate my-workflow --target staging-settings --trigger-index 0 --broadcast
+cre workflow simulate my-workflow --target simulation-settings --trigger-index 0 --broadcast
 ```
 
 ```
@@ -280,9 +289,9 @@ transaction and its `KvUpdated` event. Without `--broadcast`, the same command
 dry-runs the transaction (no fees spent, nothing lands on-chain) — useful for
 checking your report/account setup before spending devnet SOL.
 
-If you point `config.staging.json` at the **real** DON forwarder instead (see
+Because `config.staging.json` points at the **real** DON forwarder (see
 [Deploying your own receiver program](#deploying-your-own-receiver-program-optional)),
-this same command instead fails with `MismatchedForwarderProgram` — expected,
+running this same command against it instead fails with `MismatchedForwarderProgram` — expected,
 since `cre workflow simulate` always builds the transaction through the mock
 forwarder, never a real one. That failure happens *after* correct Borsh
 encoding, account ordering, PDA derivation, and CPI dispatch, so it still
