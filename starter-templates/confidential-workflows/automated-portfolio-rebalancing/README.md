@@ -57,7 +57,8 @@ Copy `.env.example` to `.env` and provide values for:
 - `MOCK_REBALANCING_RESERVE_FLOOR_USDC`
 - `MOCK_REBALANCING_MAX_SLIPPAGE_BPS`
 - `MOCK_REBALANCING_PREFERRED_VENUES`
-- `MOCK_REBALANCING_ORDER_SEQUENCE_PREFERENCE`
+
+The order sequence preference is not a secret; it is set via the `order_sequence_preference` field in each workflow's config file.
 
 The local mock server for this project only exposes routes under `/rebalancing/*`.
 
