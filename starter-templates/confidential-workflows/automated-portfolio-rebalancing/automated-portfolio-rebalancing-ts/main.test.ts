@@ -27,6 +27,7 @@ const baseConfig: Config = {
   mock_base_url: "http://127.0.0.1:8787",
   openai_url: "http://127.0.0.1:8787/rebalancing/v1/responses",
   openai_model: "gpt-4.1-mini",
+  order_sequence_preference: "model-order",
   secrets_ids: {
     exchange_api_key_id: "exchange_api_key",
     openai_api_key_id: "openai_api_key",
@@ -38,7 +39,6 @@ const baseConfig: Config = {
     reserve_floor_usdc_secret_id: "rebalancing_reserve_floor_usdc",
     max_slippage_bps_secret_id: "rebalancing_max_slippage_bps",
     preferred_venues_secret_id: "rebalancing_preferred_venues",
-    order_sequence_preference_secret_id: "rebalancing_order_sequence_preference",
   },
 };
 
@@ -184,6 +184,8 @@ describe("initWorkflow", () => {
         ...baseConfig,
         openai_url: "",
       }),
-    ).toThrow("config requires schedule, mock_base_url, openai_url, and openai_model");
+    ).toThrow(
+      "config requires schedule, mock_base_url, openai_url, openai_model, and order_sequence_preference",
+    );
   });
 });

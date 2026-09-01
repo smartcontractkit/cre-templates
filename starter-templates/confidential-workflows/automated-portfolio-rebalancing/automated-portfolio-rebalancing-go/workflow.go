@@ -30,15 +30,18 @@ type SecretsConfig struct {
 	ReserveFloorUsdcSecretID        string `json:"reserve_floor_usdc_secret_id"`
 	MaxSlippageBpsSecretID          string `json:"max_slippage_bps_secret_id"`
 	PreferredVenuesSecretID         string `json:"preferred_venues_secret_id"`
-	OrderSequencePreferenceSecretID string `json:"order_sequence_preference_secret_id"`
 }
 
 type Config struct {
-	Schedule    string        `json:"schedule"`
-	MockBaseURL string        `json:"mock_base_url"`
-	OpenAIURL   string        `json:"openai_url"`
-	OpenAIModel string        `json:"openai_model"`
-	SecretsIDs  SecretsConfig `json:"secrets_ids"`
+	Schedule    string `json:"schedule"`
+	MockBaseURL string `json:"mock_base_url"`
+	OpenAIURL   string `json:"openai_url"`
+	OpenAIModel string `json:"openai_model"`
+	// OrderSequencePreference is plain config, not a secret: it only reveals the
+	// ordering of trades within a rebalance, never the target weights, drift
+	// tolerance or trade caps an adversary would need to front-run the portfolio.
+	OrderSequencePreference string        `json:"order_sequence_preference"`
+	SecretsIDs              SecretsConfig `json:"secrets_ids"`
 }
 
 // ─── Domain types ───────────────────────────────────────────
@@ -224,7 +227,7 @@ func parseVenueListSecret(secretValue string) []string {
 }
 
 // parseOrderSequencePreference falls back to model-order for anything
-// unrecognised, so a corrupted secret cannot invent a new ordering.
+// unrecognised, so a corrupted config value cannot invent a new ordering.
 func parseOrderSequencePreference(value string) string {
 	switch strings.TrimSpace(value) {
 	case SequenceSellsFirst:
@@ -761,7 +764,7 @@ func collectMarketSnapshot(
 // The secrets are released only into an attested enclave and decrypted at the
 // moment GetSecrets runs, so node operators never see the target weights or
 // trade caps.
-func buildPolicy(secretValues map[string]string, ids SecretsConfig) (Policy, error) {
+func buildPolicy(secretValues map[string]string, ids SecretsConfig, orderSequencePreference string) (Policy, error) {
 	numeric := func(secretID string) (float64, error) {
 		return parseRequiredSecretNumber(secretValues[secretID], secretID)
 	}
@@ -806,7 +809,7 @@ func buildPolicy(secretValues map[string]string, ids SecretsConfig) (Policy, err
 		ReserveFloorUsdc:        reserveFloor,
 		MaxSlippageBps:          maxSlippage,
 		PreferredVenues:         parseVenueListSecret(secretValues[ids.PreferredVenuesSecretID]),
-		OrderSequencePreference: parseOrderSequencePreference(secretValues[ids.OrderSequencePreferenceSecretID]),
+		OrderSequencePreference: parseOrderSequencePreference(orderSequencePreference),
 	}, nil
 }
 
@@ -830,7 +833,6 @@ func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (str
 		{Id: ids.ReserveFloorUsdcSecretID},
 		{Id: ids.MaxSlippageBpsSecretID},
 		{Id: ids.PreferredVenuesSecretID},
-		{Id: ids.OrderSequencePreferenceSecretID},
 	}).Await()
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch secrets inside the enclave: %w", err)
@@ -844,7 +846,7 @@ func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (str
 	exchangeAPIKey := secretValues[ids.ExchangeAPIKeyID]
 	openAIAPIKey := secretValues[ids.OpenAIAPIKeyID]
 
-	policy, err := buildPolicy(secretValues, ids)
+	policy, err := buildPolicy(secretValues, ids, config.OrderSequencePreference)
 	if err != nil {
 		return "", err
 	}
@@ -964,8 +966,9 @@ func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (str
 // ─── Workflow Init ──────────────────────────────────────────
 
 func InitWorkflow(config *Config, _ *slog.Logger, _ cre.SecretsProvider) (cre.Workflow[*Config], error) {
-	if config.Schedule == "" || config.MockBaseURL == "" || config.OpenAIURL == "" || config.OpenAIModel == "" {
-		return nil, fmt.Errorf("config requires schedule, mock_base_url, openai_url, and openai_model")
+	if config.Schedule == "" || config.MockBaseURL == "" || config.OpenAIURL == "" ||
+		config.OpenAIModel == "" || config.OrderSequencePreference == "" {
+		return nil, fmt.Errorf("config requires schedule, mock_base_url, openai_url, openai_model, and order_sequence_preference")
 	}
 
 	ids := config.SecretsIDs
@@ -978,8 +981,7 @@ func InitWorkflow(config *Config, _ *slog.Logger, _ cre.SecretsProvider) (cre.Wo
 		ids.MaxTradeUsdSecretID == "" ||
 		ids.ReserveFloorUsdcSecretID == "" ||
 		ids.MaxSlippageBpsSecretID == "" ||
-		ids.PreferredVenuesSecretID == "" ||
-		ids.OrderSequencePreferenceSecretID == "" {
+		ids.PreferredVenuesSecretID == "" {
 		return nil, fmt.Errorf("config requires secrets_ids fields")
 	}
 

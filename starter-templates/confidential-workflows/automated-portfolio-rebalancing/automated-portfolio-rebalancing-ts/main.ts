@@ -32,7 +32,6 @@ type SecretsConfig = {
   reserve_floor_usdc_secret_id: string;
   max_slippage_bps_secret_id: string;
   preferred_venues_secret_id: string;
-  order_sequence_preference_secret_id: string;
 };
 
 export type Config = {
@@ -40,6 +39,7 @@ export type Config = {
   mock_base_url: string;
   openai_url: string;
   openai_model: string;
+  order_sequence_preference: string;
   secrets_ids: SecretsConfig;
 };
 
@@ -594,7 +594,6 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
       { id: secrets_ids.reserve_floor_usdc_secret_id },
       { id: secrets_ids.max_slippage_bps_secret_id },
       { id: secrets_ids.preferred_venues_secret_id },
-      { id: secrets_ids.order_sequence_preference_secret_id },
     ])
     .result();
 
@@ -632,7 +631,7 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
     secrets[secrets_ids.preferred_venues_secret_id].value,
   );
   const orderSequencePreference = parseOrderSequencePreference(
-    secrets[secrets_ids.order_sequence_preference_secret_id].value,
+    runtime.config.order_sequence_preference,
   );
   runtime.log("rebalance-getsecrets-ok");
 
@@ -739,9 +738,15 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
 };
 
 export const initWorkflow = (config: Config): Workflow<Config> => {
-  if (!config.schedule || !config.mock_base_url || !config.openai_url || !config.openai_model) {
+  if (
+    !config.schedule ||
+    !config.mock_base_url ||
+    !config.openai_url ||
+    !config.openai_model ||
+    !config.order_sequence_preference
+  ) {
     throw new Error(
-      "config requires schedule, mock_base_url, openai_url, and openai_model",
+      "config requires schedule, mock_base_url, openai_url, openai_model, and order_sequence_preference",
     );
   }
 
@@ -755,8 +760,7 @@ export const initWorkflow = (config: Config): Workflow<Config> => {
     !config.secrets_ids?.max_trade_usd_secret_id ||
     !config.secrets_ids?.reserve_floor_usdc_secret_id ||
     !config.secrets_ids?.max_slippage_bps_secret_id ||
-    !config.secrets_ids?.preferred_venues_secret_id ||
-    !config.secrets_ids?.order_sequence_preference_secret_id
+    !config.secrets_ids?.preferred_venues_secret_id
   ) {
     throw new Error("config requires secrets_ids fields");
   }
