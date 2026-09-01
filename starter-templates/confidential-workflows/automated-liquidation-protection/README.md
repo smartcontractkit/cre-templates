@@ -54,8 +54,9 @@ Copy `.env.example` to `.env` and provide values for:
 - `MOCK_LIQUIDATION_MIN_STABLECOIN_RESERVE_BALANCE`
 - `MOCK_LIQUIDATION_MAX_COLLATERAL_ALLOCATION`
 - `MOCK_LIQUIDATION_MAX_PARTIAL_DEBT_REPAYMENT`
-- `MOCK_LIQUIDATION_DEFENSIVE_ACTION_SEQUENCING_PREFERENCE`
 - `MOCK_LIQUIDATION_PREFERRED_VENUES`
+
+The defensive action sequencing preference is not a secret; it is set via the `defensive_action_sequencing_preference` field in each workflow's config file.
 
 The local mock server for this project only exposes routes under `/liquidation/*`.
 

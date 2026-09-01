@@ -36,10 +36,11 @@ func policyFixture() Policy {
 
 func testConfig() *Config {
 	return &Config{
-		Schedule:    "0 */5 * * * *",
-		MockBaseURL: mockBaseURL,
-		OpenAIURL:   openAIURL,
-		OpenAIModel: "gpt-4.1-mini",
+		Schedule:                "0 */5 * * * *",
+		MockBaseURL:             mockBaseURL,
+		OpenAIURL:               openAIURL,
+		OpenAIModel:             "gpt-4.1-mini",
+		OrderSequencePreference: "model-order",
 		SecretsIDs: SecretsConfig{
 			ExchangeAPIKeyID:                "exchange_api_key",
 			OpenAIAPIKeyID:                  "openai_api_key",
@@ -51,7 +52,6 @@ func testConfig() *Config {
 			ReserveFloorUsdcSecretID:        "rebalancing_reserve_floor_usdc",
 			MaxSlippageBpsSecretID:          "rebalancing_max_slippage_bps",
 			PreferredVenuesSecretID:         "rebalancing_preferred_venues",
-			OrderSequencePreferenceSecretID: "rebalancing_order_sequence_preference",
 		},
 	}
 }
@@ -71,7 +71,6 @@ func testSecrets() testutils.Secrets {
 			"rebalancing_reserve_floor_usdc":         "2000",
 			"rebalancing_max_slippage_bps":           "50",
 			"rebalancing_preferred_venues":           "binance,onchain",
-			"rebalancing_order_sequence_preference":  "model-order",
 		},
 	}
 }
@@ -606,12 +605,12 @@ func TestInitWorkflow_ErrorsWhenCoreFieldsMissing(t *testing.T) {
 
 	_, err := InitWorkflow(config, nil, nil)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "config requires schedule, mock_base_url, openai_url, and openai_model")
+	assert.Contains(t, err.Error(), "config requires schedule, mock_base_url, openai_url, openai_model, and order_sequence_preference")
 }
 
 func TestInitWorkflow_ErrorsWhenSecretIDsMissing(t *testing.T) {
 	config := testConfig()
-	config.SecretsIDs.OrderSequencePreferenceSecretID = ""
+	config.SecretsIDs.PreferredVenuesSecretID = ""
 
 	_, err := InitWorkflow(config, nil, nil)
 	require.Error(t, err)

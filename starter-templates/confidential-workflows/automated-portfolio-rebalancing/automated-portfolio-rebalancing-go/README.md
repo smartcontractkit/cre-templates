@@ -96,7 +96,8 @@ Copy `.env.example` to `.env` and provide values for:
 - `MOCK_REBALANCING_RESERVE_FLOOR_USDC`
 - `MOCK_REBALANCING_MAX_SLIPPAGE_BPS`
 - `MOCK_REBALANCING_PREFERRED_VENUES`
-- `MOCK_REBALANCING_ORDER_SEQUENCE_PREFERENCE`
+
+The order sequence preference is not a secret; it is set via the `order_sequence_preference` field in the config file.
 
 The local mock server for this project only exposes routes under `/rebalancing/*`.
 
@@ -110,6 +111,7 @@ The local mock server for this project only exposes routes under `/rebalancing/*
 | `mock_base_url` | Base URL for the portfolio, prices, volatility and execution endpoints |
 | `openai_url` | Reasoning endpoint called from inside the enclave |
 | `openai_model` | Model name passed to the reasoning endpoint |
+| `order_sequence_preference` | Trade ordering: `model-order`, `sells-first`, or `buys-first` |
 | `secrets_ids` | Maps each policy input to a secret ID in `secrets.yaml` |
 
 ## Quick Start
