@@ -21,25 +21,28 @@ import (
 // would tell an adversary exactly when this vault defends and how much it will
 // spend doing it.
 type SecretsConfig struct {
-	ExchangeAPIKeyID                            string `json:"exchange_api_key_id"`
-	OpenAIAPIKeyID                              string `json:"openai_api_key_id"`
-	LiquidationWarningActionThresholdSecretID   string `json:"liquidation_warning_action_threshold_secret_id"`
-	MinimumHealthFactorSecretID                 string `json:"minimum_health_factor_secret_id"`
-	TargetHealthFactorSecretID                  string `json:"target_health_factor_secret_id"`
-	MaximumStablecoinReserveDeploymentSecretID  string `json:"maximum_stablecoin_reserve_deployment_secret_id"`
-	MinimumStablecoinReserveBalanceSecretID     string `json:"minimum_stablecoin_reserve_balance_secret_id"`
-	MaximumCollateralAllocationSecretID         string `json:"maximum_collateral_allocation_secret_id"`
-	MaximumPartialDebtRepaymentSecretID         string `json:"maximum_partial_debt_repayment_secret_id"`
-	DefensiveActionSequencingPreferenceSecretID string `json:"defensive_action_sequencing_preference_secret_id"`
-	PreferredVenuesSecretID                     string `json:"preferred_venues_secret_id"`
+	ExchangeAPIKeyID                           string `json:"exchange_api_key_id"`
+	OpenAIAPIKeyID                             string `json:"openai_api_key_id"`
+	LiquidationWarningActionThresholdSecretID  string `json:"liquidation_warning_action_threshold_secret_id"`
+	MinimumHealthFactorSecretID                string `json:"minimum_health_factor_secret_id"`
+	TargetHealthFactorSecretID                 string `json:"target_health_factor_secret_id"`
+	MaximumStablecoinReserveDeploymentSecretID string `json:"maximum_stablecoin_reserve_deployment_secret_id"`
+	MinimumStablecoinReserveBalanceSecretID    string `json:"minimum_stablecoin_reserve_balance_secret_id"`
+	MaximumCollateralAllocationSecretID        string `json:"maximum_collateral_allocation_secret_id"`
+	MaximumPartialDebtRepaymentSecretID        string `json:"maximum_partial_debt_repayment_secret_id"`
+	PreferredVenuesSecretID                    string `json:"preferred_venues_secret_id"`
 }
 
 type Config struct {
-	Schedule    string        `json:"schedule"`
-	MockBaseURL string        `json:"mock_base_url"`
-	OpenAIURL   string        `json:"openai_url"`
-	OpenAIModel string        `json:"openai_model"`
-	SecretsIDs  SecretsConfig `json:"secrets_ids"`
+	Schedule    string `json:"schedule"`
+	MockBaseURL string `json:"mock_base_url"`
+	OpenAIURL   string `json:"openai_url"`
+	OpenAIModel string `json:"openai_model"`
+	// DefensiveActionSequencingPreference is plain config, not a secret: it only
+	// reveals the ordering of defensive actions, never the thresholds or amounts
+	// that decide when and how much the vault defends.
+	DefensiveActionSequencingPreference string        `json:"defensive_action_sequencing_preference"`
+	SecretsIDs                          SecretsConfig `json:"secrets_ids"`
 }
 
 // ─── Domain types ───────────────────────────────────────────
@@ -189,7 +192,7 @@ func parseRequiredSecretNumber(secretValue, secretID string) (float64, error) {
 }
 
 // parseExecutionSequencePreference falls back to collateral-first for anything
-// unrecognised, so a corrupted secret cannot silently invent a new ordering.
+// unrecognised, so a corrupted config value cannot silently invent a new ordering.
 func parseExecutionSequencePreference(value string) string {
 	switch strings.TrimSpace(value) {
 	case SequenceDebtFirst:
@@ -404,8 +407,7 @@ func chooseVenue(action DefensiveAction, preferredVenues []string) string {
 }
 
 // sequencePriorities ranks action types per preference. Ordering matters: adding
-// collateral before repaying debt has a different risk profile than the reverse,
-// and the operator's choice is itself confidential.
+// collateral before repaying debt has a different risk profile than the reverse.
 var sequencePriorities = map[string]map[string]int{
 	SequenceCollateralFirst: {
 		ActionAddCollateral:                 1,
@@ -545,7 +547,7 @@ func collectRiskSnapshot(
 // buildPolicy assembles the policy from the batch-fetched Vault DON secrets.
 // The secrets are released only into an attested enclave and decrypted at the
 // moment GetSecrets runs, so node operators never see the thresholds.
-func buildPolicy(secretValues map[string]string, ids SecretsConfig) (Policy, error) {
+func buildPolicy(secretValues map[string]string, ids SecretsConfig, sequencingPreference string) (Policy, error) {
 	numeric := func(secretID string) (float64, error) {
 		return parseRequiredSecretNumber(secretValues[secretID], secretID)
 	}
@@ -587,7 +589,7 @@ func buildPolicy(secretValues map[string]string, ids SecretsConfig) (Policy, err
 		MinReserveBalanceUSDC:       minReserveBalance,
 		MaxCollateralAllocationPct:  maxCollateralAllocation,
 		MaxPartialDebtRepaymentPct:  maxPartialDebtRepayment,
-		ExecutionSequencePreference: parseExecutionSequencePreference(secretValues[ids.DefensiveActionSequencingPreferenceSecretID]),
+		ExecutionSequencePreference: parseExecutionSequencePreference(sequencingPreference),
 		PreferredVenues:             parseVenueListSecret(secretValues[ids.PreferredVenuesSecretID]),
 	}, nil
 }
@@ -611,7 +613,6 @@ func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (str
 		{Id: ids.MinimumStablecoinReserveBalanceSecretID},
 		{Id: ids.MaximumCollateralAllocationSecretID},
 		{Id: ids.MaximumPartialDebtRepaymentSecretID},
-		{Id: ids.DefensiveActionSequencingPreferenceSecretID},
 		{Id: ids.PreferredVenuesSecretID},
 	}).Await()
 	if err != nil {
@@ -626,7 +627,7 @@ func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (str
 	exchangeAPIKey := secretValues[ids.ExchangeAPIKeyID]
 	openAIAPIKey := secretValues[ids.OpenAIAPIKeyID]
 
-	policy, err := buildPolicy(secretValues, ids)
+	policy, err := buildPolicy(secretValues, ids, config.DefensiveActionSequencingPreference)
 	if err != nil {
 		return "", err
 	}
@@ -728,8 +729,9 @@ func onCronTrigger(config *Config, runtime cre.TeeRuntime, _ *cron.Payload) (str
 // ─── Workflow Init ──────────────────────────────────────────
 
 func InitWorkflow(config *Config, _ *slog.Logger, _ cre.SecretsProvider) (cre.Workflow[*Config], error) {
-	if config.Schedule == "" || config.MockBaseURL == "" || config.OpenAIURL == "" || config.OpenAIModel == "" {
-		return nil, fmt.Errorf("config requires schedule, mock_base_url, openai_url, and openai_model")
+	if config.Schedule == "" || config.MockBaseURL == "" || config.OpenAIURL == "" ||
+		config.OpenAIModel == "" || config.DefensiveActionSequencingPreference == "" {
+		return nil, fmt.Errorf("config requires schedule, mock_base_url, openai_url, openai_model, and defensive_action_sequencing_preference")
 	}
 
 	ids := config.SecretsIDs
@@ -742,7 +744,6 @@ func InitWorkflow(config *Config, _ *slog.Logger, _ cre.SecretsProvider) (cre.Wo
 		ids.MinimumStablecoinReserveBalanceSecretID == "" ||
 		ids.MaximumCollateralAllocationSecretID == "" ||
 		ids.MaximumPartialDebtRepaymentSecretID == "" ||
-		ids.DefensiveActionSequencingPreferenceSecretID == "" ||
 		ids.PreferredVenuesSecretID == "" {
 		return nil, fmt.Errorf("config requires secrets_ids fields")
 	}

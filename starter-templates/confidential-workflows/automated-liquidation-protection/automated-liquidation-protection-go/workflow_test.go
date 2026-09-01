@@ -56,22 +56,22 @@ func riskFixture() RiskState {
 
 func testConfig() *Config {
 	return &Config{
-		Schedule:    "0 */5 * * * *",
-		MockBaseURL: mockBaseURL,
-		OpenAIURL:   openAIURL,
-		OpenAIModel: "gpt-4.1-mini",
+		Schedule:                            "0 */5 * * * *",
+		MockBaseURL:                         mockBaseURL,
+		OpenAIURL:                           openAIURL,
+		OpenAIModel:                         "gpt-4.1-mini",
+		DefensiveActionSequencingPreference: "collateral-first",
 		SecretsIDs: SecretsConfig{
 			ExchangeAPIKeyID: "exchange_api_key",
 			OpenAIAPIKeyID:   "openai_api_key",
-			LiquidationWarningActionThresholdSecretID:   "liquidation_liquidation_warning_action_threshold",
-			MinimumHealthFactorSecretID:                 "liquidation_minimum_health_factor",
-			TargetHealthFactorSecretID:                  "liquidation_target_health_factor",
-			MaximumStablecoinReserveDeploymentSecretID:  "liquidation_maximum_stablecoin_reserve_deployment",
-			MinimumStablecoinReserveBalanceSecretID:     "liquidation_minimum_stablecoin_reserve_balance",
-			MaximumCollateralAllocationSecretID:         "liquidation_maximum_collateral_allocation",
-			MaximumPartialDebtRepaymentSecretID:         "liquidation_maximum_partial_debt_repayment",
-			DefensiveActionSequencingPreferenceSecretID: "liquidation_defensive_action_sequencing_preference",
-			PreferredVenuesSecretID:                     "liquidation_preferred_venues",
+			LiquidationWarningActionThresholdSecretID:  "liquidation_liquidation_warning_action_threshold",
+			MinimumHealthFactorSecretID:                "liquidation_minimum_health_factor",
+			TargetHealthFactorSecretID:                 "liquidation_target_health_factor",
+			MaximumStablecoinReserveDeploymentSecretID: "liquidation_maximum_stablecoin_reserve_deployment",
+			MinimumStablecoinReserveBalanceSecretID:    "liquidation_minimum_stablecoin_reserve_balance",
+			MaximumCollateralAllocationSecretID:        "liquidation_maximum_collateral_allocation",
+			MaximumPartialDebtRepaymentSecretID:        "liquidation_maximum_partial_debt_repayment",
+			PreferredVenuesSecretID:                    "liquidation_preferred_venues",
 		},
 	}
 }
@@ -83,15 +83,14 @@ func testSecrets() testutils.Secrets {
 		cre.DefaultSecretNamespace: {
 			"exchange_api_key": exchangeAPIKey,
 			"openai_api_key":   openAIAPIKey,
-			"liquidation_liquidation_warning_action_threshold":   "18",
-			"liquidation_minimum_health_factor":                  "1.25",
-			"liquidation_target_health_factor":                   "1.5",
-			"liquidation_maximum_stablecoin_reserve_deployment":  "5000",
-			"liquidation_minimum_stablecoin_reserve_balance":     "2000",
-			"liquidation_maximum_collateral_allocation":          "80",
-			"liquidation_maximum_partial_debt_repayment":         "25",
-			"liquidation_defensive_action_sequencing_preference": "collateral-first",
-			"liquidation_preferred_venues":                       "binance,onchain",
+			"liquidation_liquidation_warning_action_threshold":  "18",
+			"liquidation_minimum_health_factor":                 "1.25",
+			"liquidation_target_health_factor":                  "1.5",
+			"liquidation_maximum_stablecoin_reserve_deployment": "5000",
+			"liquidation_minimum_stablecoin_reserve_balance":    "2000",
+			"liquidation_maximum_collateral_allocation":         "80",
+			"liquidation_maximum_partial_debt_repayment":        "25",
+			"liquidation_preferred_venues":                      "binance,onchain",
 		},
 	}
 }
@@ -433,7 +432,7 @@ func TestInitWorkflow_ErrorsWhenCoreFieldsMissing(t *testing.T) {
 
 	_, err := InitWorkflow(config, nil, nil)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "config requires schedule, mock_base_url, openai_url, and openai_model")
+	assert.Contains(t, err.Error(), "config requires schedule, mock_base_url, openai_url, openai_model, and defensive_action_sequencing_preference")
 }
 
 func TestInitWorkflow_ErrorsWhenSecretIDsMissing(t *testing.T) {

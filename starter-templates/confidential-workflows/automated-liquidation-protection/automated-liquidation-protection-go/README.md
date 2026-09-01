@@ -84,8 +84,9 @@ Copy `.env.example` to `.env` and provide values for:
 - `MOCK_LIQUIDATION_MIN_STABLECOIN_RESERVE_BALANCE`
 - `MOCK_LIQUIDATION_MAX_COLLATERAL_ALLOCATION`
 - `MOCK_LIQUIDATION_MAX_PARTIAL_DEBT_REPAYMENT`
-- `MOCK_LIQUIDATION_DEFENSIVE_ACTION_SEQUENCING_PREFERENCE`
 - `MOCK_LIQUIDATION_PREFERRED_VENUES`
+
+The defensive action sequencing preference is not a secret; it is set via the `defensive_action_sequencing_preference` field in the config file.
 
 The local mock server for this project only exposes routes under `/liquidation/*`.
 
@@ -99,6 +100,7 @@ The local mock server for this project only exposes routes under `/liquidation/*
 | `mock_base_url` | Base URL for the risk-state and execute-defense endpoints |
 | `openai_url` | Reasoning endpoint called from inside the enclave |
 | `openai_model` | Model name passed to the reasoning endpoint |
+| `defensive_action_sequencing_preference` | Action ordering: `collateral-first`, `debt-first`, or `balanced` |
 | `secrets_ids` | Maps each policy input to a secret ID in `secrets.yaml` |
 
 ## Quick Start
