@@ -35,6 +35,7 @@ const baseConfig: Config = {
   mock_base_url: "http://127.0.0.1:8787/liquidation",
   openai_url: "http://127.0.0.1:8787/liquidation/v1/responses",
   openai_model: "gpt-4.1-mini",
+  defensive_action_sequencing_preference: "collateral-first",
   secrets_ids: {
     exchange_api_key_id: "exchange_api_key",
     openai_api_key_id: "openai_api_key",
@@ -45,7 +46,6 @@ const baseConfig: Config = {
     minimum_stablecoin_reserve_balance_secret_id: "liquidation_minimum_stablecoin_reserve_balance",
     maximum_collateral_allocation_secret_id: "liquidation_maximum_collateral_allocation",
     maximum_partial_debt_repayment_secret_id: "liquidation_maximum_partial_debt_repayment",
-    defensive_action_sequencing_preference_secret_id: "liquidation_defensive_action_sequencing_preference",
     preferred_venues_secret_id: "liquidation_preferred_venues",
   },
 };
@@ -132,6 +132,8 @@ describe("initWorkflow", () => {
         ...baseConfig,
         openai_url: "",
       }),
-    ).toThrow("config requires schedule, mock_base_url, openai_url, and openai_model");
+    ).toThrow(
+      "config requires schedule, mock_base_url, openai_url, openai_model, and defensive_action_sequencing_preference",
+    );
   });
 });

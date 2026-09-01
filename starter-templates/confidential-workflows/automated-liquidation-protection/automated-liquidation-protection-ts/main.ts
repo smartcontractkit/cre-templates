@@ -30,7 +30,6 @@ type SecretsConfig = {
   minimum_stablecoin_reserve_balance_secret_id: string;
   maximum_collateral_allocation_secret_id: string;
   maximum_partial_debt_repayment_secret_id: string;
-  defensive_action_sequencing_preference_secret_id: string;
   preferred_venues_secret_id: string;
 };
 
@@ -39,6 +38,7 @@ export type Config = {
   mock_base_url: string;
   openai_url: string;
   openai_model: string;
+  defensive_action_sequencing_preference: string;
   secrets_ids: SecretsConfig;
 };
 
@@ -489,7 +489,6 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
       { id: secrets_ids.minimum_stablecoin_reserve_balance_secret_id },
       { id: secrets_ids.maximum_collateral_allocation_secret_id },
       { id: secrets_ids.maximum_partial_debt_repayment_secret_id },
-      { id: secrets_ids.defensive_action_sequencing_preference_secret_id },
       { id: secrets_ids.preferred_venues_secret_id },
     ])
     .result();
@@ -525,7 +524,7 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
     secrets_ids.maximum_partial_debt_repayment_secret_id,
   );
   const defensiveSequencePreference = parseExecutionSequencePreference(
-    secrets[secrets_ids.defensive_action_sequencing_preference_secret_id].value,
+    runtime.config.defensive_action_sequencing_preference,
   );
   const preferredVenues = parseVenueListSecret(
     secrets[secrets_ids.preferred_venues_secret_id].value,
@@ -614,9 +613,15 @@ export const onCronTrigger = async (runtime: TeeRuntime<Config>): Promise<string
 };
 
 export const initWorkflow = (config: Config): Workflow<Config> => {
-  if (!config.schedule || !config.mock_base_url || !config.openai_url || !config.openai_model) {
+  if (
+    !config.schedule ||
+    !config.mock_base_url ||
+    !config.openai_url ||
+    !config.openai_model ||
+    !config.defensive_action_sequencing_preference
+  ) {
     throw new Error(
-      "config requires schedule, mock_base_url, openai_url, and openai_model",
+      "config requires schedule, mock_base_url, openai_url, openai_model, and defensive_action_sequencing_preference",
     );
   }
 
@@ -630,7 +635,6 @@ export const initWorkflow = (config: Config): Workflow<Config> => {
     !config.secrets_ids?.minimum_stablecoin_reserve_balance_secret_id ||
     !config.secrets_ids?.maximum_collateral_allocation_secret_id ||
     !config.secrets_ids?.maximum_partial_debt_repayment_secret_id ||
-    !config.secrets_ids?.defensive_action_sequencing_preference_secret_id ||
     !config.secrets_ids?.preferred_venues_secret_id
   ) {
     throw new Error("config requires secrets_ids fields");
