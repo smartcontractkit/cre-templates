@@ -1,0 +1,6 @@
+*.env
+node_modules/
+dist/
+target/
+.cargo-home/
+.build-tmp/
