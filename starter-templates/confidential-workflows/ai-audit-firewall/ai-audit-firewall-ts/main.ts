@@ -755,7 +755,8 @@ export const initWorkflow = (config: Config): Workflow<Config> => {
     handlerInTee(
       cron.trigger({ schedule: config.schedule }),
       onCronTrigger,
-      [{ tee: "nitro", regions: ["us-west-2"] }],
+      {}, // any registered TEE, any region
+      // {[{ tee: "nitro", regions: ["us-west-2"] }]}, Use this line if you want to be explicit about the TEE used, currently only supports nitro & us-west-2
       {
         preHook: (cfg: Config) => buildRestrictions(cfg),
       },
