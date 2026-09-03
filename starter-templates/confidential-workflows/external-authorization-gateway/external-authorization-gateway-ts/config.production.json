@@ -1,0 +1,5 @@
+{
+  "schedule": "0 */5 * * * *",
+  "url": "https://example.invalid/v1/claims/example-tokenized-asset-claim-001",
+  "secretId": "GATEWAY_BEARER_TOKEN"
+}

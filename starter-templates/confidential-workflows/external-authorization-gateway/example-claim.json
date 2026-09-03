@@ -1,0 +1,13 @@
+{
+  "version": "x402.example.claim.v1",
+  "claimId": "example-tokenized-asset-claim-001",
+  "asset": "TEST_TOKEN",
+  "claimedAmount": "1000",
+  "canonicalClaimSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "evmSettlementAddress": "0x1111111111111111111111111111111111111111",
+  "authorizationState": "UNAUTHORIZED",
+  "verifiedAmount": "0",
+  "authorizedAmount": "0",
+  "settledAmount": "0",
+  "fundingSource": null
+}
