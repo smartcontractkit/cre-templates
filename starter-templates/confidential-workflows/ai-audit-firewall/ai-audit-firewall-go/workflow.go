@@ -999,13 +999,13 @@ func InitWorkflow(config *Config, _ *slog.Logger, _ cre.SecretsProvider) (cre.Wo
 		// cre.HandlerInTee instead of cre.Handler. The third argument declares
 		// which enclaves this handler accepts. Alternatives:
 		//   cre.AnyTee{}                                               — any registered TEE, any region
-		//   cre.AnyTeeInRegions{Regions: []cre.Region{cre.AwsUsWest2}} — any TEE, one region
+		//   cre.AnyTeeInRegions{Regions: []cre.Region{cre.AwsUsWest2}} — any TEE, multiple regions
 		// The fourth argument is the pre-hook: it runs in the DON before the
 		// enclave executes and returns the restrictions for that execution.
 		cre.HandlerInTeeWithPreHook(
 			cron.Trigger(&cron.Config{Schedule: config.Schedule}),
 			onCronTrigger,
-			cre.OneOfTees{cre.Nitro{Regions: []cre.NitroRegion{cre.NitroUsWest2}}},
+			cre.AnyTee{},
 			func(cfg *Config, _ *cron.Payload) (*sdkpb.Restrictions, error) {
 				return BuildRestrictions(cfg)
 			},

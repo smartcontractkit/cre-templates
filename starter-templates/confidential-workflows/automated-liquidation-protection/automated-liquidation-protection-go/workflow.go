@@ -756,7 +756,8 @@ func InitWorkflow(config *Config, _ *slog.Logger, _ cre.SecretsProvider) (cre.Wo
 		cre.HandlerInTee(
 			cron.Trigger(&cron.Config{Schedule: config.Schedule}),
 			onCronTrigger,
-			cre.OneOfTees{cre.Nitro{Regions: []cre.NitroRegion{cre.NitroUsWest2}}},
+			cre.AnyTee{},
+			//cre.OneOfTees{cre.Nitro{Regions: []cre.NitroRegion{cre.NitroUsWest2}}},
 		),
 	}, nil
 }

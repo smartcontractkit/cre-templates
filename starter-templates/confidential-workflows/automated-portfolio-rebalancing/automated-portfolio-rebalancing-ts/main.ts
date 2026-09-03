@@ -771,7 +771,8 @@ export const initWorkflow = (config: Config): Workflow<Config> => {
     handlerInTee(
       cron.trigger({ schedule: config.schedule }),
       onCronTrigger,
-      [{ tee: "nitro", regions: [NITRO_REGIONS[0]] }],
+      {},
+      //[{ tee: "nitro", regions: [NITRO_REGIONS[0]] }],
     ),
   ];
 };
