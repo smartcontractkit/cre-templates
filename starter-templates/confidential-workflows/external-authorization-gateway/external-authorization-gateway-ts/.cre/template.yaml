@@ -1,0 +1,31 @@
+kind: starter-template
+id: external-authorization-gateway-ts
+projectDir: ..
+title: "Confidential External Authorization Gateway (TypeScript)"
+description: "Demonstrates a fail-closed external authorization pattern for confidential CRE workflows, separating cryptographic verification from authorization, state mutation, and settlement."
+language: typescript
+category: workflow
+
+solutions:
+  - tokenized-assets
+  - payments
+  - institutional-workflows
+
+capabilities:
+  - confidential-compute
+  - http
+  - secrets
+
+tags:
+  - confidential
+  - authorization
+  - eip-191
+  - fail-closed
+  - trusted-signer
+  - tokenized-assets
+
+networks:
+  - ethereum-testnet-sepolia
+
+workflows:
+  - dir: .
