@@ -1,0 +1,21 @@
+kind: starter-template
+id: randomness-go
+projectDir: .
+title: "Verifiable Randomness (Go)"
+description: "VRF-style request/fulfill randomness: an on-chain event triggers a CRE workflow that generates a consensus-safe random value with runtime.Rand() and writes it back on-chain."
+language: go
+category: workflow
+capabilities:
+  - log-trigger
+  - chain-read
+  - chain-write
+tags:
+  - randomness
+  - vrf-migration
+  - event-driven
+workflows:
+  - dir: my-workflow
+postInit: |
+  Deploy RandomnessConsumer.sol (constructor arg: the KeystoneForwarder address for
+  your chain), set consumerAddress in config, then emit a request with
+  requestRandomness() and simulate against that transaction. See README.md.
