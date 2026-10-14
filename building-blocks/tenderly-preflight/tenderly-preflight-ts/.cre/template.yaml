@@ -1,0 +1,24 @@
+kind: building-block
+id: tenderly-preflight-ts
+projectDir: .
+title: "Tenderly Preflight (TypeScript)"
+description: "Simulate an EVM transaction on a Tenderly Virtual Environment and get a consensus-verified verdict before committing to an on-chain write."
+language: typescript
+category: workflow
+solutions:
+  - defi-vault-operations
+capabilities:
+  - cron
+  - http
+  - secrets
+  - chain-read
+tags:
+  - tenderly
+  - simulation
+  - preflight
+networks:
+  - ethereum-testnet-sepolia
+workflows:
+  - dir: my-workflow
+postInit: |
+  Set TENDERLY_ACCESS_KEY in .env and your Tenderly accountSlug/projectSlug in my-workflow/config.staging.json before running.

@@ -81,12 +81,24 @@ Path: [`./xml-utils`](./xml-utils)
 
 ---
 
+### 5) **Tenderly Preflight**
+Path: [`./tenderly-preflight`](./tenderly-preflight)
+
+- Simulates an EVM transaction on a **Tenderly Virtual Environment** via [`@tenderly/cre-preflight`](https://www.npmjs.com/package/@tenderly/cre-preflight) and returns a **consensus-verified verdict** before committing to an on-chain write.
+- Shows CRE secrets usage for the Tenderly access key, fork block resolution (`latest`/`finalized`/pinned), and switching on every verdict outcome.
+- Demonstrates the **preflight → conditional write** pattern: skip the on-chain write when the transaction would fail.
+
+👉 See the block’s README for setup, config, and sample logs.
+
+---
+
 ## When to Use Which Block
 
 * **kv-store**: You want to see an **off-chain write** pattern (AWS S3), secrets usage, SigV4 signing, and a **consensus read → single write** flow.
 * **read-data-feeds**: You want to **read on-chain data** via contract calls, manage ABIs/bindings, and configure **RPC** access.
 * **compression-utils**: You want to handle **data compression** in CRE Typescript workflows, especially when working with large datasets and the CRE HTTP response limit.
 * **xml-utils**: You want to work with **XML data** in CRE workflows, including parsing, validating, and building XML documents.
+* **tenderly-preflight**: You want to **simulate a transaction before writing on-chain** and gate the write on a consensus-verified Tenderly verdict.
 
 ---
 

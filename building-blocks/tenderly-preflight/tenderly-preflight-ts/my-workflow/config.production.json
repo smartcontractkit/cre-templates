@@ -1,0 +1,20 @@
+{
+  "schedule": "0 */5 * * * *",
+  "tenderly": {
+    "accountSlug": "my-account",
+    "projectSlug": "my-project",
+    "accessKeySecretId": "tenderlyaccesskey",
+    "explainReverts": true,
+    "fork": {
+      "networkId": "11155111",
+      "at": "latest"
+    }
+  },
+  "transaction": {
+    "from": "0x1111111111111111111111111111111111111111",
+    "to": "0x2222222222222222222222222222222222222222",
+    "data": "0x",
+    "value": "0x0",
+    "gas": "100000"
+  }
+}
