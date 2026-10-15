@@ -13,18 +13,12 @@ const config = configSchema.parse({
 			at: 'latest',
 		},
 	},
-	transaction: {
-		from: '0x1111111111111111111111111111111111111111',
-		to: '0x2222222222222222222222222222222222222222',
-		data: '0x',
-	},
 })
 
 describe('configSchema', () => {
-	test('applies tenderly defaults and validates the transaction', () => {
+	test('applies tenderly defaults', () => {
 		expect(config.tenderly.explainReverts).toBe(true)
 		expect(config.tenderly.deleteEnvironment).toBe(true)
-		expect(config.transaction.value).toBe('0x0')
 	})
 
 	test('rejects a misspelled tenderly key', () => {
@@ -37,11 +31,6 @@ describe('configSchema', () => {
 					accessKeySecretId: 'tenderlyaccesskey',
 					deleteEnviroment: false, // typo: strict objects reject unknown keys
 					fork: { networkId: '11155111', at: 'latest' },
-				},
-				transaction: {
-					from: '0x1111111111111111111111111111111111111111',
-					to: '0x2222222222222222222222222222222222222222',
-					data: '0x',
 				},
 			}),
 		).toThrow()

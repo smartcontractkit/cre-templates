@@ -6,7 +6,6 @@ import {
 import {
 	TenderlyPreflight,
 	tenderlyConfigSchema,
-	transactionSchema,
 } from '@tenderly/cre-preflight';
 import { z } from 'zod';
 
@@ -19,11 +18,6 @@ export const configSchema = z.object({
 	// the CRE secret holding your Tenderly access key (see secrets.yaml), never
 	// the key itself. See https://github.com/Tenderly/tenderly-cre-preflight#configuration
 	tenderly: tenderlyConfigSchema,
-	// The transaction to preflight. In a real workflow you would build this from
-	// whatever the execution just worked out (a fetched price, a report, an
-	// on-chain decision) and pass it as an argument instead. It lives in config
-	// here only so the template has something to simulate out of the box.
-	transaction: transactionSchema,
 });
 
 type Config = z.infer<typeof configSchema>;
@@ -33,10 +27,18 @@ type Config = z.infer<typeof configSchema>;
 export function onCron(runtime: Runtime<Config>, _payload: CronPayload): string {
 	const tenderly = new TenderlyPreflight(runtime.config.tenderly);
 
+	// The transaction to preflight. In a real workflow you build these from
+	// whatever the execution just worked out (a fetched price, a report, an
+	// on-chain decision) rather than hardcoding them. They are placeholders so
+	// the template has something to simulate out of the box.
+	const from = '0x1111111111111111111111111111111111111111';
+	const to = '0x2222222222222222222222222222222222222222';
+	const data = '0x';
+
 	// Every node forks the chain at the same agreed block, mines the transaction
 	// on its own Virtual Environment, and the per-node verdicts go through
 	// consensus. Nothing reaches the real chain.
-	const verdict = tenderly.sendTransaction(runtime, runtime.config.transaction);
+	const verdict = tenderly.sendTransaction(runtime, { from, to, data });
 
 	switch (verdict.outcome) {
 		case 'success':

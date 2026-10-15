@@ -74,13 +74,6 @@ Edit `my-workflow/config.staging.json`:
       "networkId": "11155111",
       "at": "latest"
     }
-  },
-  "transaction": {
-    "from": "0x1111111111111111111111111111111111111111",
-    "to": "0x2222222222222222222222222222222222222222",
-    "data": "0x",
-    "value": "0x0",
-    "gas": "100000"
   }
 }
 ```
@@ -88,7 +81,8 @@ Edit `my-workflow/config.staging.json`:
 * `accountSlug` / `projectSlug` — **replace with yours** (visible in your Tenderly dashboard URL).
 * `fork.networkId` — chain id as a decimal string (`11155111` is Sepolia). Check [Tenderly's supported networks](https://docs.tenderly.co/supported-networks-and-languages); an unsupported one fails with `misconfigured`.
 * `fork.at` — `"latest"`, `"finalized"`, or a pinned block number. A tag is resolved **once per execution** via a consensus-verified chain read (this is what the RPC in `project.yaml` is for), so every node forks at the same height.
-* `transaction` — a placeholder so the template runs out of the box. In a real workflow you build this per execution and pass it as an argument to `sendTransaction`. **The shipped placeholder will revert or be rejected** — the `from` address has no funds — which still demonstrates the verdict flow.
+
+The transaction itself is not config — it is built in the handler and passed to `sendTransaction`. The template ships placeholder `from`/`to`/`data` values in `workflow.ts`; in a real workflow you build them per execution. **The shipped placeholder will revert or be rejected** — the `from` address has no funds — which still demonstrates the verdict flow.
 
 ### 4) Run a local simulation
 
@@ -112,7 +106,7 @@ Workflow Simulation Result:
  "skipped: rejected"
 ```
 
-Point `transaction` at a call that succeeds (and give `from` a balance via the `fund` option) and you will see `preflight passed | gasUsed=...` instead.
+Point the `from`/`to`/`data` values in `workflow.ts` at a call that succeeds (and give `from` a balance via the `fund` option) and you will see `preflight passed | gasUsed=...` instead.
 
 ### 5) Run the tests
 
