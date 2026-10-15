@@ -180,10 +180,13 @@ cd offchain-report-write && bun test
 
 ## Caveats
 
-- Validation is against the **current** on-chain DON configuration. If the DON
-  membership rotates after a report is produced, old reports stop validating (the app
-  shows which signers are no longer known). Archive the DON config alongside each
-  report if you need long-term verifiability.
+> **⚠️ Signer rotation:** validation runs against the **current** on-chain DON
+> configuration. DON membership can change over time (key rotation, security
+> response, node changes). A report produced **before** such a change will no
+> longer validate — its signers will show as `unknown-signer`. To verify a
+> historical report you need the DON signer set **as of the time the report was
+> generated**: archive the DON config (or a registry state reference, e.g. block
+> number) alongside each report, or read the registry at the report's block.
 - The default RPC endpoint is a public, rate-limited one — use your own RPC for
   anything beyond a demo.
 - The workflow checks `txStatus` of the forwarder transaction; for stricter delivery

@@ -35,6 +35,15 @@ h2 {
 	margin-bottom: 1.5rem;
 }
 
+.note {
+	border: 1px solid #d9770655;
+	background: #d9770612;
+	border-radius: 8px;
+	padding: 0.6rem 0.9rem;
+	font-size: 0.85rem;
+	margin-bottom: 1.5rem;
+}
+
 .card {
 	border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
 	border-radius: 10px;

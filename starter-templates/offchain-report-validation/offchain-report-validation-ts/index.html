@@ -15,6 +15,13 @@
 				read directly from the capabilities registry contract via JSON-RPC, and
 				<code>f + 1</code> unique DON signatures over the report hash are required.
 			</p>
+			<p class="note">
+				⚠️ <strong>Signer rotation:</strong> reports are checked against the
+				<strong>current</strong> on-chain DON configuration. DON membership can change over time
+				(e.g. key rotation for security reasons), and reports produced before such a change will
+				no longer validate. Verifying a historical report requires the DON signer set as of the
+				time the report was generated — archive it alongside the report.
+			</p>
 
 			<section class="card">
 				<h2>1. Report</h2>
