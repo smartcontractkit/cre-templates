@@ -11,7 +11,7 @@ See [../README.md](../README.md) for the full guide.
 ```bash
 bun install                 # from this directory (also run bun install in ../contracts)
 
-# from the project root (cre/):
+# from the project root (the template root, where project.yaml lives):
 cre workflow simulate offchain-report-write --target staging-settings
 ```
 

@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Lockfiles (repo convention: not committed)
+bun.lock
+
 # App build output
 dist/
 

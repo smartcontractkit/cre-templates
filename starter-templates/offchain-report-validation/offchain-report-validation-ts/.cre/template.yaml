@@ -14,13 +14,13 @@ tags:
   - chain-write
   - web-app
 workflows:
-  - dir: cre/offchain-report-write
+  - dir: offchain-report-write
 postInit: |
   Install all three packages:
-    cd cre/contracts && bun install && cd ../..
-    cd cre/offchain-report-write && bun install && cd ../..
+    cd contracts && bun install && cd ..
+    cd offchain-report-write && bun install && cd ..
     npm install
   Run the validator app (includes a sample report that verifies against mainnet):
     npm run dev
-  Simulate the workflow (from the cre/ project root):
-    cd cre && cre workflow simulate offchain-report-write --target staging-settings
+  Simulate the workflow (from this template root, the CRE project root):
+    cre workflow simulate offchain-report-write --target staging-settings

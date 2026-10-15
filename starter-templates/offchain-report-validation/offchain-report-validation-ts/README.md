@@ -18,7 +18,7 @@ That same report can also be published off-chain — for example to your own bac
 so that your UI can display it to users as cryptographic proof. This template shows
 **both ends** of that flow:
 
-1. **`cre/offchain-report-write/`** — a workflow that writes a `uint256` to a `Storage`
+1. **`offchain-report-write/`** — a workflow that writes a `uint256` to a `Storage`
    consumer contract via the chain writer (`writeReport`) and emits the signed report
    in its logs, ready to be copy-pasted or POSTed to your backend.
 2. **The web app at this template's root** — a minimal browser app (Vite + TypeScript +
@@ -68,7 +68,7 @@ report validation is, by definition, something your users do outside the DON.
 
 ## Components
 
-### CRE Workflow (`cre/offchain-report-write/`)
+### CRE Workflow (`offchain-report-write/`)
 
 Cron-triggered workflow:
 
@@ -97,10 +97,10 @@ A `TODO`-style comment in `main.ts` marks the hand-off point where you would ins
 push the report to your offchain backend with the `HTTPClient` (intentionally not
 implemented in this template).
 
-### Consumer Contract (`cre/contracts/evm/src/Storage.sol`)
+### Consumer Contract (`contracts/evm/src/Storage.sol`)
 
 Minimal `ReceiverTemplate`-based consumer that stores the reported `uint256`.
-TypeScript bindings (`cre/contracts/evm/ts/generated/`) are generated from
+TypeScript bindings (`contracts/evm/ts/generated/`) are generated from
 `src/abi/Storage.abi` with `cre generate-bindings evm` and used by both the workflow
 and its unit tests (`newStorageMock`).
 
@@ -138,8 +138,8 @@ The RPC URL, chain ID, and registry address are editable in the UI.
 ### 1. Install dependencies
 
 ```bash
-cd cre/contracts && bun install && cd ../..
-cd cre/offchain-report-write && bun install && cd ../..
+cd contracts && bun install && cd ..
+cd offchain-report-write && bun install && cd ..
 npm install
 ```
 
@@ -155,10 +155,9 @@ mainnet registry state. `npm run verify:sample` runs the same check headlessly.
 
 ### 3. Simulate the workflow
 
-From the CRE project root (`cre/`):
+From this directory (the CRE project root):
 
 ```bash
-cd cre
 cre workflow simulate offchain-report-write --target staging-settings
 ```
 
@@ -166,7 +165,7 @@ You will see the `REPORT_JSON_BEGIN ... REPORT_JSON_END` block in the `[USER LOG
 output. To exercise a real testnet write from simulation, deploy `Storage.sol` with
 Sepolia's mock forwarder (`0x15fc6ae953e024d975e77382eeec56a9101f9f88`), set
 `evms[0].storageAddress` in `config.staging.json`, add `CRE_ETH_PRIVATE_KEY` to
-`cre/.env`, and run with `--broadcast`.
+`.env` (see `.env.example`), and run with `--broadcast`.
 
 > **Important:** simulation signs reports with a local mock DON, so simulated reports
 > will **not** validate in the app (you will see every signer flagged
@@ -176,7 +175,7 @@ Sepolia's mock forwarder (`0x15fc6ae953e024d975e77382eeec56a9101f9f88`), set
 ### 4. Workflow unit tests
 
 ```bash
-cd cre/offchain-report-write && bun test
+cd offchain-report-write && bun test
 ```
 
 ## Caveats
