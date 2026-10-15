@@ -46,3 +46,9 @@ tmp.js
 # Allow vendored Chainlink CRE interfaces in Solidity templates
 !starter-templates/automation-migration/contracts/evm/src/vendor/chainlink-evm/contracts/cre/
 !starter-templates/automation-migration/contracts/evm/src/vendor/chainlink-evm/contracts/cre/**
+
+# Allow the CRE project directory (project.yaml, workflow, contracts) in the
+# offchain-report-validation template — the bare `cre` rule above targets the
+# compiled CLI binary, not template content.
+!starter-templates/offchain-report-validation/offchain-report-validation-ts/cre/
+!starter-templates/offchain-report-validation/offchain-report-validation-ts/cre/**

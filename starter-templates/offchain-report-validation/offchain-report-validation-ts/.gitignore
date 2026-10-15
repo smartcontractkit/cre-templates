@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# App build output
+dist/
+
+# CRE build artifacts
+binary.wasm.br.b64
+.cre_build_tmp.js
+
+# Environment
+*.env

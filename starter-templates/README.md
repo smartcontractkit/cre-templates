@@ -73,6 +73,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 12. **Hello Confidential Workflows** — [`./hello-confidential-workflows`](./hello-confidential-workflows)
     Confidential compute with `handlerInTee` — fetch a secret and call an API from inside a TEE enclave, then cross back to the DON for consensus. Requires private beta access.
 
+13. **Off-Chain Report Validation** — [`./offchain-report-validation`](./offchain-report-validation)
+    Write on-chain via the chain writer, export the DON-signed report, and verify it client-side in a browser app that reads the DON configuration from the capabilities registry over RPC. The only template shipping a small web app.
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License
