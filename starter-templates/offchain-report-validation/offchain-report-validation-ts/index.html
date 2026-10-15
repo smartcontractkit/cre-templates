@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>CRE Off-Chain Report Validator</title>
+		<link rel="stylesheet" href="/src/style.css" />
+	</head>
+	<body>
+		<main id="app">
+			<h1>CRE Off-Chain Report Validator</h1>
+			<p class="intro">
+				Paste a CRE report published by your workflow server. The report is verified entirely
+				in your browser: the DON configuration (<code>f</code> and the node signer addresses) is
+				read directly from the capabilities registry contract via JSON-RPC, and
+				<code>f + 1</code> unique DON signatures over the report hash are required.
+			</p>
+			<p class="note">
+				⚠️ <strong>Signer rotation:</strong> reports are checked against the
+				<strong>current</strong> on-chain DON configuration. DON membership can change over time
+				(e.g. key rotation for security reasons), and reports produced before such a change will
+				no longer validate. Verifying a historical report requires the DON signer set as of the
+				time the report was generated — archive it alongside the report.
+			</p>
+
+			<section class="card">
+				<h2>1. Report</h2>
+				<div class="row">
+					<button id="load-sample" type="button">Load sample report</button>
+				</div>
+				<label for="report-json">Report JSON ({ rawReport, reportContext, signatures })</label>
+				<textarea
+					id="report-json"
+					rows="10"
+					spellcheck="false"
+					placeholder='{"rawReport": "0x...", "reportContext": "0x...", "signatures": ["0x...", ...]}'
+				></textarea>
+			</section>
+
+			<section class="card">
+				<h2>2. Registry / RPC</h2>
+				<div class="grid">
+					<label>
+						RPC URL
+						<input id="rpc-url" type="text" spellcheck="false" />
+					</label>
+					<label>
+						Chain ID
+						<input id="chain-id" type="number" min="1" />
+					</label>
+					<label class="span-2">
+						Capabilities registry address
+						<input id="registry-address" type="text" spellcheck="false" />
+					</label>
+				</div>
+			</section>
+
+			<button id="verify" type="button" class="primary">Verify report</button>
+
+			<section id="result" class="card hidden" aria-live="polite"></section>
+		</main>
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>
