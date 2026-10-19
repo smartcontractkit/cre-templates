@@ -1,5 +1,6 @@
 {
 	"schedule": "*/30 * * * * *",
+	"backendUrl": "https://httpbin.org/post",
 	"evms": [
 		{
 			"storageAddress": "0x0000000000000000000000000000000000000000",

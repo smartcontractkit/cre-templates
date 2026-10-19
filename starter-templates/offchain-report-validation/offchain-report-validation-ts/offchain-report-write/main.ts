@@ -1,10 +1,15 @@
 import {
+	bytesToBase64,
 	bytesToHex,
+	consensusIdenticalAggregation,
 	CronCapability,
 	EVMClient,
 	getNetwork,
 	handler,
+	HTTPClient,
+	type HTTPSendRequester,
 	prepareReportRequest,
+	type Report,
 	Runner,
 	type Runtime,
 	TxStatus,
@@ -14,11 +19,52 @@ import { Storage, StorageABI } from '../contracts/evm/ts/generated'
 
 export type Config = {
 	schedule: string
+	backendUrl: string
 	evms: Array<{
 		storageAddress: string
 		chainSelectorName: string
 		gasLimit: string
 	}>
+}
+
+/**
+ * Runs in node mode: POSTs the signed report to the backend as JSON using the
+ * HTTP capability's sendReport helper. The sendReport callback receives the
+ * ReportResponse (rawReport, reportContext, sigs) — the supported way to read a
+ * report's fields for off-chain transport.
+ *
+ * Returns a JSON string with the push outcome and the exact payload sent, so the
+ * DON-mode handler can log them.
+ */
+const pushReport = (
+	sendRequester: HTTPSendRequester,
+	report: Report,
+	backendUrl: string,
+): string => {
+	// Built inside the sendReport callback — it runs before the request is sent.
+	let payload = ''
+	let statusCode = -1
+	try {
+		const resp = sendRequester
+			.sendReport(report, (reportResponse) => {
+				payload = JSON.stringify({
+					rawReport: bytesToHex(reportResponse.rawReport),
+					reportContext: bytesToHex(reportResponse.reportContext),
+					signatures: reportResponse.sigs.map((s) => bytesToHex(s.signature)),
+				})
+				return {
+					url: backendUrl,
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: bytesToBase64(new TextEncoder().encode(payload)),
+				}
+			})
+			.result()
+		statusCode = resp.statusCode
+	} catch {
+		// Endpoint unreachable — the payload is still returned for logging.
+	}
+	return JSON.stringify({ statusCode, payload })
 }
 
 export const onCronTrigger = (runtime: Runtime<Config>): string => {
@@ -69,21 +115,36 @@ export const onCronTrigger = (runtime: Runtime<Config>): string => {
 	}
 	runtime.log(`Value ${value} written onchain`)
 
-	// 5. Emit the signed report field by field (one log line each, signatures one
-	//    per line) so long values don't get truncated in the logs. The lines
+	// 5. Publish the signed report to your offchain backend over HTTP (via the
+	//    sendReport helper), and log it field by field (one line per field, one
+	//    signature per line, so nothing is truncated in the logs). The lines
 	//    between REPORT_JSON_BEGIN / REPORT_JSON_END reassemble into the exact
-	//    JSON shape the offchain validator UI expects.
-	const rr = signedReport.x_generatedCodeOnly_unwrap()
-	const reportPayload = {
-		rawReport: bytesToHex(rr.rawReport),
-		reportContext: bytesToHex(rr.reportContext),
-		signatures: rr.sigs.map((s) => bytesToHex(s.signature)),
+	//    JSON shape the offchain validator app expects.
+	const exportResult = new HTTPClient()
+		.sendRequest(
+			runtime,
+			pushReport,
+			consensusIdenticalAggregation(),
+		)(signedReport, runtime.config.backendUrl)
+		.result()
+
+	const { statusCode, payload } = JSON.parse(exportResult) as {
+		statusCode: number
+		payload: string
+	}
+	if (statusCode >= 200 && statusCode < 300) {
+		runtime.log(`Report pushed to ${runtime.config.backendUrl} (HTTP ${statusCode})`)
+	} else {
+		runtime.log(
+			`Could not push report to ${runtime.config.backendUrl} (status ${statusCode}) — the report is still logged below`,
+		)
 	}
 
-	// Here you would send the report to your offchain backend via HTTP
-	// (e.g. HTTPClient POST <your-backend>/reports with JSON body
-	// JSON.stringify(reportPayload)) so clients can verify it — intentionally
-	// left as log lines in this example.
+	const reportPayload = JSON.parse(payload) as {
+		rawReport: string
+		reportContext: string
+		signatures: string[]
+	}
 	runtime.log('REPORT_JSON_BEGIN')
 	runtime.log(`{"rawReport":"${reportPayload.rawReport}",`)
 	runtime.log(`"reportContext":"${reportPayload.reportContext}",`)

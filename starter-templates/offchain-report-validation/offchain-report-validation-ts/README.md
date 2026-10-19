@@ -19,8 +19,9 @@ so that your UI can display it to users as cryptographic proof. This template sh
 **both ends** of that flow:
 
 1. **`offchain-report-write/`** — a workflow that writes a `uint256` to a `Storage`
-   consumer contract via the chain writer (`writeReport`) and emits the signed report
-   in its logs, ready to be copy-pasted or POSTed to your backend.
+   consumer contract via the chain writer (`writeReport`) and publishes the signed
+   report to your backend over HTTP using the HTTP capability's `sendReport` helper
+   (also logged, ready to be copy-pasted).
 2. **The web app at this template's root** — a minimal browser app (Vite + TypeScript +
    [viem](https://viem.sh)) that validates such a report with **no backend of your own**:
    it reads the DON configuration directly from the capabilities registry contract over
@@ -46,7 +47,7 @@ report validation is, by definition, something your users do outside the DON.
 │                                     │ (chain writer)     │  │
 │                                     └─────────┬──────────┘  │
 │                                               │             │
-│                            runtime.log / HTTP POST (TODO)   │
+│                            HTTP POST (sendReport) + log     │
 └───────────────────────────────┬───────────────┬─────────────┘
                                 │               │
                 ┌───────────────v───┐   ┌───────v──────────────┐
@@ -81,9 +82,11 @@ Cron-triggered workflow:
    report object and export it.
 3. Submits the write on-chain via `evmClient.writeReport(...)` — the
    `KeystoneForwarder` delivers it to the consumer contract.
-4. Logs the report field by field between `REPORT_JSON_BEGIN` / `REPORT_JSON_END`
-   markers (one value per line, so nothing is truncated in the logs). The lines
-   reassemble into:
+4. Publishes the report to `backendUrl` with `sendReport` — its callback receives the
+   `ReportResponse` (`rawReport`, `reportContext`, `sigs`), which is the supported way
+   to read a report's fields for off-chain transport. The same JSON is also logged
+   field by field between `REPORT_JSON_BEGIN` / `REPORT_JSON_END` markers (one value
+   per line, so nothing is truncated in the logs). The lines reassemble into:
 
 ```json
 {
@@ -93,9 +96,10 @@ Cron-triggered workflow:
 }
 ```
 
-A `TODO`-style comment in `main.ts` marks the hand-off point where you would instead
-push the report to your offchain backend with the `HTTPClient` (intentionally not
-implemented in this template).
+If the push fails (endpoint unreachable, non-2xx), the workflow tolerates it and
+still logs the report. `config.staging.json` points at `https://httpbin.org/post` (an
+echo service) so simulation demonstrates the push out of the box — set `backendUrl`
+to your real endpoint.
 
 ### Consumer Contract (`contracts/evm/src/Storage.sol`)
 
@@ -194,9 +198,9 @@ cd offchain-report-write && bun test
 
 ## Customization
 
-- **Push reports to your backend**: replace the log lines in `main.ts` with an
-  `HTTPClient` POST of the report JSON (the comment marks the spot), and point the
-  app's fetch logic at your endpoint instead of pasting.
+- **Point at your backend**: set `backendUrl` in the config; the workflow already
+  POSTs the report JSON there via `sendReport`. To skip the network call entirely,
+  remove the `sendRequest` block in `main.ts` and keep the log-only export.
 - **Change the payload**: edit the `encodeAbiParameters` call in `main.ts` and the
   `abi.decode` in `Storage.sol` together, then regenerate the ABI + bindings.
 - **Verify on another chain/environment**: override RPC URL, chain ID, and registry

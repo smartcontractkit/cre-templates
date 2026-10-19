@@ -20,6 +20,7 @@ Config (`config.staging.json` / `config.production.json`):
 | Key | Description |
 |-----|-------------|
 | `schedule` | Cron schedule (6-field, with seconds) |
+| `backendUrl` | HTTP endpoint the signed report is POSTed to (via `sendReport`) |
 | `evms[0].storageAddress` | Deployed `Storage` contract address |
 | `evms[0].chainSelectorName` | CRE chain selector name (default `ethereum-testnet-sepolia`) |
 | `evms[0].gasLimit` | Gas limit for the write transaction |
