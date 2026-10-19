@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Lockfiles (repo convention: not committed)
+bun.lock
+
+# App build output
+dist/
+
+# CRE build artifacts
+binary.wasm.br.b64
+.cre_build_tmp.js
+
+# Environment
+*.env

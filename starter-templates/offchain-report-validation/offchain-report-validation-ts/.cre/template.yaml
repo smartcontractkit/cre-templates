@@ -1,0 +1,26 @@
+kind: starter-template
+id: offchain-report-validation-ts
+projectDir: .
+title: "Off-Chain Report Validation (TypeScript + Web App)"
+description: "Write a value on-chain via the chain writer, export the DON-signed report, and verify it client-side in a browser app that reads the DON configuration directly from the capabilities registry over RPC."
+language: typescript
+category: workflow
+capabilities:
+  - cron
+  - chain-write
+tags:
+  - offchain-report
+  - report-validation
+  - chain-write
+  - web-app
+workflows:
+  - dir: offchain-report-write
+postInit: |
+  Install all three packages:
+    cd contracts && bun install && cd ..
+    cd offchain-report-write && bun install && cd ..
+    npm install
+  Run the validator app (includes a sample report that verifies against mainnet):
+    npm run dev
+  Simulate the workflow (from this template root, the CRE project root):
+    cre workflow simulate offchain-report-write --target staging-settings

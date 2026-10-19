@@ -1,0 +1,11 @@
+{
+	"schedule": "0 */5 * * * *",
+	"backendUrl": "https://your-backend.example.com/reports",
+	"evms": [
+		{
+			"storageAddress": "0x0000000000000000000000000000000000000000",
+			"chainSelectorName": "ethereum-testnet-sepolia",
+			"gasLimit": "500000"
+		}
+	]
+}
