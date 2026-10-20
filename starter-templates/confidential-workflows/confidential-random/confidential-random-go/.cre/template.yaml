@@ -1,0 +1,20 @@
+kind: starter-template
+id: confidential-random-go
+projectDir: .
+title: "Confidential Random (Go)"
+description: "Generate a fresh random uint32 on each cron tick inside an AWS Nitro enclave using rt.Rand()."
+language: go
+category: workflow
+capabilities:
+  - cron
+  - tee
+tags:
+  - randomness
+  - confidential-compute
+  - tee
+workflows:
+  - dir: my-workflow
+postInit: |
+  Confidential Workflows is in private beta — enrollment via your Chainlink
+  account team is required to deploy. TEE randomness currently runs in AWS
+  Nitro in us-west-2 (staging). See README.md for details.

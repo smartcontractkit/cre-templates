@@ -73,6 +73,9 @@ They are more comprehensive than **building-blocks**, and can be adapted into yo
 12. **Hello Confidential Workflows** — [`./hello-confidential-workflows`](./hello-confidential-workflows)
     Confidential compute with `handlerInTee` — fetch a secret and call an API from inside a TEE enclave, then cross back to the DON for consensus. Requires private beta access.
 
+13. **Confidential Random** — [`./confidential-workflows/confidential-random`](./confidential-workflows/confidential-random)
+    Generate a fresh random `uint32` on each cron tick inside an AWS Nitro enclave with `rt.Rand()` (Go) or the TEE-seeded `Math.random()` (TypeScript). Requires private beta access.
+
 > Each subdirectory includes its own README with template-specific steps and example logs.
 
 ## License

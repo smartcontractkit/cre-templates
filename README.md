@@ -45,6 +45,7 @@ More complex, end-to-end workflows. Each directory includes its own README (some
 - **`starter-template/bring-your-own-data`** – NAV (Net Asset Value) & PoR (Proof of Reserve) templates for publishing your own data on-chain.
 - **`starter-template/multi-chain-token-manager`** – Orchestrate token operations and state across **multiple chains**.
 - **`starter-template/sports-resolution`** – Resolve sports game outcomes on-chain with an event-driven workflow, HTTP data sources, aggregation, and signed reports.
+- **`starter-template/confidential-workflows/confidential-random`** – Generate fresh random values on each cron tick inside an AWS Nitro enclave with TEE-local randomness, available in Go (`rt.Rand()`) and TypeScript (TEE-seeded `Math.random()`).
 
 ---
 
